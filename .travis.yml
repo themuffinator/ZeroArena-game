@@ -14,13 +14,12 @@ notifications:
     on_success: change
     on_failure: always
 
-sudo: required
+sudo: false
 
 addons:
   coverity_scan:
     project:
       name: "zturtleman/mint-arena"
-      description: "Build submitted via Travis CI"
     notification_email: zturtleman@gmail.com
     build_command_prepend: "make clean"
     build_command: "make release"
