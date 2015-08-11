@@ -5,7 +5,7 @@ env:
     # coverity token
     - secure: "THWKfpOxFbQxX8Oyg8qkNaPACdOqx4KljQYytfoSzEpGuWgDLzP5YUTq0jiZLm5BRCY3Vj+GbmYGUectpEJQ7UyccfxUipmuAMEpW1zcwzl5Pdspyz2O1rJVh5pb/qRss7VSmyieh8OJYyl5W//HGxsDU29rDPRP4oW6k2k3Zvs="
 
-script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then ./travis-ci-build.sh ; fi
+script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then ./travis-ci-build.sh ; else cat /home/travis/build/zturtleman/mint-arena/cov-int/scm_log.txt ; fi
 
 notifications:
   irc:
