@@ -19,14 +19,6 @@ notifications:
 sudo: false
 
 addons:
-  apt:
-    packages:
-      - binutils-mingw-w64-i686
-      - gcc-mingw-w64-i686
-      - binutils-mingw-w64-x86-64
-      - gcc-mingw-w64-x86-64
-      - gcc-mingw-w64
-      - mingw-w64
   coverity_scan:
     project:
       name: "zturtleman/mint-arena"
