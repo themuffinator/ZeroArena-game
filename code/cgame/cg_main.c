@@ -91,7 +91,7 @@ Q_EXPORT intptr_t vmMain( int command, int arg0, int arg1, int arg2, int arg3, i
 	case CG_VOIP_STRING:
 		return (intptr_t)CG_VoIPString(arg0);
 	case CG_KEY_EVENT:
-		CG_DistributeKeyEvent(arg0, arg1, arg2, arg3, 0);
+		CG_DistributeKeyEvent(arg0, arg1, arg2, arg3, -1, 0);
 		return 0;
 	case CG_CHAR_EVENT:
 		CG_DistributeCharEvent(arg0, arg1);
@@ -201,6 +201,9 @@ vmCvar_t	cg_simpleItems;
 vmCvar_t	cg_fov;
 vmCvar_t	cg_zoomFov;
 vmCvar_t	cg_splitviewVertical;
+vmCvar_t	cg_splitviewThirdEqual;
+vmCvar_t	cg_splitviewTextScale;
+vmCvar_t	cg_hudTextScale;
 vmCvar_t	cg_lagometer;
 vmCvar_t	cg_drawAttacker;
 vmCvar_t	cg_synchronousClients;
@@ -262,6 +265,8 @@ vmCvar_t	cg_drawScores;
 vmCvar_t	cg_oldBubbles;
 vmCvar_t	cg_smoothBodySink;
 vmCvar_t	cg_antiLag;
+vmCvar_t	cg_forceBitmapFonts;
+
 vmCvar_t	cg_introPlayed;
 vmCvar_t	cg_joystickDebug;
 vmCvar_t	ui_stretch;
@@ -344,7 +349,7 @@ static cvarTable_t cgameCvarTable[] = {
 	{ &cg_drawCrosshairNames, "cg_drawCrosshairNames", "1", CVAR_ARCHIVE, RANGE_BOOL },
 	{ &cg_drawRewards, "cg_drawRewards", "1", CVAR_ARCHIVE, RANGE_BOOL },
 	{ &cg_crosshairSize, "cg_crosshairSize", "24", CVAR_ARCHIVE, RANGE_ALL },
-	{ &cg_crosshairHealth, "cg_crosshairHealth", "1", CVAR_ARCHIVE, RANGE_BOOL },
+	{ &cg_crosshairHealth, "cg_crosshairHealth", "0", CVAR_ARCHIVE, RANGE_BOOL },
 	{ &cg_crosshairX, "cg_crosshairX", "0", CVAR_ARCHIVE, RANGE_ALL },
 	{ &cg_crosshairY, "cg_crosshairY", "0", CVAR_ARCHIVE, RANGE_ALL },
 	{ &cg_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE, RANGE_ALL },
@@ -376,6 +381,9 @@ static cvarTable_t cgameCvarTable[] = {
 	{ &cg_tracerWidth, "cg_tracerwidth", "1", CVAR_CHEAT, RANGE_ALL },
 	{ &cg_tracerLength, "cg_tracerlength", "100", CVAR_CHEAT, RANGE_ALL },
 	{ &cg_splitviewVertical, "cg_splitviewVertical", "0", CVAR_ARCHIVE, RANGE_BOOL },
+	{ &cg_splitviewThirdEqual, "cg_splitviewThirdEqual", "1", CVAR_ARCHIVE, RANGE_BOOL },
+	{ &cg_splitviewTextScale, "cg_splitviewTextScale", "2", CVAR_ARCHIVE, RANGE_FLOAT( 0.1, 5 ) },
+	{ &cg_hudTextScale, "cg_hudTextScale", "1", CVAR_ARCHIVE, RANGE_FLOAT( 0.1, 5 ) },
 	{ &cg_teamChatTime, "cg_teamChatTime", "3000", CVAR_ARCHIVE, RANGE_ALL },
 	{ &cg_teamChatHeight, "cg_teamChatHeight", "0", CVAR_ARCHIVE, RANGE_INT( 0, TEAMCHAT_HEIGHT ) },
 	{ &cg_forceModel, "cg_forceModel", "0", CVAR_ARCHIVE, RANGE_BOOL },
@@ -456,6 +464,7 @@ static cvarTable_t cgameCvarTable[] = {
 	{ &cg_oldBubbles, "cg_oldBubbles", "1", CVAR_ARCHIVE, RANGE_BOOL },
 	{ &cg_smoothBodySink, "cg_smoothBodySink", "1", CVAR_ARCHIVE, RANGE_BOOL },
 	{ &cg_antiLag, "cg_antiLag", "0", CVAR_USERINFO_ALL | CVAR_ARCHIVE, RANGE_INT( 0, 2 ) },
+	{ &cg_forceBitmapFonts, "cg_forceBitmapFonts", "0", CVAR_ARCHIVE | CVAR_LATCH, RANGE_BOOL },
 //	{ &cg_pmove_fixed, "cg_pmove_fixed", "0", CVAR_USERINFO | CVAR_ARCHIVE, RANGE_BOOL }
 
 	{ &cg_introPlayed, "com_introPlayed", "0", CVAR_ARCHIVE, RANGE_BOOL },
@@ -1382,19 +1391,6 @@ This function may execute for a couple of minutes with a slow disk.
 static void CG_RegisterGraphics( void ) {
 	int			i;
 	char		items[MAX_ITEMS+1];
-	static char		*sb_nums[11] = {
-		"gfx/2d/numbers/zero_32b",
-		"gfx/2d/numbers/one_32b",
-		"gfx/2d/numbers/two_32b",
-		"gfx/2d/numbers/three_32b",
-		"gfx/2d/numbers/four_32b",
-		"gfx/2d/numbers/five_32b",
-		"gfx/2d/numbers/six_32b",
-		"gfx/2d/numbers/seven_32b",
-		"gfx/2d/numbers/eight_32b",
-		"gfx/2d/numbers/nine_32b",
-		"gfx/2d/numbers/minus_32b",
-	};
 
 	// clear any references to old media
 	memset( &cg.refdef, 0, sizeof( cg.refdef ) );
@@ -1410,10 +1406,6 @@ static void CG_RegisterGraphics( void ) {
 
 	// precache status bar pics
 	CG_LoadingString( "game media" );
-
-	for ( i=0 ; i<11 ; i++) {
-		cgs.media.numberShaders[i] = trap_R_RegisterShader( sb_nums[i] );
-	}
 
 	cgs.media.botSkillShaders[0] = trap_R_RegisterShader( "menu/art/skill1.tga" );
 	cgs.media.botSkillShaders[1] = trap_R_RegisterShader( "menu/art/skill2.tga" );
@@ -1858,7 +1850,9 @@ qboolean CG_Asset_Parse(int handle) {
 			if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize)) {
 				return qfalse;
 			}
-			CG_InitTrueTypeFont(tempStr, pointSize, &cgDC.Assets.textFont);
+			if (!CG_InitTrueTypeFont(tempStr, pointSize, &cgDC.Assets.textFont)) {
+				CG_InitBitmapFont(&cgDC.Assets.textFont, pointSize, pointSize / 2);
+			}
 			continue;
 		}
 
@@ -1868,7 +1862,9 @@ qboolean CG_Asset_Parse(int handle) {
 			if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize)) {
 				return qfalse;
 			}
-			CG_InitTrueTypeFont(tempStr, pointSize, &cgDC.Assets.smallFont);
+			if (!CG_InitTrueTypeFont(tempStr, pointSize, &cgDC.Assets.smallFont)) {
+				CG_InitBitmapFont(&cgDC.Assets.smallFont, pointSize, pointSize / 2);
+			}
 			continue;
 		}
 
@@ -1878,7 +1874,9 @@ qboolean CG_Asset_Parse(int handle) {
 			if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize)) {
 				return qfalse;
 			}
-			CG_InitTrueTypeFont(tempStr, pointSize, &cgDC.Assets.bigFont);
+			if (!CG_InitTrueTypeFont(tempStr, pointSize, &cgDC.Assets.bigFont)) {
+				CG_InitBitmapFont(&cgDC.Assets.bigFont, pointSize, pointSize / 2);
+			}
 			continue;
 		}
 
@@ -2699,10 +2697,15 @@ Draw the frame
 =================
 */
 void CG_Refresh( int serverTime, stereoFrame_t stereoView, qboolean demoPlayback, connstate_t state, int realTime ) {
+	int i;
 
 	CG_SetConnectionState( state );
 	cg.realFrameTime = realTime - cg.realTime;
 	cg.realTime = realTime;
+
+	for ( i = 0; i < CG_MaxSplitView(); i++ ) {
+		CG_UpdateMouseState( i );
+	}
 
 	// update cvars
 	CG_UpdateCvars();
@@ -2776,7 +2779,7 @@ an action started before a mode switch.
 
 ===================
 */
-void CG_ParseBinding( int key, qboolean down, unsigned time, connstate_t state, int keyCatcher, int axisNum )
+void CG_ParseBinding( int key, qboolean down, unsigned time, connstate_t state, int keyCatcher, int joystickNum, int axisNum )
 {
 	char buf[ MAX_STRING_CHARS ], *p = buf, *end;
 	qboolean allCommands, allowUpCmds;
@@ -2809,8 +2812,8 @@ void CG_ParseBinding( int key, qboolean down, unsigned time, connstate_t state, 
 			// subframe corrected
 			if ( allCommands || ( allowUpCmds && !down ) ) {
 				char cmd[1024];
-				Com_sprintf( cmd, sizeof( cmd ), "%c%s %d %d %d\n",
-					( down ) ? '+' : '-', p + 1, key, time, axisNum );
+				Com_sprintf( cmd, sizeof( cmd ), "%c%s %d %d %d %d\n",
+					( down ) ? '+' : '-', p + 1, key, time, joystickNum, axisNum );
 				trap_Cmd_ExecuteText( EXEC_APPEND, cmd );
 			}
 		}
@@ -2874,7 +2877,7 @@ void Message_Key( int key, qboolean down ) {
 CG_DistributeKeyEvent
 ================
 */
-void CG_DistributeKeyEvent( int key, qboolean down, unsigned time, connstate_t state, int axisNum ) {
+void CG_DistributeKeyEvent( int key, qboolean down, unsigned time, connstate_t state, int joystickNum, int axisNum ) {
 	int keyCatcher;
 
 	CG_SetConnectionState( state );
@@ -2939,7 +2942,7 @@ void CG_DistributeKeyEvent( int key, qboolean down, unsigned time, connstate_t s
 		keyCatcher &= ~KEYCATCH_CONSOLE;
 	} else {
 		// send the bound action
-		CG_ParseBinding( key, down, time, state, keyCatcher, axisNum );
+		CG_ParseBinding( key, down, time, state, keyCatcher, joystickNum, axisNum );
 	}
 
 	// distribute the key down event to the apropriate handler
@@ -2986,20 +2989,27 @@ CG_UpdateMouseState
 ====================
 */
 void CG_UpdateMouseState( int localPlayerNum ) {
-	int state;
+	int state = 0;
 
-	if ( ( Key_GetCatcher() & KEYCATCH_CONSOLE ) || ( cg.connState != CA_DISCONNECTED && cg.connState != CA_ACTIVE )
-		|| trap_GetDemoState() == DS_PLAYBACK ) {
+	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
 		// no grab, show system cursor
-		state = MOUSE_SYSTEMCURSOR;
-	} else {
-		state = 0;
+		state |= MOUSE_SYSTEMCURSOR;
 	}
 
+	// controling UI mouse cursor
 	if ( Key_GetCatcher() & KEYCATCH_UI ) {
 		// call mouse move event, no grab, hide system cursor
 		state |= MOUSE_CGAME;
-	} else if ( !( state & MOUSE_SYSTEMCURSOR ) ) {
+	}
+	// not controlling view angles
+	else if ( cg.demoPlayback || cg.connState != CA_ACTIVE
+			|| ( cg.snap && ( cg.snap->pss[localPlayerNum].pm_flags & (PMF_FOLLOW|PMF_SCOREBOARD) ) ) ) {
+		// no grab, show system cursor
+		state |= MOUSE_SYSTEMCURSOR;
+	}
+	// if console isn't open, not UI, and not other non-view angle modes
+	else if ( state == 0 )
+	{
 		// change viewangles, grab mouse, hide system cursor
 		state = MOUSE_CLIENT;
 	}
@@ -3180,11 +3190,11 @@ void CG_JoystickAxisEvent( int localPlayerNum, int axis, int value, unsigned tim
 	if ( value == 0 || !!( value < 0 ) != !!( oldvalue < 0 ) ) {
 		if ( oldvalue < 0 ) {
 			if ( negKey != -1 ) {
-				CG_DistributeKeyEvent( negKey, qfalse, time, state, -(axis+1) );
+				CG_DistributeKeyEvent( negKey, qfalse, time, state, localPlayerNum, -(axis+1) );
 			}
 		} else if ( oldvalue > 0 ) {
 			if ( posKey != -1 ) {
-				CG_DistributeKeyEvent( posKey, qfalse, time, state, axis+1 );
+				CG_DistributeKeyEvent( posKey, qfalse, time, state, localPlayerNum, axis+1 );
 			}
 		}
 	}
@@ -3193,12 +3203,12 @@ void CG_JoystickAxisEvent( int localPlayerNum, int axis, int value, unsigned tim
 	if ( value < 0 && oldvalue >= 0 ) {
 		CG_JoystickEvent( localPlayerNum, &negEvent );
 		if ( negKey != -1 ) {
-			CG_DistributeKeyEvent( negKey, qtrue, time, state, -(axis+1) );
+			CG_DistributeKeyEvent( negKey, qtrue, time, state, localPlayerNum, -(axis+1) );
 		}
 	} else if ( value > 0 && oldvalue <= 0 ) {
 		CG_JoystickEvent( localPlayerNum, &posEvent );
 		if ( posKey != -1 ) {
-			CG_DistributeKeyEvent( posKey, qtrue, time, state, axis+1 );
+			CG_DistributeKeyEvent( posKey, qtrue, time, state, localPlayerNum, axis+1 );
 		}
 	}
 }
@@ -3228,7 +3238,7 @@ void CG_JoystickButtonEvent( int localPlayerNum, int button, qboolean down, unsi
 	}
 
 	if ( key != -1 ) {
-		CG_DistributeKeyEvent( key, down, time, state, 0 );
+		CG_DistributeKeyEvent( key, down, time, state, localPlayerNum, 0 );
 	}
 }
 
@@ -3277,7 +3287,7 @@ void CG_JoystickHatEvent( int localPlayerNum, int hat, int value, unsigned time,
 	for ( i = 0; i < 4; i++ ) {
 		if ( ( oldvalue & (1<<i) ) && !( value & (1<<i) ) ) {
 			if ( hatKeys[i] != -1 ) {
-				CG_DistributeKeyEvent( hatKeys[i], qfalse, time, state, 0 );
+				CG_DistributeKeyEvent( hatKeys[i], qfalse, time, state, localPlayerNum, 0 );
 			}
 		}
 	}
@@ -3299,7 +3309,7 @@ void CG_JoystickHatEvent( int localPlayerNum, int hat, int value, unsigned time,
 		if ( !( oldvalue & (1<<i) ) && ( value & (1<<i) ) ) {
 			CG_JoystickEvent( localPlayerNum, &hatEvent[i] );
 			if ( hatKeys[i] != -1 ) {
-				CG_DistributeKeyEvent( hatKeys[i], qtrue, time, state, 0 );
+				CG_DistributeKeyEvent( hatKeys[i], qtrue, time, state, localPlayerNum, 0 );
 			}
 		}
 	}
