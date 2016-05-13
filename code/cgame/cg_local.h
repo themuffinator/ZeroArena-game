@@ -747,6 +747,7 @@ typedef struct {
 	char        *spawnVars[MAX_SPAWN_VARS][2];  // key / value pairs
 	int numSpawnVarChars;
 	char spawnVarChars[MAX_SPAWN_VARS_CHARS];
+	int spawnEntityOffset;
 
 	vec2_t mapcoordsMins;
 	vec2_t mapcoordsMaxs;
@@ -1286,6 +1287,7 @@ typedef struct {
 	vec3_t		globalFogColor;
 	float		globalFogDepthForOpaque;
 	float		globalFogDensity;
+	float		globalFogFarClip;
 
 	cg_gamemodel_t miscGameModels[MAX_STATIC_GAMEMODELS];
 
