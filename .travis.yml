@@ -7,13 +7,6 @@ env:
 
 script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then ./travis-ci-build.sh ; else cat /home/travis/build/zturtleman/mint-arena/cov-int/scm_log.txt ; fi
 
-notifications:
-  irc:
-    channels:
-      - "irc.freenode.org#spearmint"
-    on_success: change
-    on_failure: always
-
 sudo: false
 
 addons:
