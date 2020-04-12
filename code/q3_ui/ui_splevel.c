@@ -551,7 +551,7 @@ static void UI_SPLevelMenu_MenuDraw( void ) {
 	int				x, y;
 	vec4_t			color;
 	int				level;
-//	int				fraglimit;
+//	int				fragLimit;
 	int				pad;
 	char			buf[MAX_INFO_VALUE];
 	char			string[64];
@@ -657,8 +657,8 @@ static void UI_SPLevelMenu_MenuDraw( void ) {
 	Com_sprintf( string, sizeof(string), "%s: %s", buf, Info_ValueForKey( levelMenuInfo.selectedArenaInfo, "longname" ) );
 	UI_DrawProportionalString( 320, y, string, UI_CENTER|UI_SMALLFONT, color_orange );
 
-//	fraglimit = atoi( Info_ValueForKey( levelMenuInfo.selectedArenaInfo, "fraglimit" ) );
-//	UI_DrawString( 18, 212, va("Frags %i", fraglimit) , UI_LEFT|UI_SMALLFONT, color_orange );
+//	fragLimit = atoi( Info_ValueForKey( levelMenuInfo.selectedArenaInfo, "fragLimit" ) );
+//	UI_DrawString( 18, 212, va("Frags %i", fragLimit) , UI_LEFT|UI_SMALLFONT, color_orange );
 
 	// draw bot opponents
 	y += 24;

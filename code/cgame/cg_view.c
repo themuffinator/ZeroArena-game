@@ -603,7 +603,7 @@ static void CG_CalcFov2( const refdef_t *refdef, float *input_fov, float *out_fo
 		*input_fov = 90;
 	} else {
 		// user selectable
-		if ( cgs.dmflags & DF_FIXED_FOV ) {
+		if ( cgs.dmFlags & DF_FIXED_FOV ) {
 			// dmflag to prevent wide fov for all players
 			fov_x = 90;
 			*input_fov = 90;
@@ -1098,7 +1098,7 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 		CG_PredictPlayerState();
 
 		// Remove expired console lines
-		if( cg.cur_lc->consoleLines[ 0 ].time + cg_consoleLatency.integer < cg.time && cg_consoleLatency.integer > 0 ) {
+		if( cg.cur_lc->consoleLines[ 0 ].time + con_latency.integer < cg.time && con_latency.integer > 0 ) {
 			CG_RemoveNotifyLine( cg.cur_lc );
 		}
 	}

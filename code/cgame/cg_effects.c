@@ -627,7 +627,7 @@ void CG_LaunchGib( vec3_t origin, vec3_t velocity, qhandle_t hModel ) {
 
 	le->leType = LE_FRAGMENT;
 	le->startTime = cg.time;
-	le->endTime = le->startTime + 5000 + random() * 3000;
+	le->endTime = le->startTime + 60000 + random() * 3000;
 
 	VectorCopy( origin, re->origin );
 	AxisCopy( axisDefault, re->axis );

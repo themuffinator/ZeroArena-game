@@ -389,10 +389,10 @@ BotSetTeamStatus
 */
 void BotSetTeamStatus(bot_state_t *bs) {
 #ifdef MISSIONPACK
-	int teamtask;
+	int teamTask;
 	aas_entityinfo_t entinfo;
 
-	teamtask = TEAMTASK_PATROL;
+	teamTask = TEAMTASK_PATROL;
 
 	switch(bs->ltgtype) {
 		case LTG_TEAMHELP:
@@ -401,48 +401,48 @@ void BotSetTeamStatus(bot_state_t *bs) {
 			BotEntityInfo(bs->teammate, &entinfo);
 			if ( ( (gametype == GT_CTF || gametype == GT_1FCTF) && EntityCarriesFlag(&entinfo))
 				|| ( gametype == GT_HARVESTER && EntityCarriesCubes(&entinfo)) ) {
-				teamtask = TEAMTASK_ESCORT;
+				teamTask = TEAMTASK_ESCORT;
 			}
 			else {
-				teamtask = TEAMTASK_FOLLOW;
+				teamTask = TEAMTASK_FOLLOW;
 			}
 			break;
 		case LTG_DEFENDKEYAREA:
-			teamtask = TEAMTASK_DEFENSE;
+			teamTask = TEAMTASK_DEFENSE;
 			break;
 		case LTG_GETFLAG:
-			teamtask = TEAMTASK_OFFENSE;
+			teamTask = TEAMTASK_OFFENSE;
 			break;
 		case LTG_RUSHBASE:
-			teamtask = TEAMTASK_DEFENSE;
+			teamTask = TEAMTASK_DEFENSE;
 			break;
 		case LTG_RETURNFLAG:
-			teamtask = TEAMTASK_RETRIEVE;
+			teamTask = TEAMTASK_RETRIEVE;
 			break;
 		case LTG_CAMP:
 		case LTG_CAMPORDER:
-			teamtask = TEAMTASK_CAMP;
+			teamTask = TEAMTASK_CAMP;
 			break;
 		case LTG_PATROL:
-			teamtask = TEAMTASK_PATROL;
+			teamTask = TEAMTASK_PATROL;
 			break;
 		case LTG_GETITEM:
-			teamtask = TEAMTASK_PATROL;
+			teamTask = TEAMTASK_PATROL;
 			break;
 		case LTG_KILL:
-			teamtask = TEAMTASK_PATROL;
+			teamTask = TEAMTASK_PATROL;
 			break;
 		case LTG_HARVEST:
-			teamtask = TEAMTASK_OFFENSE;
+			teamTask = TEAMTASK_OFFENSE;
 			break;
 		case LTG_ATTACKENEMYBASE:
-			teamtask = TEAMTASK_OFFENSE;
+			teamTask = TEAMTASK_OFFENSE;
 			break;
 		default:
-			teamtask = TEAMTASK_PATROL;
+			teamTask = TEAMTASK_PATROL;
 			break;
 	}
-	BotSetUserInfo(bs, "teamtask", va("%d", teamtask));
+	BotSetUserInfo(bs, "teamTask", va("%d", teamTask));
 #endif
 }
 
@@ -550,7 +550,7 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 				// don't use any alt route goal, just get the hell out of the base
 				bs->altroutegoal.areanum = 0;
 			}
-			BotSetUserInfo(bs, "teamtask", va("%d", TEAMTASK_OFFENSE));
+			BotSetUserInfo(bs, "teamTask", va("%d", TEAMTASK_OFFENSE));
 			BotVoiceChat(bs, -1, VOICECHAT_IHAVEFLAG);
 		}
 		else if (bs->rushbaseaway_time > FloatTime()) {
@@ -2240,7 +2240,7 @@ BotCanCamp
 */
 qboolean BotCanCamp(bot_state_t *bs) {
 	// if the bot's team does not lead
-	if (g_gametype.integer >= GT_TEAM && bs->ownteamscore < bs->enemyteamscore) return qfalse;
+	if (g_gameType.integer >= GT_TEAM && bs->ownteamscore < bs->enemyteamscore) return qfalse;
 	// if the enemy is located way higher than the bot
 	if (bs->inventory[ENEMY_HEIGHT] > 200) return qfalse;
 	// if the bot is very low on health
@@ -4623,7 +4623,7 @@ void BotCheckBlockedTeammates(bot_state_t *bs) {
 	vec3_t mins, maxs, end, v1, sideward, up = {0, 0, 1}, blocked_movedir;
 	trace_t trace;
 
-	if (g_gametype.integer < GT_TEAM) {
+	if (g_gameType.integer < GT_TEAM) {
 		return;
 	}
 
@@ -5817,7 +5817,7 @@ void BotSetupDeathmatchAI(void) {
 	int ent, modelnum;
 	char model[128];
 
-	gametype = trap_Cvar_VariableIntegerValue("g_gametype");
+	gametype = trap_Cvar_VariableIntegerValue("g_gameType");
 
 	trap_Cvar_Register(&bot_rocketjump, "bot_rocketjump", "1", 0);
 	trap_Cvar_Register(&bot_grapple, "bot_grapple", "1", 0);

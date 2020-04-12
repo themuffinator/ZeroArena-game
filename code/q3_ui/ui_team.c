@@ -168,7 +168,7 @@ void TeamMain_MenuInit( int localPlayerNum ) {
 	s_teammain.spectate.color            = colorRed;
 
 	trap_GetConfigString(CS_SERVERINFO, info, MAX_INFO_STRING);   
-	gametype = atoi( Info_ValueForKey( info,"g_gametype" ) );
+	gametype = atoi( Info_ValueForKey( info,"g_gameType" ) );
 			      
 	// set initial states
 	switch( gametype ) {

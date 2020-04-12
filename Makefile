@@ -1,5 +1,5 @@
 #
-# Spearmint Makefile
+# ZeroArena Makefile
 #
 # GNU Make required
 #
@@ -98,19 +98,19 @@ endif
 export CROSS_COMPILING
 
 ifndef VERSION
-VERSION=1.0.2
+VERSION=0.0.1
 endif
 
 ifndef VM_PREFIX
-VM_PREFIX=mint-
+VM_PREFIX=zeroarena-
 endif
 
 ifndef SOURCE_ARCHIVE
-SOURCE_ARCHIVE=mint-arena
+SOURCE_ARCHIVE=ZeroArena-game
 endif
 
 ifndef BASEGAME
-BASEGAME=baseq3
+BASEGAME=baseza
 endif
 
 ifndef BASEGAME_CFLAGS
@@ -139,7 +139,7 @@ BUILD_DEFINES =
 endif
 
 ifndef COPYDIR
-COPYDIR="/usr/local/games/spearmint"
+COPYDIR="/usr/local/games/ZeroArena"
 endif
 
 ifndef COPYBINDIR
@@ -576,7 +576,7 @@ ifeq ($(PLATFORM),sunos)
   CC=gcc
   INSTALL=ginstall
   MKDIR=gmkdir -p
-  COPYDIR="/usr/local/share/games/spearmint"
+  COPYDIR="/usr/local/share/games/ZeroArena"
 
   ifneq ($(ARCH),x86)
     ifneq ($(ARCH),sparc)
@@ -665,12 +665,12 @@ ifneq ($(BUILD_GAME_SO),0)
   ifneq ($(BUILD_BASEGAME),0)
     TARGETS += \
       $(B)/$(BASEGAME)/$(VM_PREFIX)cgame_$(SHLIBNAME) \
-      $(B)/$(BASEGAME)/$(VM_PREFIX)game_$(SHLIBNAME)
+      $(B)/$(BASEGAME)/$(VM_PREFIX)sgame_$(SHLIBNAME)
   endif
   ifneq ($(BUILD_MISSIONPACK),0)
     TARGETS += \
       $(B)/$(MISSIONPACK)/$(VM_PREFIX)cgame_$(SHLIBNAME) \
-      $(B)/$(MISSIONPACK)/$(VM_PREFIX)game_$(SHLIBNAME)
+      $(B)/$(MISSIONPACK)/$(VM_PREFIX)sgame_$(SHLIBNAME)
   endif
 endif
 
@@ -678,12 +678,12 @@ ifneq ($(BUILD_GAME_QVM),0)
   ifneq ($(BUILD_BASEGAME),0)
     TARGETS += \
       $(B)/$(BASEGAME)/vm/$(VM_PREFIX)cgame.qvm \
-      $(B)/$(BASEGAME)/vm/$(VM_PREFIX)game.qvm
+      $(B)/$(BASEGAME)/vm/$(VM_PREFIX)sgame.qvm
   endif
   ifneq ($(BUILD_MISSIONPACK),0)
     TARGETS += \
       $(B)/$(MISSIONPACK)/vm/$(VM_PREFIX)cgame.qvm \
-      $(B)/$(MISSIONPACK)/vm/$(VM_PREFIX)game.qvm
+      $(B)/$(MISSIONPACK)/vm/$(VM_PREFIX)sgame.qvm
   endif
 endif
 
@@ -736,8 +736,8 @@ $(Q)$(CC) $(BASEGAME_CFLAGS) $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c $<
 $(Q)$(DO_QVM_DEP)
 endef
 
-define DO_GAME_CC
-$(echo_cmd) "GAME_CC $<"
+define DO_SGAME_CC
+$(echo_cmd) "SGAME_CC $<"
 $(Q)$(CC) $(BASEGAME_CFLAGS) -DGAME $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c $<
 $(Q)$(DO_QVM_DEP)
 endef
@@ -754,7 +754,7 @@ $(Q)$(CC) $(MISSIONPACK_CFLAGS) $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c 
 $(Q)$(DO_QVM_DEP)
 endef
 
-define DO_GAME_CC_MISSIONPACK
+define DO_SGAME_CC_MISSIONPACK
 $(echo_cmd) "GAME_CC_MISSIONPACK $<"
 $(Q)$(CC) $(MISSIONPACK_CFLAGS) -DGAME $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c $<
 $(Q)$(DO_QVM_DEP)
@@ -1014,7 +1014,7 @@ $(echo_cmd) "CGAME_Q3LCC $<"
 $(Q)$(Q3LCC) $(BASEGAME_CFLAGS) -DCGAME $(QVM_CFLAGS) -o $@ $<
 endef
 
-define DO_GAME_Q3LCC
+define DO_SGAME_Q3LCC
 $(echo_cmd) "GAME_Q3LCC $<"
 $(Q)$(Q3LCC) $(BASEGAME_CFLAGS) -DGAME $(QVM_CFLAGS) -o $@ $<
 endef
@@ -1029,7 +1029,7 @@ $(echo_cmd) "CGAME_Q3LCC_MISSIONPACK $<"
 $(Q)$(Q3LCC) $(MISSIONPACK_CFLAGS) -DCGAME $(QVM_CFLAGS) -o $@ $<
 endef
 
-define DO_GAME_Q3LCC_MISSIONPACK
+define DO_SGAME_Q3LCC_MISSIONPACK
 $(echo_cmd) "GAME_Q3LCC_MISSIONPACK $<"
 $(Q)$(Q3LCC) $(MISSIONPACK_CFLAGS) -DGAME $(QVM_CFLAGS) -o $@ $<
 endef
@@ -1324,11 +1324,11 @@ Q3GOBJ = \
 
 Q3GVMOBJ = $(Q3GOBJ:%.o=%.asm)
 
-$(B)/$(BASEGAME)/$(VM_PREFIX)game_$(SHLIBNAME): $(Q3GOBJ)
+$(B)/$(BASEGAME)/$(VM_PREFIX)sgame_$(SHLIBNAME): $(Q3GOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CFLAGS) $(SHLIBLDFLAGS) -o $@ $(Q3GOBJ)
 
-$(B)/$(BASEGAME)/vm/$(VM_PREFIX)game.qvm: $(Q3GVMOBJ) $(GDIR)/bg_syscalls.asm $(Q3ASM)
+$(B)/$(BASEGAME)/vm/$(VM_PREFIX)sgame.qvm: $(Q3GVMOBJ) $(GDIR)/bg_syscalls.asm $(Q3ASM)
 	$(echo_cmd) "Q3ASM $@"
 	$(Q)$(Q3ASM) -o $@ $(Q3GVMOBJ) $(GDIR)/bg_syscalls.asm
 
@@ -1403,11 +1403,11 @@ MPGOBJ = \
 
 MPGVMOBJ = $(MPGOBJ:%.o=%.asm)
 
-$(B)/$(MISSIONPACK)/$(VM_PREFIX)game_$(SHLIBNAME): $(MPGOBJ)
+$(B)/$(MISSIONPACK)/$(VM_PREFIX)sgame_$(SHLIBNAME): $(MPGOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CFLAGS) $(SHLIBLDFLAGS) -o $@ $(MPGOBJ)
 
-$(B)/$(MISSIONPACK)/vm/$(VM_PREFIX)game.qvm: $(MPGVMOBJ) $(GDIR)/bg_syscalls.asm $(Q3ASM)
+$(B)/$(MISSIONPACK)/vm/$(VM_PREFIX)sgame.qvm: $(MPGVMOBJ) $(GDIR)/bg_syscalls.asm $(Q3ASM)
 	$(echo_cmd) "Q3ASM $@"
 	$(Q)$(Q3ASM) -o $@ $(MPGVMOBJ) $(GDIR)/bg_syscalls.asm
 
@@ -1477,28 +1477,28 @@ $(B)/$(MISSIONPACK)/q3ui/%.asm: $(Q3UIDIR)/%.c $(Q3LCC)
 
 
 $(B)/$(BASEGAME)/game/%.o: $(GDIR)/%.c
-	$(DO_GAME_CC)
+	$(DO_SGAME_CC)
 
 $(B)/$(BASEGAME)/game/%.asm: $(GDIR)/%.c $(Q3LCC)
-	$(DO_GAME_Q3LCC)
+	$(DO_SGAME_Q3LCC)
 
 $(B)/$(MISSIONPACK)/game/%.o: $(GDIR)/%.c
-	$(DO_GAME_CC_MISSIONPACK)
+	$(DO_SGAME_CC_MISSIONPACK)
 
 $(B)/$(MISSIONPACK)/game/%.asm: $(GDIR)/%.c $(Q3LCC)
-	$(DO_GAME_Q3LCC_MISSIONPACK)
+	$(DO_SGAME_Q3LCC_MISSIONPACK)
 
 $(B)/$(BASEGAME)/botlib/%.o: $(BLIBDIR)/%.c
-	$(DO_GAME_CC)
+	$(DO_SGAME_CC)
 
 $(B)/$(BASEGAME)/botlib/%.asm: $(BLIBDIR)/%.c $(Q3LCC)
-	$(DO_GAME_Q3LCC)
+	$(DO_SGAME_Q3LCC)
 
 $(B)/$(MISSIONPACK)/botlib/%.o: $(BLIBDIR)/%.c
-	$(DO_GAME_CC_MISSIONPACK)
+	$(DO_SGAME_CC_MISSIONPACK)
 
 $(B)/$(MISSIONPACK)/botlib/%.asm: $(BLIBDIR)/%.c $(Q3LCC)
-	$(DO_GAME_Q3LCC_MISSIONPACK)
+	$(DO_SGAME_Q3LCC_MISSIONPACK)
 
 $(B)/$(BASEGAME)/qcommon/%.o: $(CMDIR)/%.c
 	$(DO_SHLIB_CC)
@@ -1536,13 +1536,13 @@ ifneq ($(BUILD_GAME_SO),0)
   ifneq ($(BUILD_BASEGAME),0)
 	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(BASEGAME)/$(VM_PREFIX)cgame_$(SHLIBNAME) \
 					$(COPYDIR)/$(BASEGAME)/.
-	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(BASEGAME)/$(VM_PREFIX)game_$(SHLIBNAME) \
+	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(BASEGAME)/$(VM_PREFIX)sgame_$(SHLIBNAME) \
 					$(COPYDIR)/$(BASEGAME)/.
   endif
   ifneq ($(BUILD_MISSIONPACK),0)
 	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(MISSIONPACK)/$(VM_PREFIX)cgame_$(SHLIBNAME) \
 					$(COPYDIR)/$(MISSIONPACK)/.
-	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(MISSIONPACK)/$(VM_PREFIX)game_$(SHLIBNAME) \
+	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(MISSIONPACK)/$(VM_PREFIX)sgame_$(SHLIBNAME) \
 					$(COPYDIR)/$(MISSIONPACK)/.
   endif
 endif

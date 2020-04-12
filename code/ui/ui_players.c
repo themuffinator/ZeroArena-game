@@ -1314,9 +1314,9 @@ qboolean UI_RegisterPlayerModelname( uiPlayerInfo_t *pi, const char *modelSkinNa
 UI_PlayerInfo_SetModel
 ===============
 */
-void UI_PlayerInfo_SetModel( uiPlayerInfo_t *pi, const char *model, const char *headmodel, char *teamName ) {
+void UI_PlayerInfo_SetModel( uiPlayerInfo_t *pi, const char *model, const char *headModel, char *teamName ) {
 	memset( pi, 0, sizeof(*pi) );
-	UI_RegisterPlayerModelname( pi, model, headmodel, teamName );
+	UI_RegisterPlayerModelname( pi, model, headModel, teamName );
 	pi->weapon = WP_MACHINEGUN;
 	pi->currentWeapon = pi->weapon;
 	pi->lastWeapon = pi->weapon;

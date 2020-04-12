@@ -271,7 +271,7 @@ static servernode_t		g_favoriteserverlist[MAX_FAVORITESERVERS];
 static int				g_numfavoriteservers;
 static int				g_servertype;
 static char				g_gameIndex;
-static int				g_gametype;
+static int				g_gameType;
 static int				g_sortkey;
 static int				g_emptyservers;
 static int				g_fullservers;
@@ -591,7 +591,7 @@ static void ArenaServers_UpdateMenu( void ) {
 			continue;
 		}
 
-		gametype = ArenaServers_GametypeForGames(g_gametype);
+		gametype = ArenaServers_GametypeForGames(g_gameType);
 		if( gametype >= 0 && gametype < GT_MAX_GAME_TYPE
 			&& Q_stricmp(servernodeptr->gametypeName, bg_netGametypeNames[gametype]) != 0 ) {
 			continue;
@@ -1238,7 +1238,7 @@ static void ArenaServers_Event( void* ptr, int event ) {
 
 	case ID_GAMETYPE:
 		trap_Cvar_SetValue( "ui_browserGameType", g_arenaservers.gametype.curvalue );
-		g_gametype = g_arenaservers.gametype.curvalue;
+		g_gameType = g_arenaservers.gametype.curvalue;
 		ArenaServers_UpdateMenu();
 		break;
 
@@ -1728,8 +1728,8 @@ static void ArenaServers_MenuInit( void ) {
 		}
 	}
 
-	g_gametype = Com_Clamp( 0, GAMES_NUM_GAMES-1, ui_browserGameType.integer );
-	g_arenaservers.gametype.curvalue = g_gametype;
+	g_gameType = Com_Clamp( 0, GAMES_NUM_GAMES-1, ui_browserGameType.integer );
+	g_arenaservers.gametype.curvalue = g_gameType;
 
 	g_sortkey = Com_Clamp( 0, SORT_NUM_SORTS-1, ui_browserSortKey.integer );
 	g_arenaservers.sortkey.curvalue = g_sortkey;

@@ -70,7 +70,7 @@ void AddScore( gentity_t *ent, vec3_t origin, int score ) {
 	ScorePlum(ent, origin, score);
 	//
 	ent->player->ps.persistant[PERS_SCORE] += score;
-	if ( g_gametype.integer == GT_TEAM ) {
+	if ( g_gameType.integer == GT_TEAM ) {
 		AddTeamScore( origin, ent->player->ps.persistant[PERS_TEAM], score );
 	}
 	CalculateRanks();
@@ -107,7 +107,7 @@ void TossPlayerItems( gentity_t *self ) {
 	}
 
 	if ( weapon > WP_MACHINEGUN && weapon != WP_GRAPPLING_HOOK && 
-		self->player->ps.ammo[ weapon ] && !g_instagib.integer ) {
+		self->player->ps.ammo[ weapon ] && !g_instaGib.integer ) {
 		// find the item type for this weapon
 		item = BG_FindItemForWeapon( weapon );
 
@@ -116,7 +116,7 @@ void TossPlayerItems( gentity_t *self ) {
 	}
 
 	// drop all the powerups if not in teamplay
-	if ( g_gametype.integer != GT_TEAM ) {
+	if ( g_gameType.integer != GT_TEAM ) {
 		angle = 45;
 		for ( i = 1 ; i < PW_NUM_POWERUPS ; i++ ) {
 			if ( self->player->ps.powerups[ i ] > level.time ) {
@@ -176,7 +176,7 @@ void TossPlayerGametypeItems(gentity_t *ent) {
 	}
 
 #ifdef MISSIONPACK
-	if ( g_gametype.integer == GT_HARVESTER ) {
+	if ( g_gameType.integer == GT_HARVESTER ) {
 		if ( ent->player->ps.tokens > 0 ) {
 			if ( ent->player->sess.sessionTeam == TEAM_RED ) {
 				item = BG_FindItem( "Blue Cube" );
@@ -250,7 +250,7 @@ void TossPlayerCubes( gentity_t *self ) {
 
 	drop = LaunchItem( item, origin, velocity );
 
-	drop->nextthink = level.time + g_cubeTimeout.integer * 1000;
+	drop->nextthink = level.time + g_harvester_skullTimeout.integer * 1000;
 	drop->think = G_FreeEntity;
 	drop->s.team = self->player->sess.sessionTeam;
 }
@@ -443,7 +443,7 @@ void CheckAlmostCapture( gentity_t *self, gentity_t *attacker ) {
 		self->player->ps.powerups[PW_BLUEFLAG] ||
 		self->player->ps.powerups[PW_NEUTRALFLAG] ) {
 		// get the goal flag this player should have been going for
-		if ( g_gametype.integer == GT_CTF ) {
+		if ( g_gameType.integer == GT_CTF ) {
 			if ( self->player->sess.sessionTeam == TEAM_BLUE ) {
 				classname = "team_CTF_blueflag";
 			}
@@ -657,7 +657,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	TossPlayerItems( self );
 #ifdef MISSIONPACK
 	TossPlayerPersistantPowerups( self );
-	if( g_gametype.integer == GT_HARVESTER ) {
+	if( g_gameType.integer == GT_HARVESTER ) {
 		TossPlayerCubes( self );
 	}
 #endif
@@ -697,7 +697,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	self->player->ps.maxs[2] = self->s.maxs[2] = -8;
 
 	// don't allow respawn until the death anim is done
-	// g_forcerespawn may force spawning at some later time
+	// g_forcePlayerRespawnTime may force spawning at some later time
 	self->player->respawnTime = level.time + 1700;
 
 	// remove powerups
@@ -934,7 +934,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		return;
 	}
 #ifdef MISSIONPACK
-	if( g_gametype.integer == GT_OBELISK && CheckObeliskAttack( targ, attacker ) ) {
+	if( g_gameType.integer == GT_OBELISK && CheckObeliskAttack( targ, attacker ) ) {
 		return;
 	}
 #endif
@@ -953,7 +953,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 	player = targ->player;
 
 	if ( player ) {
-		if ( player->noclip ) {
+		if ( player->noClip ) {
 			return;
 		}
 	}
@@ -1095,9 +1095,9 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 
 	// See if it's the player hurting the emeny flag carrier
 #ifdef MISSIONPACK
-	if( g_gametype.integer == GT_CTF || g_gametype.integer == GT_1FCTF ) {
+	if( g_gameType.integer == GT_CTF || g_gameType.integer == GT_1FCTF ) {
 #else	
-	if( g_gametype.integer == GT_CTF) {
+	if( g_gameType.integer == GT_CTF) {
 #endif
 		Team_CheckHurtCarrier(targ, attacker);
 	}

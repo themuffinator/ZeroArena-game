@@ -163,7 +163,7 @@ void CG_DrawInformation( void ) {
 	const char	*sysInfo;
 	int			y;
 	int			value;
-	qhandle_t	levelshot;
+	qhandle_t	levelShot;
 	qhandle_t	detail;
 	char		buf[1024];
 
@@ -171,12 +171,12 @@ void CG_DrawInformation( void ) {
 	sysInfo = CG_ConfigString( CS_SYSTEMINFO );
 
 	s = Info_ValueForKey( info, "mapname" );
-	levelshot = trap_R_RegisterShaderNoMip( va( "levelshots/%s", s ) );
-	if ( !levelshot ) {
-		levelshot = trap_R_RegisterShaderNoMip( "menu/art/unknownmap" );
+	levelShot = trap_R_RegisterShaderNoMip( va( "levelshots/%s", s ) );
+	if ( !levelShot ) {
+		levelShot = trap_R_RegisterShaderNoMip( "menu/art/unknownmap" );
 	}
 	trap_R_SetColor( NULL );
-	trap_R_DrawStretchPic( 0, 0, cgs.glconfig.vidWidth, cgs.glconfig.vidHeight, 0, 0, 1, 1, levelshot );
+	trap_R_DrawStretchPic( 0, 0, cgs.glconfig.vidWidth, cgs.glconfig.vidHeight, 0, 0, 1, 1, levelShot );
 
 	// blend a detail texture over it
 	detail = trap_R_RegisterShader( "levelShotDetail" );
@@ -250,26 +250,26 @@ void CG_DrawInformation( void ) {
 		UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite );
 	y += PROP_HEIGHT;
 		
-	value = atoi( Info_ValueForKey( info, "timelimit" ) );
+	value = atoi( Info_ValueForKey( info, "timeLimit" ) );
 	if ( value ) {
-		UI_DrawProportionalString( 320, y, va( "timelimit %i", value ),
+		UI_DrawProportionalString( 320, y, va( "timeLimit %i", value ),
 			UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite );
 		y += PROP_HEIGHT;
 	}
 
 	if (cgs.gametype < GT_CTF ) {
-		value = atoi( Info_ValueForKey( info, "fraglimit" ) );
+		value = atoi( Info_ValueForKey( info, "fragLimit" ) );
 		if ( value ) {
-			UI_DrawProportionalString( 320, y, va( "fraglimit %i", value ),
+			UI_DrawProportionalString( 320, y, va( "fragLimit %i", value ),
 				UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite );
 			y += PROP_HEIGHT;
 		}
 	}
 
 	if (cgs.gametype >= GT_CTF) {
-		value = atoi( Info_ValueForKey( info, "capturelimit" ) );
+		value = atoi( Info_ValueForKey( info, "captureLimit" ) );
 		if ( value ) {
-			UI_DrawProportionalString( 320, y, va( "capturelimit %i", value ),
+			UI_DrawProportionalString( 320, y, va( "captureLimit %i", value ),
 				UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite );
 		}
 	}

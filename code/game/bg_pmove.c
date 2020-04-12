@@ -39,19 +39,21 @@ pmove_t		*pm;
 pml_t		pml;
 
 // movement parameters
-float	pm_stopspeed = 100.0f;
-float	pm_duckScale = 0.25f;
-float	pm_swimScale = 0.50f;
+const float	pm_stopSpeed = 100.0f;
+const float pm_ladderSpeed = 100.0f;
+const float	pm_duckScale = 0.25f;
+const float	pm_swimScale = 0.50f;
 
-float	pm_accelerate = 10.0f;
-float	pm_airaccelerate = 1.0f;
-float	pm_wateraccelerate = 4.0f;
-float	pm_flyaccelerate = 8.0f;
+const float	pm_accelerate = 10.0f;
+const float	pm_airAccelerate = 1.0f;
+const float	pm_waterAccelerate = 4.0f;
+const float	pm_flyAccelerate = 8.0f;
 
-float	pm_friction = 6.0f;
-float	pm_waterfriction = 1.0f;
-float	pm_flightfriction = 3.0f;
-float	pm_spectatorfriction = 5.0f;
+const float	pm_groundFriction = 6.0f;
+const float	pm_waterFriction = 1.0f;
+const float	pm_flightFriction = 3.0f;
+const float	pm_ladderFriction = 14.0f;
+const float	pm_spectatorFriction = 5.0f;
 
 int		c_pmove = 0;
 
@@ -204,24 +206,29 @@ static void PM_Friction( void ) {
 		if ( pml.walking && !(pml.groundTrace.surfaceFlags & SURF_SLICK) ) {
 			// if getting knocked back, no friction
 			if ( ! (pm->ps->pm_flags & PMF_TIME_KNOCKBACK) ) {
-				control = speed < pm_stopspeed ? pm_stopspeed : speed;
-				drop += control*pm_friction*pml.frametime;
+				control = speed < pm_stopSpeed ? pm_stopSpeed : speed;
+				drop += control * pm_groundFriction * pml.frametime;
 			}
 		}
 	}
 
 	// apply water friction even if just wading
 	if ( pm->waterlevel ) {
-		drop += speed*pm_waterfriction*pm->waterlevel*pml.frametime;
+		drop += speed * pm_waterFriction * pm->waterlevel * pml.frametime;
 	}
 
 	// apply flying friction
 	if ( pm->ps->powerups[PW_FLIGHT]) {
-		drop += speed*pm_flightfriction*pml.frametime;
+		drop += speed * pm_flightFriction * pml.frametime;
 	}
 
 	if ( pm->ps->pm_type == PM_SPECTATOR) {
-		drop += speed*pm_spectatorfriction*pml.frametime;
+		drop += speed * pm_spectatorFriction * pml.frametime;
+	}
+
+	// apply ladder strafe friction
+	if (pml.ladder) {
+		drop += speed * pm_ladderFriction * pml.frametime;
 	}
 
 	// scale the velocity
@@ -245,7 +252,6 @@ Handles user intended acceleration
 ==============
 */
 static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel ) {
-#if 1
 	// q2 style
 	int			i;
 	float		addspeed, accelspeed, currentspeed;
@@ -263,24 +269,6 @@ static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel ) {
 	for (i=0 ; i<3 ; i++) {
 		pm->ps->velocity[i] += accelspeed*wishdir[i];	
 	}
-#else
-	// proper way (avoids strafe jump maxspeed bug), but feels bad
-	vec3_t		wishVelocity;
-	vec3_t		pushDir;
-	float		pushLen;
-	float		canPush;
-
-	VectorScale( wishdir, wishspeed, wishVelocity );
-	VectorSubtract( wishVelocity, pm->ps->velocity, pushDir );
-	pushLen = VectorNormalize( pushDir );
-
-	canPush = accel*pml.frametime*wishspeed;
-	if (canPush > pushLen) {
-		canPush = pushLen;
-	}
-
-	VectorMA( pm->ps->velocity, canPush, pushDir, pm->ps->velocity );
-#endif
 }
 
 
@@ -487,20 +475,7 @@ static void PM_WaterMove( void ) {
 		PM_WaterJumpMove();
 		return;
 	}
-#if 0
-	// jump = head for surface
-	if ( pm->cmd.upmove >= 10 ) {
-		if (pm->ps->velocity[2] > -300) {
-			if ( pm->watertype & CONTENTS_WATER ) {
-				pm->ps->velocity[2] = 100;
-			} else if ( pm->watertype & CONTENTS_SLIME ) {
-				pm->ps->velocity[2] = 80;
-			} else {
-				pm->ps->velocity[2] = 50;
-			}
-		}
-	}
-#endif
+
 	PM_Friction ();
 
 	scale = PM_CmdScale( &pm->cmd );
@@ -525,7 +500,7 @@ static void PM_WaterMove( void ) {
 		wishspeed = pm->ps->speed * pm_swimScale;
 	}
 
-	PM_Accelerate (wishdir, wishspeed, pm_wateraccelerate);
+	PM_Accelerate (wishdir, wishspeed, pm_waterAccelerate);
 
 	// make sure we can go up slopes easily under water
 	if ( pml.groundPlane && DotProduct( pm->ps->velocity, pml.groundTrace.plane.normal ) < 0 ) {
@@ -596,7 +571,7 @@ static void PM_FlyMove( void ) {
 	VectorCopy (wishvel, wishdir);
 	wishspeed = VectorNormalize(wishdir);
 
-	PM_Accelerate (wishdir, wishspeed, pm_flyaccelerate);
+	PM_Accelerate (wishdir, wishspeed, pm_flyAccelerate);
 
 	PM_StepSlideMove( qfalse );
 }
@@ -644,7 +619,7 @@ static void PM_AirMove( void ) {
 	wishspeed *= scale;
 
 	// not on ground, so little effect on velocity
-	PM_Accelerate (wishdir, wishspeed, pm_airaccelerate);
+	PM_Accelerate (wishdir, wishspeed, pm_airAccelerate);
 
 	// we may have a ground plane that is very steep, even
 	// though we don't have a groundentity
@@ -780,7 +755,7 @@ static void PM_WalkMove( void ) {
 	// when a player gets hit, they temporarily lose
 	// full control, which allows them to be moved a bit
 	if ( ( pml.groundTrace.surfaceFlags & SURF_SLICK ) || pm->ps->pm_flags & PMF_TIME_KNOCKBACK ) {
-		accelerate = pm_airaccelerate;
+		accelerate = pm_airAccelerate;
 	} else {
 		accelerate = pm_accelerate;
 	}
@@ -873,9 +848,9 @@ static void PM_NoclipMove( void ) {
 	{
 		drop = 0;
 
-		friction = pm_friction*1.5;	// extra friction
-		control = speed < pm_stopspeed ? pm_stopspeed : speed;
-		drop += control*friction*pml.frametime;
+		friction = pm_groundFriction * 1.5;	// extra friction
+		control = speed < pm_stopSpeed ? pm_stopSpeed : speed;
+		drop += control * friction * pml.frametime;
 
 		// scale the velocity
 		newspeed = speed - drop;
@@ -931,6 +906,7 @@ static int PM_FootstepForSurface( void ) {
 PM_CrashLand
 
 Check for hard landings that generate sound events
+source: RTCW
 =================
 */
 static void PM_CrashLand( void ) {
@@ -1013,20 +989,218 @@ static void PM_CrashLand( void ) {
 }
 
 /*
-=============
-PM_CheckStuck
-=============
-*/
-/*
-void PM_CheckStuck(void) {
-	trace_t trace;
+================
+PM_CheckLadderMove
 
-	pm->trace (&trace, pm->ps->origin, pm->ps->mins, pm->ps->maxs, pm->ps->origin, pm->ps->playerNum, pm->tracemask);
-	if (trace.allsolid) {
-		//int shit = qtrue;
-	}
-}
+Checks to see if we are on a ladder
+source: RTCW
+================
 */
+qboolean ladderforward;
+vec3_t laddervec;
+
+void PM_CheckLadderMove(void) {
+	vec3_t spot;
+	vec3_t flatforward;
+	trace_t trace;
+	float tracedist;
+#define TRACE_LADDER_DIST   48.0
+	qboolean wasOnLadder = qfalse;
+
+	if (pm->ps->pm_time) {
+		return;
+	}
+
+	if (pml.walking) {
+		tracedist = 1.0;
+	}
+	else {
+		tracedist = TRACE_LADDER_DIST;
+	}
+
+	wasOnLadder = ((pm->ps->pm_flags & PMF_LADDER) != 0);
+
+	pml.ladder = qfalse;
+	pm->ps->pm_flags &= ~PMF_LADDER;    // clear ladder bit
+	ladderforward = qfalse;
+
+	if (pm->ps->stats[STAT_HEALTH] <= 0) {
+		pm->ps->groundEntityNum = ENTITYNUM_NONE;
+		pml.groundPlane = qfalse;
+		pml.walking = qfalse;
+		return;
+	}
+
+	// check for ladder
+	flatforward[0] = pml.forward[0];
+	flatforward[1] = pml.forward[1];
+	flatforward[2] = 0;
+	VectorNormalize(flatforward);
+
+	VectorMA(pm->ps->origin, tracedist, flatforward, spot);
+	pm->trace(&trace, pm->ps->origin, pm->ps->mins, pm->ps->maxs, spot, pm->ps->playerNum, pm->tracemask);
+	if ((trace.fraction < 1) && (trace.surfaceFlags & SURF_LADDER)) {
+		pml.ladder = qtrue;
+	}
+	if (pml.ladder) {
+		VectorCopy(trace.plane.normal, laddervec);
+	}
+
+	if (pml.ladder && !pml.walking && (trace.fraction * tracedist > 1.0)) {
+		vec3_t mins;
+		// if we are only just on the ladder, don't do this yet, or it may throw us back off the ladder
+		pml.ladder = qfalse;
+		VectorCopy(pm->ps->mins, mins);
+		mins[2] = -1;
+		VectorMA(pm->ps->origin, -tracedist, laddervec, spot);
+		pm->trace(&trace, pm->ps->origin, mins, pm->ps->maxs, spot, pm->ps->playerNum, pm->tracemask);
+		if ((trace.fraction < 1) && (trace.surfaceFlags & SURF_LADDER)) {
+			// if AI, then be more stringent on their viewangles
+#if 0
+			if (pm->ps->aiChar && (DotProduct(trace.plane.normal, pml.forward) > -0.9)) {
+				pml.ladder = qfalse;
+			}
+			else {
+#endif
+				ladderforward = qtrue;
+				pml.ladder = qtrue;
+				pm->ps->pm_flags |= PMF_LADDER; // set ladder bit
+#if 0
+			}
+#endif
+		}
+		else {
+			pml.ladder = qfalse;
+		}
+	}
+	else if (pml.ladder) {
+		pm->ps->pm_flags |= PMF_LADDER; // set ladder bit
+	}
+
+	// create some up/down velocity if touching ladder
+	if (pml.ladder) {
+		if (pml.walking) {
+			// we are currently on the ground, only go up and prevent X/Y if we are pushing forwards
+			if (pm->cmd.forwardmove <= 0) {
+				pml.ladder = qfalse;
+			}
+		}
+	}
+
+	// if we have just dismounted the ladder at the top, play dismount
+	if (!pml.ladder && wasOnLadder && pm->ps->velocity[2] > 0) {
+#if 0
+		BG_AnimScriptEvent(pm->ps, ANIM_ET_CLIMB_DISMOUNT, qfalse, qfalse);
+#endif
+	}
+	// if we have just mounted the ladder
+	if (pml.ladder && !wasOnLadder && pm->ps->velocity[2] < 0) {    // only play anim if going down ladder
+#if 0
+		//BG_AnimScriptEvent(pm->ps, ANIM_ET_CLIMB_MOUNT, qfalse, qfalse);
+#endif
+	}
+
+}
+
+
+
+/*
+============
+PM_LadderMove
+
+source: RTCW
+============
+*/
+void PM_LadderMove(void) {
+	float wishspeed, scale;
+	vec3_t wishdir, wishvel;
+	float upscale;
+
+	if (ladderforward) {
+		// move towards the ladder
+		VectorScale(laddervec, -200.0, wishvel);
+		pm->ps->velocity[0] = wishvel[0];
+		pm->ps->velocity[1] = wishvel[1];
+	}
+
+	upscale = (pml.forward[2] + 0.5) * 2.5;
+	if (upscale > 1.0) {
+		upscale = 1.0;
+	}
+	else if (upscale < -1.0) {
+		upscale = -1.0;
+	}
+
+	// forward/right should be horizontal only
+	pml.forward[2] = 0;
+	pml.right[2] = 0;
+	VectorNormalize(pml.forward);
+	VectorNormalize(pml.right);
+
+	// move depending on the view, if view is straight forward, then go up
+	// if view is down more then X degrees, start going down
+	// if they are back pedalling, then go in reverse of above
+	scale = PM_CmdScale(&pm->cmd);
+	VectorClear(wishvel);
+
+	if (pm->cmd.forwardmove) {
+#if 0
+		if (pm->ps->aiChar) {
+			wishvel[2] = 0.5 * upscale * scale * (float)pm->cmd.forwardmove;
+		}
+		else { // player speed
+#endif
+			wishvel[2] = 0.9 * upscale * scale * (float)pm->cmd.forwardmove;
+#if 0
+		}
+#endif
+	}
+	//Com_Printf("wishvel[2] = %i, fwdmove = %i\n", (int)wishvel[2], (int)pm->cmd.forwardmove );
+
+	if (pm->cmd.rightmove) {
+		// strafe, so we can jump off ladder
+		vec3_t ladder_right, ang;
+		vectoangles(laddervec, ang);
+		AngleVectors(ang, NULL, ladder_right, NULL);
+
+		// if we are looking away from the ladder, reverse the right vector
+		if (DotProduct(laddervec, pml.forward) > 0) {
+			VectorInverse(ladder_right);
+		}
+
+		VectorMA(wishvel, 0.5 * scale * (float)pm->cmd.rightmove, pml.right, wishvel);
+	}
+
+	// do strafe friction
+	PM_Friction();
+
+	wishspeed = VectorNormalize2(wishvel, wishdir);
+
+	PM_Accelerate(wishdir, wishspeed, pm_accelerate);
+	if (!wishvel[2]) {
+		if (pm->ps->velocity[2] > 0) {
+			pm->ps->velocity[2] -= pm->ps->gravity * pml.frametime;
+			if (pm->ps->velocity[2] < 0) {
+				pm->ps->velocity[2] = 0;
+			}
+		}
+		else
+		{
+			pm->ps->velocity[2] += pm->ps->gravity * pml.frametime;
+			if (pm->ps->velocity[2] > 0) {
+				pm->ps->velocity[2] = 0;
+			}
+		}
+	}
+
+	//Com_Printf("vel[2] = %i\n", (int)pm->ps->velocity[2] );
+
+	PM_StepSlideMove(qfalse);  // no gravity while going up ladder
+
+	// always point legs forward
+	pm->ps->movementDir = 0;
+}
+
 
 /*
 =============
@@ -1103,6 +1277,17 @@ static void PM_GroundTraceMissed( void ) {
 				pm->ps->pm_flags |= PMF_BACKWARDS_JUMP;
 			}
 		}
+
+		if (trace.fraction == 1.0 && !(pm->ps->pm_flags & PMF_LADDER)) {
+			if (pm->cmd.forwardmove >= 0) {
+				//BG_AnimScriptEvent(pm->ps, ANIM_ET_JUMP, qfalse, qtrue);
+				pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
+			}
+			else {
+				//BG_AnimScriptEvent(pm->ps, ANIM_ET_JUMPBK, qfalse, qtrue);
+				pm->ps->pm_flags |= PMF_BACKWARDS_JUMP;
+			}
+		}
 	}
 
 	pm->ps->groundEntityNum = ENTITYNUM_NONE;
@@ -1146,13 +1331,16 @@ static void PM_GroundTrace( void ) {
 		if ( pm->debugLevel ) {
 			Com_Printf("%i:kickoff\n", c_pmove);
 		}
-		// go into jump animation
-		if ( pm->cmd.forwardmove >= 0 ) {
-			PM_ForceLegsAnim( LEGS_JUMP );
-			pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
-		} else {
-			PM_ForceLegsAnim( LEGS_JUMPB );
-			pm->ps->pm_flags |= PMF_BACKWARDS_JUMP;
+		if (!(pm->ps->pm_flags & PMF_LADDER)) {
+			// go into jump animation
+			if (pm->cmd.forwardmove >= 0) {
+				PM_ForceLegsAnim(LEGS_JUMP);
+				pm->ps->pm_flags &= ~PMF_BACKWARDS_JUMP;
+			}
+			else {
+				PM_ForceLegsAnim(LEGS_JUMPB);
+				pm->ps->pm_flags |= PMF_BACKWARDS_JUMP;
+			}
 		}
 
 		pm->ps->groundEntityNum = ENTITYNUM_NONE;
@@ -1293,7 +1481,7 @@ static void PM_CheckDuck (void)
 		return;
 	}
 
-	if (pm->cmd.upmove < 0)
+	if (pm->cmd.upmove < 0 && !pml.ladder)
 	{	// duck
 		pm->ps->pm_flags |= PMF_DUCKED;
 	}
@@ -1379,17 +1567,6 @@ static void PM_Footsteps( void ) {
 		else {
 			PM_ContinueLegsAnim( LEGS_WALKCR );
 		}
-		// ducked characters never play footsteps
-	/*
-	} else 	if ( pm->ps->pm_flags & PMF_BACKWARDS_RUN ) {
-		if ( !( pm->cmd.buttons & BUTTON_WALKING ) ) {
-			bobmove = 0.4;	// faster speeds bob faster
-			footstep = qtrue;
-		} else {
-			bobmove = 0.3;
-		}
-		PM_ContinueLegsAnim( LEGS_BACK );
-	*/
 	} else {
 		if ( !( pm->cmd.buttons & BUTTON_WALKING ) ) {
 			bobmove = 0.4f;	// faster speeds bob faster
@@ -1978,6 +2155,9 @@ void PmoveSingle (pmove_t *pmove) {
 		PM_DeadMove ();
 	}
 
+	// Ridah, ladders
+	PM_CheckLadderMove();
+
 	PM_DropTimers();
 
 #ifdef MISSIONPACK
@@ -1989,6 +2169,10 @@ void PmoveSingle (pmove_t *pmove) {
 		PM_GrappleMove();
 		// We can wiggle a bit
 		PM_AirMove();
+	// Ridah, ladders
+	} else if (pml.ladder) {
+		PM_LadderMove();
+		// done.
 	} else if ( pm->ps->powerups[PW_FLIGHT] ) {
 		// flight powerup doesn't allow jump and has different friction
 		PM_FlyMove();

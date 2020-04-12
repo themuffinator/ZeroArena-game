@@ -202,12 +202,12 @@ void CG_ParseServerinfo( void ) {
 
 	info = CG_ConfigString( CS_SERVERINFO );
 	Q_strncpyz( cgs.gametypeName, Info_ValueForKey( info, "sv_gametypeName" ), sizeof (cgs.gametypeName) );
-	cgs.gametype = atoi( Info_ValueForKey( info, "g_gametype" ) );
-	trap_Cvar_SetValue("g_gametype", cgs.gametype);
-	cgs.dmflags = atoi( Info_ValueForKey( info, "dmflags" ) );
-	cgs.fraglimit = atoi( Info_ValueForKey( info, "fraglimit" ) );
-	cgs.capturelimit = atoi( Info_ValueForKey( info, "capturelimit" ) );
-	cgs.timelimit = atoi( Info_ValueForKey( info, "timelimit" ) );
+	cgs.gametype = atoi( Info_ValueForKey( info, "g_gameType" ) );
+	trap_Cvar_SetValue("g_gameType", cgs.gametype);
+	cgs.dmFlags = atoi( Info_ValueForKey( info, "dmFlags" ) );
+	cgs.fragLimit = atoi( Info_ValueForKey( info, "fragLimit" ) );
+	cgs.captureLimit = atoi( Info_ValueForKey( info, "captureLimit" ) );
+	cgs.timeLimit = atoi( Info_ValueForKey( info, "timeLimit" ) );
 	cgs.maxplayers = atoi( Info_ValueForKey( info, "sv_maxclients" ) );
 	mapname = Info_ValueForKey( info, "mapname" );
 	Com_sprintf( cgs.mapname, sizeof( cgs.mapname ), "maps/%s.bsp", mapname );
@@ -631,7 +631,7 @@ typedef struct voiceChatList_s
 
 typedef struct headModelVoiceChat_s
 {
-	char headmodel[64];
+	char headModel[64];
 	int voiceChatNum;
 } headModelVoiceChat_t;
 
@@ -859,7 +859,7 @@ voiceChatList_t *CG_VoiceChatListForPlayer( int playerNum ) {
 		}
 		// find the voice file for the head model the player uses
 		for ( i = 0; i < MAX_HEADMODELS; i++ ) {
-			if (!Q_stricmp(headModelVoiceChat[i].headmodel, headModelName)) {
+			if (!Q_stricmp(headModelVoiceChat[i].headModel, headModelName)) {
 				break;
 			}
 		}
@@ -868,12 +868,12 @@ voiceChatList_t *CG_VoiceChatListForPlayer( int playerNum ) {
 		}
 		// find a <headmodelname>.vc file
 		for ( i = 0; i < MAX_HEADMODELS; i++ ) {
-			if (!strlen(headModelVoiceChat[i].headmodel)) {
+			if (!strlen(headModelVoiceChat[i].headModel)) {
 				Com_sprintf(filename, sizeof(filename), "scripts/%s.vc", headModelName);
 				voiceChatNum = CG_HeadModelVoiceChats(filename);
 				if (voiceChatNum == -1)
 					break;
-				Com_sprintf(headModelVoiceChat[i].headmodel, sizeof ( headModelVoiceChat[i].headmodel ),
+				Com_sprintf(headModelVoiceChat[i].headModel, sizeof ( headModelVoiceChat[i].headModel ),
 							"%s", headModelName);
 				headModelVoiceChat[i].voiceChatNum = voiceChatNum;
 				return &voiceChatLists[headModelVoiceChat[i].voiceChatNum];
@@ -888,8 +888,8 @@ voiceChatList_t *CG_VoiceChatListForPlayer( int playerNum ) {
 				if (voiceChatLists[i].gender == gender) {
 					// store this head model with voice chat for future reference
 					for ( j = 0; j < MAX_HEADMODELS; j++ ) {
-						if (!strlen(headModelVoiceChat[j].headmodel)) {
-							Com_sprintf(headModelVoiceChat[j].headmodel, sizeof ( headModelVoiceChat[j].headmodel ),
+						if (!strlen(headModelVoiceChat[j].headModel)) {
+							Com_sprintf(headModelVoiceChat[j].headModel, sizeof ( headModelVoiceChat[j].headModel ),
 									"%s", headModelName);
 							headModelVoiceChat[j].voiceChatNum = i;
 							break;
@@ -906,8 +906,8 @@ voiceChatList_t *CG_VoiceChatListForPlayer( int playerNum ) {
 	}
 	// store this head model with voice chat for future reference
 	for ( j = 0; j < MAX_HEADMODELS; j++ ) {
-		if (!strlen(headModelVoiceChat[j].headmodel)) {
-			Com_sprintf(headModelVoiceChat[j].headmodel, sizeof ( headModelVoiceChat[j].headmodel ),
+		if (!strlen(headModelVoiceChat[j].headModel)) {
+			Com_sprintf(headModelVoiceChat[j].headModel, sizeof ( headModelVoiceChat[j].headModel ),
 					"%s", headModelName);
 			headModelVoiceChat[j].voiceChatNum = 0;
 			break;
@@ -965,7 +965,7 @@ void CG_PlayVoiceChat( bufferedVoiceChat_t *vchat ) {
 					cg.localPlayers[i].acceptLeader = vchat->playerNum;
 				}
 
-				cg.localPlayers[i].voiceTime = cg.time + cg_consoleLatency.integer;
+				cg.localPlayers[i].voiceTime = cg.time + con_latency.integer;
 				cg.localPlayers[i].currentVoicePlayerNum = vchat->playerNum;
 			}
 		}

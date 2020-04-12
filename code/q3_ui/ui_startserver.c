@@ -672,8 +672,8 @@ typedef struct {
 
 	menuradiobutton_s	publicserver;
 	menuradiobutton_s	dedicated;
-	menufield_s			timelimit;
-	menufield_s			fraglimit;
+	menufield_s			timeLimit;
+	menufield_s			fragLimit;
 	menufield_s			flaglimit;
 	menuradiobutton_s	friendlyfire;
 	menufield_s			hostname;
@@ -770,8 +770,8 @@ ServerOptions_Start
 =================
 */
 static void ServerOptions_Start( void ) {
-	int		timelimit;
-	int		fraglimit;
+	int		timeLimit;
+	int		fragLimit;
 	int		maxplayers;
 	int		localPlayerBits;
 	int		publicserver;
@@ -785,8 +785,8 @@ static void ServerOptions_Start( void ) {
 	char	buf[64];
 	const char *info;
 
-	timelimit	 = atoi( MField_Buffer( &s_serveroptions.timelimit.field ) );
-	fraglimit	 = atoi( MField_Buffer( &s_serveroptions.fraglimit.field ) );
+	timeLimit	 = atoi( MField_Buffer( &s_serveroptions.timeLimit.field ) );
+	fragLimit	 = atoi( MField_Buffer( &s_serveroptions.fragLimit.field ) );
 	flaglimit	 = atoi( MField_Buffer( &s_serveroptions.flaglimit.field ) );
 	publicserver = s_serveroptions.publicserver.curvalue;
 	dedicated	 = s_serveroptions.dedicated.curvalue;
@@ -817,27 +817,27 @@ static void ServerOptions_Start( void ) {
 	switch( s_serveroptions.gametype ) {
 	case GT_FFA:
 	default:
-		trap_Cvar_SetValue( "ui_ffa_fraglimit", fraglimit );
-		trap_Cvar_SetValue( "ui_ffa_timelimit", timelimit );
+		trap_Cvar_SetValue( "ui_ffa_fraglimit", fragLimit );
+		trap_Cvar_SetValue( "ui_ffa_timelimit", timeLimit );
 		trap_Cvar_SetValue( "ui_ffa_instagib", instagib );
 		break;
 
 	case GT_TOURNAMENT:
-		trap_Cvar_SetValue( "ui_tourney_fraglimit", fraglimit );
-		trap_Cvar_SetValue( "ui_tourney_timelimit", timelimit );
+		trap_Cvar_SetValue( "ui_tourney_fraglimit", fragLimit );
+		trap_Cvar_SetValue( "ui_tourney_timelimit", timeLimit );
 		trap_Cvar_SetValue( "ui_tourney_instagib", instagib );
 		break;
 
 	case GT_TEAM:
-		trap_Cvar_SetValue( "ui_team_fraglimit", fraglimit );
-		trap_Cvar_SetValue( "ui_team_timelimit", timelimit );
+		trap_Cvar_SetValue( "ui_team_fraglimit", fragLimit );
+		trap_Cvar_SetValue( "ui_team_timelimit", timeLimit );
 		trap_Cvar_SetValue( "ui_team_friendly", friendlyfire );
 		trap_Cvar_SetValue( "ui_team_instagib", instagib );
 		break;
 
 	case GT_CTF:
 		trap_Cvar_SetValue( "ui_ctf_capturelimit", flaglimit );
-		trap_Cvar_SetValue( "ui_ctf_timelimit", timelimit );
+		trap_Cvar_SetValue( "ui_ctf_timelimit", timeLimit );
 		trap_Cvar_SetValue( "ui_ctf_friendly", friendlyfire );
 		trap_Cvar_SetValue( "ui_ctf_instagib", instagib );
 		break;
@@ -845,21 +845,21 @@ static void ServerOptions_Start( void ) {
 #ifdef MISSIONPACK
 	case GT_1FCTF:
 		trap_Cvar_SetValue( "ui_1flag_capturelimit", flaglimit );
-		trap_Cvar_SetValue( "ui_1flag_timelimit", timelimit );
+		trap_Cvar_SetValue( "ui_1flag_timelimit", timeLimit );
 		trap_Cvar_SetValue( "ui_1flag_friendly", friendlyfire );
 		trap_Cvar_SetValue( "ui_1flag_instagib", instagib );
 		break;
 
 	case GT_OBELISK:
 		trap_Cvar_SetValue( "ui_obelisk_capturelimit", flaglimit );
-		trap_Cvar_SetValue( "ui_obelisk_timelimit", timelimit );
+		trap_Cvar_SetValue( "ui_obelisk_timelimit", timeLimit );
 		trap_Cvar_SetValue( "ui_obelisk_friendly", friendlyfire );
 		trap_Cvar_SetValue( "ui_obelisk_instagib", instagib );
 		break;
 
 	case GT_HARVESTER:
 		trap_Cvar_SetValue( "ui_harvester_capturelimit", flaglimit );
-		trap_Cvar_SetValue( "ui_harvester_timelimit", timelimit );
+		trap_Cvar_SetValue( "ui_harvester_timelimit", timeLimit );
 		trap_Cvar_SetValue( "ui_harvester_friendly", friendlyfire );
 		trap_Cvar_SetValue( "ui_harvester_instagib", instagib );
 		break;
@@ -874,11 +874,11 @@ static void ServerOptions_Start( void ) {
 		trap_Cvar_SetValue( "sv_public", 0 );
 	}
 	trap_Cvar_SetValue( "dedicated", Com_Clamp( 0, 1, dedicated ) );
-	trap_Cvar_SetValue ("timelimit", Com_Clamp( 0, timelimit, timelimit ) );
-	trap_Cvar_SetValue ("fraglimit", Com_Clamp( 0, fraglimit, fraglimit ) );
-	trap_Cvar_SetValue ("capturelimit", Com_Clamp( 0, flaglimit, flaglimit ) );
+	trap_Cvar_SetValue ("timeLimit", Com_Clamp( 0, timeLimit, timeLimit ) );
+	trap_Cvar_SetValue ("fragLimit", Com_Clamp( 0, fragLimit, fragLimit ) );
+	trap_Cvar_SetValue ("captureLimit", Com_Clamp( 0, flaglimit, flaglimit ) );
 	trap_Cvar_SetValue( "g_friendlyfire", friendlyfire );
-	trap_Cvar_SetValue( "g_instagib", instagib );
+	trap_Cvar_SetValue( "g_instaGib", instagib );
 	trap_Cvar_SetValue( "sv_pure", pure );
 	trap_Cvar_Set("sv_hostname", MField_Buffer( &s_serveroptions.hostname.field ) );
 
@@ -1264,27 +1264,27 @@ static void ServerOptions_SetMenuItems( void ) {
 	switch( s_serveroptions.gametype ) {
 	case GT_FFA:
 	default:
-		MField_SetText( &s_serveroptions.fraglimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_ffa_fraglimit" ) ) ) );
-		MField_SetText( &s_serveroptions.timelimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_ffa_timelimit" ) ) ) );
+		MField_SetText( &s_serveroptions.fragLimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_ffa_fraglimit" ) ) ) );
+		MField_SetText( &s_serveroptions.timeLimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_ffa_timelimit" ) ) ) );
 		s_serveroptions.instagib.curvalue = (int)Com_Clamp( 0, 1, trap_Cvar_VariableValue( "ui_ffa_instagib" ) );
 		break;
 
 	case GT_TOURNAMENT:
-		MField_SetText( &s_serveroptions.fraglimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_tourney_fraglimit" ) ) ) );
-		MField_SetText( &s_serveroptions.timelimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_tourney_timelimit" ) ) ) );
+		MField_SetText( &s_serveroptions.fragLimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_tourney_fraglimit" ) ) ) );
+		MField_SetText( &s_serveroptions.timeLimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_tourney_timelimit" ) ) ) );
 		s_serveroptions.instagib.curvalue = (int)Com_Clamp( 0, 1, trap_Cvar_VariableValue( "ui_tourney_instagib" ) );
 		break;
 
 	case GT_TEAM:
-		MField_SetText( &s_serveroptions.fraglimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_team_fraglimit" ) ) ) );
-		MField_SetText( &s_serveroptions.timelimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_team_timelimit" ) ) ) );
+		MField_SetText( &s_serveroptions.fragLimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_team_fraglimit" ) ) ) );
+		MField_SetText( &s_serveroptions.timeLimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_team_timelimit" ) ) ) );
 		s_serveroptions.friendlyfire.curvalue = (int)Com_Clamp( 0, 1, trap_Cvar_VariableValue( "ui_team_friendly" ) );
 		s_serveroptions.instagib.curvalue = (int)Com_Clamp( 0, 1, trap_Cvar_VariableValue( "ui_team_instagib" ) );
 		break;
 
 	case GT_CTF:
 		MField_SetText( &s_serveroptions.flaglimit.field, va( "%i", (int)Com_Clamp( 0, 100, trap_Cvar_VariableValue( "ui_ctf_capturelimit" ) ) ) );
-		MField_SetText( &s_serveroptions.timelimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_ctf_timelimit" ) ) ) );
+		MField_SetText( &s_serveroptions.timeLimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_ctf_timelimit" ) ) ) );
 		s_serveroptions.friendlyfire.curvalue = (int)Com_Clamp( 0, 1, trap_Cvar_VariableValue( "ui_ctf_friendly" ) );
 		s_serveroptions.instagib.curvalue = (int)Com_Clamp( 0, 1, trap_Cvar_VariableValue( "ui_ctf_instagib" ) );
 		break;
@@ -1292,21 +1292,21 @@ static void ServerOptions_SetMenuItems( void ) {
 #ifdef MISSIONPACK
 	case GT_1FCTF:
 		MField_SetText( &s_serveroptions.flaglimit.field, va( "%i", (int)Com_Clamp( 0, 100, trap_Cvar_VariableValue( "ui_1flag_capturelimit" ) ) ) );
-		MField_SetText( &s_serveroptions.timelimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_1flag_timelimit" ) ) ) );
+		MField_SetText( &s_serveroptions.timeLimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_1flag_timelimit" ) ) ) );
 		s_serveroptions.friendlyfire.curvalue = (int)Com_Clamp( 0, 1, trap_Cvar_VariableValue( "ui_1flag_friendly" ) );
 		s_serveroptions.instagib.curvalue = (int)Com_Clamp( 0, 1, trap_Cvar_VariableValue( "ui_1flag_instagib" ) );
 		break;
 
 	case GT_OBELISK:
 		MField_SetText( &s_serveroptions.flaglimit.field, va( "%i", (int)Com_Clamp( 0, 100, trap_Cvar_VariableValue( "ui_obelisk_capturelimit" ) ) ) );
-		MField_SetText( &s_serveroptions.timelimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_obelisk_timelimit" ) ) ) );
+		MField_SetText( &s_serveroptions.timeLimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_obelisk_timelimit" ) ) ) );
 		s_serveroptions.friendlyfire.curvalue = (int)Com_Clamp( 0, 1, trap_Cvar_VariableValue( "ui_obelisk_friendly" ) );
 		s_serveroptions.instagib.curvalue = (int)Com_Clamp( 0, 1, trap_Cvar_VariableValue( "ui_obelisk_instagib" ) );
 		break;
 
 	case GT_HARVESTER:
 		MField_SetText( &s_serveroptions.flaglimit.field, va( "%i", (int)Com_Clamp( 0, 100, trap_Cvar_VariableValue( "ui_harvester_capturelimit" ) ) ) );
-		MField_SetText( &s_serveroptions.timelimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_harvester_timelimit" ) ) ) );
+		MField_SetText( &s_serveroptions.timeLimit.field, va( "%i", (int)Com_Clamp( 0, 999, trap_Cvar_VariableValue( "ui_harvester_timelimit" ) ) ) );
 		s_serveroptions.friendlyfire.curvalue = (int)Com_Clamp( 0, 1, trap_Cvar_VariableValue( "ui_harvester_friendly" ) );
 		s_serveroptions.instagib.curvalue = (int)Com_Clamp( 0, 1, trap_Cvar_VariableValue( "ui_harvester_instagib" ) );
 		break;
@@ -1401,7 +1401,7 @@ static void ServerOptions_MenuInit( qboolean multiplayer ) {
 	memset( &s_serveroptions, 0 ,sizeof(serveroptions_t) );
 	s_serveroptions.multiplayer = multiplayer;
 	s_serveroptions.gametype = (int) Com_Clamp(0, ARRAY_LEN(gametype_remap2) - 1,
-						trap_Cvar_VariableValue("g_gametype"));
+						trap_Cvar_VariableValue("g_gameType"));
 
 	ServerOptions_Cache();
 
@@ -1434,14 +1434,14 @@ static void ServerOptions_MenuInit( qboolean multiplayer ) {
 
 	y = 272;
 	if( s_serveroptions.gametype <= GT_TEAM ) {
-		s_serveroptions.fraglimit.generic.type       = MTYPE_FIELD;
-		s_serveroptions.fraglimit.generic.name       = "Frag Limit:";
-		s_serveroptions.fraglimit.generic.flags      = QMF_NUMBERSONLY|QMF_PULSEIFFOCUS|QMF_SMALLFONT;
-		s_serveroptions.fraglimit.generic.x	         = OPTIONS_X;
-		s_serveroptions.fraglimit.generic.y	         = y;
-		s_serveroptions.fraglimit.generic.statusbar  = ServerOptions_StatusBar;
-		s_serveroptions.fraglimit.field.widthInChars = 3;
-		s_serveroptions.fraglimit.field.maxchars     = 3;
+		s_serveroptions.fragLimit.generic.type       = MTYPE_FIELD;
+		s_serveroptions.fragLimit.generic.name       = "Frag Limit:";
+		s_serveroptions.fragLimit.generic.flags      = QMF_NUMBERSONLY|QMF_PULSEIFFOCUS|QMF_SMALLFONT;
+		s_serveroptions.fragLimit.generic.x	         = OPTIONS_X;
+		s_serveroptions.fragLimit.generic.y	         = y;
+		s_serveroptions.fragLimit.generic.statusbar  = ServerOptions_StatusBar;
+		s_serveroptions.fragLimit.field.widthInChars = 3;
+		s_serveroptions.fragLimit.field.maxchars     = 3;
 	}
 	else {
 		s_serveroptions.flaglimit.generic.type       = MTYPE_FIELD;
@@ -1455,14 +1455,14 @@ static void ServerOptions_MenuInit( qboolean multiplayer ) {
 	}
 
 	y += BIGCHAR_HEIGHT+2;
-	s_serveroptions.timelimit.generic.type       = MTYPE_FIELD;
-	s_serveroptions.timelimit.generic.name       = "Time Limit:";
-	s_serveroptions.timelimit.generic.flags      = QMF_NUMBERSONLY|QMF_PULSEIFFOCUS|QMF_SMALLFONT;
-	s_serveroptions.timelimit.generic.x	         = OPTIONS_X;
-	s_serveroptions.timelimit.generic.y	         = y;
-	s_serveroptions.timelimit.generic.statusbar  = ServerOptions_StatusBar;
-	s_serveroptions.timelimit.field.widthInChars = 3;
-	s_serveroptions.timelimit.field.maxchars     = 3;
+	s_serveroptions.timeLimit.generic.type       = MTYPE_FIELD;
+	s_serveroptions.timeLimit.generic.name       = "Time Limit:";
+	s_serveroptions.timeLimit.generic.flags      = QMF_NUMBERSONLY|QMF_PULSEIFFOCUS|QMF_SMALLFONT;
+	s_serveroptions.timeLimit.generic.x	         = OPTIONS_X;
+	s_serveroptions.timeLimit.generic.y	         = y;
+	s_serveroptions.timeLimit.generic.statusbar  = ServerOptions_StatusBar;
+	s_serveroptions.timeLimit.field.widthInChars = 3;
+	s_serveroptions.timeLimit.field.maxchars     = 3;
 
 	if( s_serveroptions.gametype >= GT_TEAM ) {
 		y += BIGCHAR_HEIGHT+2;
@@ -1628,12 +1628,12 @@ static void ServerOptions_MenuInit( qboolean multiplayer ) {
 	}
 
 	if( s_serveroptions.gametype <= GT_TEAM ) {
-		Menu_AddItem( &s_serveroptions.menu, &s_serveroptions.fraglimit );
+		Menu_AddItem( &s_serveroptions.menu, &s_serveroptions.fragLimit );
 	}
 	else {
 		Menu_AddItem( &s_serveroptions.menu, &s_serveroptions.flaglimit );
 	}
-	Menu_AddItem( &s_serveroptions.menu, &s_serveroptions.timelimit );
+	Menu_AddItem( &s_serveroptions.menu, &s_serveroptions.timeLimit );
 	if( s_serveroptions.gametype >= GT_TEAM ) {
 		Menu_AddItem( &s_serveroptions.menu, &s_serveroptions.friendlyfire );
 	}

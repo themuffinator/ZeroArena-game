@@ -268,7 +268,7 @@ Used when drawing fullscreen 4:3 UI.
 =================
 */
 void CG_ClearViewport( void ) {
-	trap_R_SetColor( g_color_table[0] );
+	trap_R_SetColor(ColorFromChar(COLOR_BLACK));
 	trap_R_DrawStretchPic( cg.viewportX, cg.viewportY, cg.viewportWidth, cg.viewportHeight, 0, 0, 0, 0, cgs.media.whiteShader );
 	trap_R_SetColor( NULL );
 }

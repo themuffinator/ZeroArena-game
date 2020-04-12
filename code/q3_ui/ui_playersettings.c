@@ -263,14 +263,14 @@ PlayerSettings_DrawPlayer
 static void PlayerSettings_DrawPlayer( void *self ) {
 	menubitmap_s	*b;
 	vec3_t			viewangles;
-	char			model[MAX_QPATH], headmodel[MAX_QPATH];
+	char			model[MAX_QPATH], headModel[MAX_QPATH];
 
 	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "model"), model, sizeof( model ) );
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "headmodel"), headmodel, sizeof ( headmodel ) );
-	if ( strcmp( model, s_playersettings.playerModel ) != 0 || strcmp( headmodel, s_playersettings.playerHead ) != 0 ) {
-		UI_PlayerInfo_SetModel( &s_playersettings.playerinfo, model, headmodel, NULL );
+	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "headModel"), headModel, sizeof ( headModel ) );
+	if ( strcmp( model, s_playersettings.playerModel ) != 0 || strcmp( headModel, s_playersettings.playerHead ) != 0 ) {
+		UI_PlayerInfo_SetModel( &s_playersettings.playerinfo, model, headModel, NULL );
 		strcpy( s_playersettings.playerModel, model );
-		strcpy( s_playersettings.playerHead, headmodel );
+		strcpy( s_playersettings.playerHead, headModel );
 
 		viewangles[YAW]   = 180 - 30;
 		viewangles[PITCH] = 0;
@@ -327,7 +327,7 @@ static void PlayerSettings_SetMenuItems( void ) {
 	vec3_t	viewangles;
 	int		c;
 	int		h;
-	char	model[MAX_QPATH], headmodel[MAX_QPATH];
+	char	model[MAX_QPATH], headModel[MAX_QPATH];
 
 	// name
 	MField_SetText( &s_playersettings.name.field, CG_Cvar_VariableString(
@@ -354,9 +354,9 @@ static void PlayerSettings_SetMenuItems( void ) {
 	viewangles[ROLL]  = 0;
 
 	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "model"), model, sizeof( model ) );
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "headmodel"), headmodel, sizeof ( headmodel ) );
+	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "headModel"), headModel, sizeof ( headModel ) );
 
-	UI_PlayerInfo_SetModel( &s_playersettings.playerinfo, model, headmodel, NULL );
+	UI_PlayerInfo_SetModel( &s_playersettings.playerinfo, model, headModel, NULL );
 	UI_PlayerInfo_SetInfo( &s_playersettings.playerinfo, LEGS_IDLE, TORSO_STAND, viewangles, vec3_origin, WP_MACHINEGUN, qfalse );
 
 	// handicap

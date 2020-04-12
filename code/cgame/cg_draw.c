@@ -978,9 +978,9 @@ static float CG_DrawScores( float y ) {
 		}
 
 		if ( cgs.gametype >= GT_CTF ) {
-			v = cgs.capturelimit;
+			v = cgs.captureLimit;
 		} else {
-			v = cgs.fraglimit;
+			v = cgs.fragLimit;
 		}
 		if ( v ) {
 			s = va( "%2i", v );
@@ -1043,8 +1043,8 @@ static float CG_DrawScores( float y ) {
 			CG_DrawBigString( x + 4, y, s, 1.0F);
 		}
 
-		if ( cgs.fraglimit ) {
-			s = va( "%2i", cgs.fraglimit );
+		if ( cgs.fragLimit ) {
+			s = va( "%2i", cgs.fragLimit );
 			w = CG_DrawStrlen( s, UI_BIGFONT ) + 8;
 			x -= w;
 			CG_DrawBigString( x + 4, y, s, 1.0F);
@@ -1607,7 +1607,7 @@ static void CG_DrawLagometer( void ) {
 		if ( v > 0 ) {
 			if ( color != 1 ) {
 				color = 1;
-				trap_R_SetColor( g_color_table[ColorIndex(COLOR_YELLOW)] );
+				trap_R_SetColor(ColorFromChar(COLOR_YELLOW));
 			}
 			if ( v > range ) {
 				v = range;
@@ -1616,7 +1616,7 @@ static void CG_DrawLagometer( void ) {
 		} else if ( v < 0 ) {
 			if ( color != 2 ) {
 				color = 2;
-				trap_R_SetColor( g_color_table[ColorIndex(COLOR_BLUE)] );
+				trap_R_SetColor(ColorFromChar(COLOR_BLUE) );
 			}
 			v = -v;
 			if ( v > range ) {
@@ -1637,12 +1637,12 @@ static void CG_DrawLagometer( void ) {
 			if ( lagometer.snapshotFlags[i] & SNAPFLAG_RATE_DELAYED ) {
 				if ( color != 5 ) {
 					color = 5;	// YELLOW for rate delay
-					trap_R_SetColor( g_color_table[ColorIndex(COLOR_YELLOW)] );
+					trap_R_SetColor(ColorFromChar(COLOR_YELLOW) );
 				}
 			} else {
 				if ( color != 3 ) {
 					color = 3;
-					trap_R_SetColor( g_color_table[ColorIndex(COLOR_GREEN)] );
+					trap_R_SetColor(ColorFromChar(COLOR_GREEN) );
 				}
 			}
 			v = v * vscale;
@@ -1653,7 +1653,7 @@ static void CG_DrawLagometer( void ) {
 		} else if ( v < 0 ) {
 			if ( color != 4 ) {
 				color = 4;		// RED for dropped snapshots
-				trap_R_SetColor( g_color_table[ColorIndex(COLOR_RED)] );
+				trap_R_SetColor(ColorFromChar(COLOR_RED) );
 			}
 			trap_R_DrawStretchPic( ax + aw - a, ay + ah - range, 1, range, 0, 0, 0, 0, cgs.media.whiteShader );
 		}
@@ -2645,7 +2645,7 @@ static void CG_DrawProxWarning( void ) {
 	// put proxy warning below where the out of ammo location
 	lineHeight = CG_DrawStringLineHeight( UI_BIGFONT );
 
-	CG_DrawString( SCREEN_WIDTH / 2, 64 + lineHeight, s, UI_CENTER|UI_DROPSHADOW|UI_BIGFONT, g_color_table[ColorIndex(COLOR_RED)] );
+	CG_DrawString( SCREEN_WIDTH / 2, 64 + lineHeight, s, UI_CENTER|UI_DROPSHADOW|UI_BIGFONT, ColorFromChar(COLOR_RED) );
 }
 #endif
 
@@ -2798,7 +2798,7 @@ static void CG_Draw2D(stereoFrame_t stereoFrame, qboolean *voiceMenuOpen)
 		CG_CheckOrderPending( cg.cur_localPlayerNum );
 	}
 #endif
-	// if we are taking a levelshot for the menu, don't draw anything
+	// if we are taking a levelShot for the menu, don't draw anything
 	if ( cg.levelShot ) {
 		return;
 	}
@@ -3113,7 +3113,7 @@ void CG_DrawScreen2D( stereoFrame_t stereoView ) {
 		return;
 	}
 
-	// if we are taking a levelshot for the menu, don't draw anything
+	// if we are taking a levelShot for the menu, don't draw anything
 	if ( cg.levelShot ) {
 		return;
 	}

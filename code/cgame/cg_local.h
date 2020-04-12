@@ -1243,10 +1243,10 @@ typedef struct {
 	// parsed from serverinfo
 	char			gametypeName[MAX_NAME_LENGTH];
 	gametype_t		gametype;
-	int				dmflags;
-	int				fraglimit;
-	int				capturelimit;
-	int				timelimit;
+	int				dmFlags;
+	int				fragLimit;
+	int				captureLimit;
+	int				timeLimit;
 	int				maxplayers;
 	char			mapname[MAX_QPATH];
 
@@ -1313,9 +1313,9 @@ extern	weaponInfo_t	cg_weapons[MAX_WEAPONS];
 extern	itemInfo_t		cg_items[MAX_ITEMS];
 extern	markPoly_t		cg_markPolys[MAX_MARK_POLYS];
 
-extern	vmCvar_t		con_conspeed;
-extern	vmCvar_t		con_autochat;
-extern	vmCvar_t		con_autoclear;
+extern	vmCvar_t		con_scrollSpeed;
+extern	vmCvar_t		con_autoChat;
+extern	vmCvar_t		con_autoClear;
 extern	vmCvar_t		cg_dedicated;
 
 extern	vmCvar_t		cg_centertime;
@@ -1424,7 +1424,7 @@ extern	vmCvar_t		cg_atmosphericEffects;
 extern	vmCvar_t		cg_teamDmLeadAnnouncements;
 extern	vmCvar_t		cg_voipShowMeter;
 extern	vmCvar_t		cg_voipShowCrosshairMeter;
-extern	vmCvar_t		cg_consoleLatency;
+extern	vmCvar_t		con_latency;
 extern	vmCvar_t		cg_drawShaderInfo;
 extern	vmCvar_t		cg_coronafardist;
 extern	vmCvar_t		cg_coronas;
@@ -1441,8 +1441,8 @@ extern	vmCvar_t		cg_antiLag;
 extern	vmCvar_t		cg_forceBitmapFonts;
 extern	vmCvar_t		cg_drawGrappleHook;
 extern	vmCvar_t		cg_drawBBox;
-extern	vmCvar_t		cg_consoleFont;
-extern	vmCvar_t		cg_consoleFontSize;
+extern	vmCvar_t		con_font;
+extern	vmCvar_t		con_fontSize;
 extern	vmCvar_t		cg_hudFont;
 extern	vmCvar_t		cg_hudFontBorder;
 extern	vmCvar_t		cg_numberFont;

@@ -1162,7 +1162,7 @@ void Script_SetPlayerModel(itemDef_t *item, char **args) {
 void Script_SetPlayerHead(itemDef_t *item, char **args) {
   const char *name;
   if (String_Parse(args, &name)) {
-    DC->setCVar("team_headmodel", name);
+    DC->setCVar("team_headModel", name);
   }
 }
 
@@ -3231,17 +3231,17 @@ static bind_t g_bindings[] =
 	{"+speed", 			 K_LEFTSHIFT,	K_RIGHTSHIFT, -1, -1},
 	{"+forward", 		 K_UPARROW,		-1,		-1, -1},
 	{"+back", 			 K_DOWNARROW,	-1,		-1, -1},
-	{"+moveleft", 	 ',',					-1,		-1, -1},
-	{"+moveright", 	 '.',					-1,		-1, -1},
-	{"+moveup",			 K_SPACE,			-1,		-1, -1},
-	{"+movedown",		 'c',					-1,		-1, -1},
+	{"+moveLeft", 	 ',',					-1,		-1, -1},
+	{"+moveRight", 	 '.',					-1,		-1, -1},
+	{"+moveUp",			 K_SPACE,			-1,		-1, -1},
+	{"+moveDown",		 'c',					-1,		-1, -1},
 	{"+left", 			 K_LEFTARROW,	-1,		-1, -1},
 	{"+right", 			 K_RIGHTARROW,	-1,		-1, -1},
 	{"+strafe", 		 K_LEFTALT,		K_RIGHTALT, -1, -1},
-	{"+lookup", 		 K_PGDN,				-1,		-1, -1},
-	{"+lookdown", 	 K_DEL,				-1,		-1, -1},
-	{"+mlook", 			 '/',					-1,		-1, -1},
-	{"centerview", 	 K_END,				-1,		-1, -1},
+	{"+lookUp", 		 K_PGDN,				-1,		-1, -1},
+	{"+lookDown", 	 K_DEL,				-1,		-1, -1},
+	{"+mouseLook", 			 '/',					-1,		-1, -1},
+	{"centerView", 	 K_END,				-1,		-1, -1},
 	{"+zoom", 			 -1,						-1,		-1, -1},
 	{"weapon 1",		 '1',					-1,		-1, -1},
 	{"weapon 2",		 '2',					-1,		-1, -1},
@@ -3257,8 +3257,8 @@ static bind_t g_bindings[] =
 	{"weapon 12",		 -1,					-1,		-1, -1},
 	{"weapon 13",		 -1,					-1,		-1, -1},
 	{"+attack", 		 K_LEFTCTRL,	K_RIGHTCTRL,		-1, -1},
-	{"weapprev",		 '[',					-1,		-1, -1},
-	{"weapnext", 		 ']',					-1,		-1, -1},
+	{"weaponPrevious",		 '[',					-1,		-1, -1},
+	{"weaponNext", 		 ']',					-1,		-1, -1},
 	{"+button3", 		 K_MOUSE3,			-1,		-1, -1},
 	{"+button4", 		 K_MOUSE4,			-1,		-1, -1},
 	{"prevTeamMember", 'w',					-1,		-1, -1},

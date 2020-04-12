@@ -374,7 +374,7 @@ void Text_Paint( float x, float y, const fontInfo_t *font, float scale, const ve
 	while ( s && *s && count < len ) {
 		if ( Q_IsColorString( s ) ) {
 			if ( !forceColor ) {
-				VectorCopy( g_color_table[ColorIndex(*(s+1))], newColor );
+				VectorCopy(ColorFromChar(*(s+1)), newColor );
 				newColor[3] = color[3];
 				trap_R_SetColor( newColor );
 				Vector4Copy( newColor, lastTextColor );
@@ -465,7 +465,7 @@ void Text_PaintWithCursor( float x, float y, const fontInfo_t *font, float scale
 	while ( s && *s && count < len ) {
 		if ( Q_IsColorString( s ) ) {
 			if ( !forceColor ) {
-				VectorCopy( g_color_table[ColorIndex(*(s+1))], newColor );
+				VectorCopy(ColorFromChar(*(s+1)), newColor );
 				newColor[3] = color[3];
 				trap_R_SetColor( newColor );
 				Vector4Copy( newColor, lastTextColor );
@@ -580,7 +580,7 @@ void Text_Paint_Limit( float *maxX, float x, float y, const fontInfo_t *font, fl
 	count = 0;
 	while ( s && *s && count < len ) {
 		if ( Q_IsColorString( s ) ) {
-			VectorCopy( g_color_table[ColorIndex(*(s+1))], newColor );
+			VectorCopy(ColorFromChar(*(s+1)), newColor );
 			newColor[3] = color[3];
 			trap_R_SetColor( newColor );
 			Vector4Copy( newColor, lastTextColor );

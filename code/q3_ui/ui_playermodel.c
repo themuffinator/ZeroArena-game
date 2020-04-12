@@ -204,9 +204,9 @@ PlayerModel_SaveChanges
 static void PlayerModel_SaveChanges( void )
 {
 	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "model"), s_playermodel.modelskin );
-	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "headmodel"), s_playermodel.headmodelskin );
+	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "headModel"), s_playermodel.headmodelskin );
 	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "team_model"), s_playermodel.modelskin );
-	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "team_headmodel"), s_playermodel.headmodelskin );
+	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "team_headModel"), s_playermodel.headmodelskin );
 }
 
 /*
@@ -482,7 +482,7 @@ static void PlayerModel_SetMenuItems( void )
 
 	// model
 	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "model"), s_playermodel.modelskin, sizeof ( s_playermodel.modelskin ) );
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "headmodel"), s_playermodel.headmodelskin, sizeof ( s_playermodel.headmodelskin ) );
+	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "headModel"), s_playermodel.headmodelskin, sizeof ( s_playermodel.headmodelskin ) );
 	
 	// use default skin if none is set
 	if (!strchr(s_playermodel.modelskin, '/')) {

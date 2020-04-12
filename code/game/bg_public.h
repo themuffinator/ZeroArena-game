@@ -36,7 +36,7 @@ Suite 120, Rockville, Maryland 20850 USA.
   #ifdef MISSIONPACK
     #define MODDIR "missionpack"
   #else
-    #define MODDIR "baseq3"
+    #define MODDIR "baseza"
   #endif
 #endif
 
@@ -54,7 +54,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 // used for switching fs_game
 #ifndef BASEQ3
-	#define BASEQ3			"baseq3"
+	#define BASEQ3			"baseza"
 #endif
 #ifndef BASETA
 	#define BASETA			"missionpack"
@@ -105,7 +105,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 #define STEPSIZE			18
 
-#define	BODY_SINK_DELAY		5000
+#define	BODY_SINK_DELAY		60000	//5000
 #define	BODY_SINK_TIME		1500
 
 #ifdef MISSIONPACK
@@ -139,7 +139,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 #define	CS_GAME_PROTOCOL		20
 #define	CS_LEVEL_START_TIME		21		// so the timer only shows the current level
-#define	CS_INTERMISSION			22		// when 1, fraglimit/timelimit has been hit and intermission will start in a second or two
+#define	CS_INTERMISSION			22		// when 1, fragLimit/timeLimit has been hit and intermission will start in a second or two
 #define CS_FLAGSTATUS			23		// string indicating flag status in CTF
 #define CS_SHADERSTATE			24
 #define	CS_PLAYERS_READY		25		// players wishing to exit the intermission
@@ -453,7 +453,7 @@ movement on the server game.
 
 typedef enum {
 	PM_NORMAL,		// can accelerate and turn
-	PM_NOCLIP,		// noclip movement
+	PM_NOCLIP,		// noClip movement
 	PM_SPECTATOR,	// still run into walls
 	PM_DEAD,		// no acceleration or turning, but free falling
 	PM_FREEZE,		// stuck in place with no control
@@ -475,7 +475,7 @@ typedef enum {
 #define	PMF_BACKWARDS_RUN	16		// coast down to backwards run
 #define	PMF_TIME_LAND		32		// pm_time is time before rejump
 #define	PMF_TIME_KNOCKBACK	64		// pm_time is an air-accelerate only time
-
+#define PMF_LADDER			128		// on a ladder
 #define	PMF_TIME_WATERJUMP	256		// pm_time is waterjump
 #define	PMF_RESPAWNED		512		// clear after attack and jump buttons come up
 #define	PMF_USE_ITEM_HELD	1024
@@ -1067,7 +1067,7 @@ gitem_t	*BG_FindItemForHoldable( holdable_t pw );
 qboolean	BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const playerState_t *ps );
 
 
-// g_dmflags->integer flags
+// g_dmFlags->integer flags
 #define	DF_NO_FALLING			8
 #define DF_FIXED_FOV			16
 #define	DF_NO_FOOTSTEPS			32

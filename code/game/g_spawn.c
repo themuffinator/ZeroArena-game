@@ -123,7 +123,9 @@ field_t fields[] = {
 	{"color",        FOFS( dl_color ),     F_VECTOR},      // color of the light
 	{"stylestring",  FOFS( dl_stylestring ), F_STRING},   // user defined stylestring "fffndlsfaaaaaa" for example
 	{"shader",       FOFS( dl_shader ), F_STRING},    // shader to use for a target_effect or dlight
-
+//muff
+	{"author", FOFS(message), F_STRING},
+	{"author2", FOFS(message), F_STRING},
 	{NULL}
 };
 
@@ -315,7 +317,7 @@ qboolean G_CallSpawn( gentity_t *ent ) {
 			continue;
 		}
 		if ( !strcmp(item->classname, ent->classname) ) {
-			if ( g_instagib.integer && item->giType != IT_TEAM ) {
+			if ( g_instaGib.integer && item->giType != IT_TEAM ) {
 				// only spawn team play items in instagib mode
 				return qfalse;
 			}
@@ -448,7 +450,7 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 		G_ParseField( level.spawnVars[i][0], level.spawnVars[i][1], ent );
 	}
 
-	spawnInfo.gametype = g_gametype.integer;
+	spawnInfo.gametype = g_gameType.integer;
 	spawnInfo.spawnInt = G_SpawnInt;
 	spawnInfo.spawnString = G_SpawnString;
 

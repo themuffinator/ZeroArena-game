@@ -1100,7 +1100,7 @@ void BotInterbreeding(void) {
 	if (!strlen(bot_interbreedchar.string)) return;
 	//make sure we are in tournament mode
 	if (gametype != GT_TOURNAMENT) {
-		trap_Cvar_SetValue("g_gametype", GT_TOURNAMENT);
+		trap_Cvar_SetValue("g_gameType", GT_TOURNAMENT);
 		ExitLevel();
 		return;
 	}
@@ -1406,9 +1406,9 @@ void BotInputToUserCommand(bot_input_t *bi, usercmd_t *ucmd, int delta_angles[3]
 	if (bi->actionflags & ACTION_MOVEBACK) ucmd->forwardmove = -127;
 	if (bi->actionflags & ACTION_MOVELEFT) ucmd->rightmove = -127;
 	if (bi->actionflags & ACTION_MOVERIGHT) ucmd->rightmove = 127;
-	//jump/moveup
+	//jump/moveUp
 	if (bi->actionflags & ACTION_JUMP) ucmd->upmove = 127;
-	//crouch/movedown
+	//crouch/moveDown
 	if (bi->actionflags & ACTION_CROUCH) ucmd->upmove = -127;
 }
 

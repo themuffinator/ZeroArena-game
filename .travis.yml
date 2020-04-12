@@ -27,8 +27,8 @@ addons:
       - mingw-w64
   coverity_scan:
     project:
-      name: "zturtleman/mint-arena"
-    notification_email: zturtleman@gmail.com
+      name: "themuffinator/ZeroArena-game"
+    notification_email: "djdacosta86@gmail.com"
     build_command_prepend: "make clean"
     build_command: "make release"
     branch_pattern: coverity_scan

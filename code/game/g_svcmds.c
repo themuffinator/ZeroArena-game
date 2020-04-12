@@ -545,7 +545,7 @@ void	Svcmd_Teleport_f( void ) {
 		angles[YAW] = atoi( str );
 	}
 
-	TeleportPlayer( ent, position, angles );
+	TeleportPlayer( ent, position, angles, qfalse, qfalse );
 }
 
 /*

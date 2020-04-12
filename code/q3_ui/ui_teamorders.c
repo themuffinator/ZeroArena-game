@@ -406,7 +406,7 @@ static void UI_TeamOrdersMenu_BuildBotList( void ) {
 
 	trap_GetConfigString( CS_SERVERINFO, info, sizeof(info) );
 	numPlayers = atoi( Info_ValueForKey( info, "sv_maxclients" ) );
-	teamOrdersMenuInfo.gametype = atoi( Info_ValueForKey( info, "g_gametype" ) );
+	teamOrdersMenuInfo.gametype = atoi( Info_ValueForKey( info, "g_gameType" ) );
 
 	trap_GetConfigString( CS_PLAYERS + cg.localPlayers[0].playerNum, info, MAX_INFO_STRING );
 	playerTeam = *Info_ValueForKey( info, "t" );
@@ -527,7 +527,7 @@ void UI_TeamOrdersMenu_f( void ) {
 
 	// make sure it's a team game
 	trap_GetConfigString( CS_SERVERINFO, info, sizeof(info) );
-	teamOrdersMenuInfo.gametype = atoi( Info_ValueForKey( info, "g_gametype" ) );
+	teamOrdersMenuInfo.gametype = atoi( Info_ValueForKey( info, "g_gameType" ) );
 	if( teamOrdersMenuInfo.gametype < GT_TEAM ) {
 		return;
 	}

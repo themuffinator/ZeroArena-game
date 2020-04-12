@@ -155,7 +155,7 @@ static void UI_CalcPostGameStats( void ) {
 
 	trap_GetConfigString( CS_SERVERINFO, info, sizeof(info) );
 	Q_strncpyz( map, Info_ValueForKey( info, "mapname" ), sizeof(map) );
-	game = atoi(Info_ValueForKey(info, "g_gametype"));
+	game = atoi(Info_ValueForKey(info, "g_gameType"));
 
 	// compose file name
 	Com_sprintf(fileName, MAX_QPATH, "games/%s_%i.game", map, game);
@@ -224,8 +224,8 @@ static void UI_CalcPostGameStats( void ) {
 	}
  
 	// put back all the ui overrides
-	trap_Cvar_SetValue("capturelimit", trap_Cvar_VariableValue("ui_saveCaptureLimit"));
-	trap_Cvar_SetValue("fraglimit", trap_Cvar_VariableValue("ui_saveFragLimit"));
+	trap_Cvar_SetValue("captureLimit", trap_Cvar_VariableValue("ui_saveCaptureLimit"));
+	trap_Cvar_SetValue("fragLimit", trap_Cvar_VariableValue("ui_saveFragLimit"));
 	trap_Cvar_SetValue("cg_drawTimer", trap_Cvar_VariableValue("ui_drawTimer"));
 	trap_Cvar_SetValue("g_doWarmup", trap_Cvar_VariableValue("ui_doWarmup"));
 	trap_Cvar_SetValue("g_Warmup", trap_Cvar_VariableValue("ui_Warmup"));

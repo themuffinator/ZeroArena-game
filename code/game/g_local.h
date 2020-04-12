@@ -37,7 +37,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 //==================================================================
 
-#define BODY_QUEUE_SIZE		64
+#define BODY_QUEUE_SIZE		128			//64
 
 #define	FRAMETIME			100					// msec
 #define	CARNAGE_REWARD_TIME	3000
@@ -55,6 +55,12 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define FL_NO_BOTS				0x00002000	// spawn point not for bot use
 #define FL_NO_HUMANS			0x00004000	// spawn point just for bots
 #define FL_FORCE_GESTURE		0x00008000	// force gesture on player
+
+//wolfet
+#define AP( x ) trap_SendServerCommand( -1, x )                 // Print to all
+#define CP( x ) trap_SendServerCommand( ent - g_entities, x )     // Print to an ent
+#define CPx( x, y ) trap_SendServerCommand( x, y )              // Print to id = x
+//-wolfet
 
 // movers are things like doors, plats, buttons, etc
 typedef enum {
@@ -87,7 +93,7 @@ struct gentity_s {
 	int			spawnflags;			// set in QuakeEd
 
 	qboolean	neverFree;			// if true, FreeEntity will only unlink
-									// bodyque uses this
+									// bodyqueue uses this
 
 	int			flags;				// FL_* variables
 
@@ -195,6 +201,9 @@ struct gentity_s {
 	vec3_t		lastMins;
 	vec3_t		lastMaxs;
 	int			areanum;
+//muff
+	char		*author;
+//-muff
 };
 
 
@@ -285,7 +294,7 @@ struct gplayer_s {
 
 	qboolean	readyToExit;		// wishes to leave the intermission
 
-	qboolean	noclip;
+	qboolean	noClip;
 
 	// history for backward reconcile
 	int			topMarker;
@@ -408,7 +417,7 @@ typedef struct {
 
 	int			snd_fry;				// sound index for standing in lava
 
-	int			warmupModificationCount;	// for detecting if g_warmup is changed
+	int			warmupModificationCount;	// for detecting if g_warmupCountdownTime is changed
 	int			botReportModificationCount;
 
 	// voting state
@@ -450,8 +459,8 @@ typedef struct {
 
 	qboolean	locationLinked;			// target_locations get linked
 	gentity_t	*locationHead;			// head of the location list
-	int			bodyQueIndex;			// dead bodies
-	gentity_t	*bodyQue[BODY_QUEUE_SIZE];
+	int			bodyQueueIndex;			// dead bodies
+	gentity_t	*bodyQueue[BODY_QUEUE_SIZE];
 #ifdef MISSIONPACK
 	int			portalSequence;
 #endif
@@ -588,7 +597,7 @@ void trigger_teleporter_touch (gentity_t *self, gentity_t *other, trace_t *trace
 //
 // g_misc.c
 //
-void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles );
+void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles, const qboolean freezeVelocity, const qboolean saveAngles);
 #ifdef MISSIONPACK
 void DropPortalSource( gentity_t *ent );
 void DropPortalDestination( gentity_t *ent );
@@ -613,10 +622,10 @@ int TeamLeader( int team );
 team_t PickTeam( int ignorePlayerNum );
 void SetPlayerViewAngle( gentity_t *ent, vec3_t angle );
 gentity_t *SelectSpawnPoint (vec3_t avoidPoint, vec3_t origin, vec3_t angles, qboolean isbot);
-void CopyToBodyQue( gentity_t *ent );
+void CopyToBodyQueue( gentity_t *ent );
 void PlayerRespawn(gentity_t *ent);
 void BeginIntermission (void);
-void InitBodyQue (void);
+void InitBodyQueue (void);
 void PlayerSpawn( gentity_t *ent );
 void player_die (gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int mod);
 void AddScore( gentity_t *ent, vec3_t origin, int score );
@@ -763,25 +772,25 @@ extern	gentity_t		g_entities[MAX_GENTITIES];
 
 #define	FOFS(x) ((size_t)&(((gentity_t *)0)->x))
 
-extern	vmCvar_t	g_gametype;
+extern	vmCvar_t	g_gameType;
 extern	vmCvar_t	g_dedicated;
 extern	vmCvar_t	g_cheats;
-extern	vmCvar_t	g_maxplayers;			// allow this many total, including spectators
-extern	vmCvar_t	g_maxGamePlayers;		// allow this many active
+extern	vmCvar_t	g_maxClients;			// allow this many total, including spectators
+extern	vmCvar_t	g_maxGameClients;		// allow this many active
 extern	vmCvar_t	g_restarted;
 
-extern	vmCvar_t	g_dmflags;
-extern	vmCvar_t	g_fraglimit;
-extern	vmCvar_t	g_timelimit;
-extern	vmCvar_t	g_capturelimit;
+extern	vmCvar_t	g_dmFlags;
+extern	vmCvar_t	g_fragLimit;
+extern	vmCvar_t	g_timeLimit;
+extern	vmCvar_t	g_captureLimit;
 extern	vmCvar_t	g_friendlyFire;
 extern	vmCvar_t	g_password;
-extern	vmCvar_t	g_needpass;
+extern	vmCvar_t	g_needPassword;
 extern	vmCvar_t	g_gravity;
 extern	vmCvar_t	g_speed;
 extern	vmCvar_t	g_knockback;
-extern	vmCvar_t	g_quadfactor;
-extern	vmCvar_t	g_forcerespawn;
+extern	vmCvar_t	g_quadFactor;
+extern	vmCvar_t	g_forcePlayerRespawnTime;
 extern	vmCvar_t	g_inactivity;
 extern	vmCvar_t	g_debugMove;
 extern	vmCvar_t	g_debugDamage;
@@ -789,7 +798,7 @@ extern	vmCvar_t	g_weaponRespawn;
 extern	vmCvar_t	g_weaponTeamRespawn;
 extern	vmCvar_t	g_synchronousClients;
 extern	vmCvar_t	g_motd;
-extern	vmCvar_t	g_warmup;
+extern	vmCvar_t	g_warmupCountdownTime;
 extern	vmCvar_t	g_doWarmup;
 extern	vmCvar_t	g_allowVote;
 extern	vmCvar_t	g_teamAutoJoin;
@@ -800,16 +809,16 @@ extern	vmCvar_t	g_obeliskHealth;
 extern	vmCvar_t	g_obeliskRegenPeriod;
 extern	vmCvar_t	g_obeliskRegenAmount;
 extern	vmCvar_t	g_obeliskRespawnDelay;
-extern	vmCvar_t	g_cubeTimeout;
-extern	vmCvar_t	g_redteam;
-extern	vmCvar_t	g_blueteam;
+extern	vmCvar_t	g_harvester_skullTimeout;
+extern	vmCvar_t	g_redTeamName;
+extern	vmCvar_t	g_blueTeamName;
 extern	vmCvar_t	g_smoothClients;
 extern	vmCvar_t	pmove_overbounce;
 extern	vmCvar_t	pmove_fixed;
 extern	vmCvar_t	pmove_msec;
 extern	vmCvar_t	g_rankings;
-extern	vmCvar_t	g_singlePlayer;
+extern	vmCvar_t	g_singlePlayerActive;
 extern	vmCvar_t	g_proxMineTimeout;
 extern	vmCvar_t	g_playerCapsule;
-extern	vmCvar_t	g_instagib;
+extern	vmCvar_t	g_instaGib;
 

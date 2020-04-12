@@ -1223,9 +1223,9 @@ void CG_NewPlayerInfo( int playerNum ) {
 		char *skin;
 
 		if( cgs.gametype >= GT_TEAM ) {
-			trap_Cvar_VariableStringBuffer( "team_headmodel", modelStr, sizeof( modelStr ) );
+			trap_Cvar_VariableStringBuffer( "team_headModel", modelStr, sizeof( modelStr ) );
 		} else {
-			trap_Cvar_VariableStringBuffer( "headmodel", modelStr, sizeof( modelStr ) );
+			trap_Cvar_VariableStringBuffer( "headModel", modelStr, sizeof( modelStr ) );
 		}
 		if ( ( skin = strchr( modelStr, '/' ) ) == NULL) {
 			skin = "default";

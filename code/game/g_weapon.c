@@ -93,7 +93,7 @@ qboolean CheckGauntletAttack( gentity_t *ent ) {
 		return qfalse;
 	}
 
-	if ( ent->player->noclip ) {
+	if ( ent->player->noClip ) {
 		return qfalse;
 	}
 
@@ -115,10 +115,10 @@ qboolean CheckGauntletAttack( gentity_t *ent ) {
 		G_AddEvent( ent, EV_POWERUP_QUAD, 0 );
 	}
 
-	if ( g_instagib.integer ) {
+	if ( g_instaGib.integer ) {
 		s_quadFactor = 100;
 	} else if ( ent->player->ps.powerups[PW_QUAD] ) {
-		s_quadFactor = g_quadfactor.value;
+		s_quadFactor = g_quadFactor.value;
 	} else {
 		s_quadFactor = 1;
 	}
@@ -823,10 +823,10 @@ FireWeapon
 ===============
 */
 void FireWeapon( gentity_t *ent ) {
-	if ( g_instagib.integer ) {
+	if ( g_instaGib.integer ) {
 		s_quadFactor = 100;
 	} else if ( ent->player->ps.powerups[PW_QUAD] ) {
-		s_quadFactor = g_quadfactor.value;
+		s_quadFactor = g_quadFactor.value;
 	} else {
 		s_quadFactor = 1;
 	}
@@ -866,7 +866,7 @@ void FireWeapon( gentity_t *ent ) {
 		weapon_supershotgun_fire( ent );
 		break;
 	case WP_MACHINEGUN:
-		if ( g_gametype.integer != GT_TEAM ) {
+		if ( g_gameType.integer != GT_TEAM ) {
 			Bullet_Fire( ent, MACHINEGUN_SPREAD, MACHINEGUN_DAMAGE, MOD_MACHINEGUN );
 		} else {
 			Bullet_Fire( ent, MACHINEGUN_SPREAD, MACHINEGUN_TEAM_DAMAGE, MOD_MACHINEGUN );
@@ -1145,7 +1145,7 @@ void G_StartKamikaze( gentity_t *ent ) {
 		G_Damage( ent, ent, ent, NULL, NULL, 100000, DAMAGE_NO_PROTECTION, MOD_KAMIKAZE );
 	}
 	else {
-		if ( !strcmp(ent->activator->classname, "bodyque") ) {
+		if ( !strcmp(ent->activator->classname, "bodyqueue") ) {
 			explosion->activator = &g_entities[ent->activator->r.ownerNum];
 		}
 		else {

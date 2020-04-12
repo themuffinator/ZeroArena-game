@@ -217,7 +217,7 @@ void CG_CheckOrderPending( int localPlayerNum ) {
 		} else {
 			// for the player self
 			if (sortedTeamPlayers[team][selectedPlayer] == playerNum && p1) {
-				trap_Cmd_ExecuteText(EXEC_APPEND, va("%s %i\n", Com_LocalPlayerCvarName(localPlayerNum, "teamtask"), localPlayer->currentOrder));
+				trap_Cmd_ExecuteText(EXEC_APPEND, va("%s %i\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), localPlayer->currentOrder));
 				//trap_Cmd_ExecuteText(EXEC_APPEND, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "say_team"), p2));
 				trap_Cmd_ExecuteText(EXEC_APPEND, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), p1));
 			} else if (p2) {
@@ -1289,7 +1289,7 @@ static void CG_DrawKiller(rectDef_t *rect, float scale, vec4_t color, qhandle_t 
 
 
 static void CG_DrawCapFragLimit(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle) {
-	int limit = (cgs.gametype >= GT_CTF) ? cgs.capturelimit : cgs.fraglimit;
+	int limit = (cgs.gametype >= GT_CTF) ? cgs.captureLimit : cgs.fragLimit;
 	CG_Text_Paint(rect->x, rect->y, scale, color, va("%2i", limit),0, 0, textStyle); 
 }
 

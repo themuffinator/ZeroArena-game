@@ -2028,7 +2028,7 @@ void BotTeamAI(bot_state_t *bs) {
 		case GT_CTF:
 		{
 			// if the enemy team leads and time limit has expired to 70%, choose aggressive strategy
-			if (bs->ownteamscore < bs->enemyteamscore && level.time - level.startTime > (g_timelimit.integer * 60000) * 0.7f) {
+			if (bs->ownteamscore < bs->enemyteamscore && level.time - level.startTime > (g_timeLimit.integer * 60000) * 0.7f) {
 				bs->ctfstrategy = CTFS_AGRESSIVE;
 			} else {
 				// if there were no flag captures the last 4 minutes
@@ -2060,7 +2060,7 @@ void BotTeamAI(bot_state_t *bs) {
 		case GT_1FCTF:
 		{
 			// if the enemy team leads and time limit has expired to 70%, choose aggressive strategy
-			if (bs->ownteamscore < bs->enemyteamscore && level.time - level.startTime > (g_timelimit.integer * 60000) * 0.7f) {
+			if (bs->ownteamscore < bs->enemyteamscore && level.time - level.startTime > (g_timeLimit.integer * 60000) * 0.7f) {
 				bs->ctfstrategy = CTFS_AGRESSIVE;
 				//give orders again after 30 seconds
 				bs->teamgiveorders_time = FloatTime() + 30;
@@ -2093,7 +2093,7 @@ void BotTeamAI(bot_state_t *bs) {
 		case GT_OBELISK:
 		{
 			// if the enemy team is leading by more than 1 point, or if the enemy team leads and time limit has expired to 50%, choose aggressive strategy
-			if (bs->ownteamscore + 1 < bs->enemyteamscore || (bs->ownteamscore < bs->enemyteamscore && level.time - level.startTime > (g_timelimit.integer * 60000) * 0.5f)) {
+			if (bs->ownteamscore + 1 < bs->enemyteamscore || (bs->ownteamscore < bs->enemyteamscore && level.time - level.startTime > (g_timeLimit.integer * 60000) * 0.5f)) {
 				bs->ctfstrategy = CTFS_AGRESSIVE;
 			}
 
@@ -2112,8 +2112,8 @@ void BotTeamAI(bot_state_t *bs) {
 		}
 		case GT_HARVESTER:
 		{
-			// if the enemy team is leading by more than the half of the capturelimit points and time limit has expired to 70%, choose aggressive strategy
-			if (bs->ownteamscore + (g_capturelimit.integer * 0.5f) < bs->enemyteamscore && level.time - level.startTime > (g_timelimit.integer * 60000) * 0.7f) {
+			// if the enemy team is leading by more than the half of the captureLimit points and time limit has expired to 70%, choose aggressive strategy
+			if (bs->ownteamscore + (g_captureLimit.integer * 0.5f) < bs->enemyteamscore && level.time - level.startTime > (g_timeLimit.integer * 60000) * 0.7f) {
 				bs->ctfstrategy = CTFS_AGRESSIVE;
 			}
 

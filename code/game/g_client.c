@@ -358,50 +358,50 @@ gentity_t *SelectSpectatorSpawnPoint( vec3_t origin, vec3_t angles ) {
 /*
 =======================================================================
 
-BODYQUE
+BODYQUEUE
 
 =======================================================================
 */
 
 /*
 ===============
-InitBodyQue
+InitBodyQueue
 ===============
 */
-void InitBodyQue (void) {
+void InitBodyQueue (void) {
 	int		i;
 	gentity_t	*ent;
 
-	level.bodyQueIndex = 0;
+	level.bodyQueueIndex = 0;
 	for (i=0; i<BODY_QUEUE_SIZE ; i++) {
 		ent = G_Spawn();
-		ent->classname = "bodyque";
+		ent->classname = "bodyqueue";
 		ent->neverFree = qtrue;
-		level.bodyQue[i] = ent;
+		level.bodyQueue[i] = ent;
 	}
 }
 
 /*
 =============
-BodyQueFree
+BodyQueueFree
 
-The body ques are never actually freed, they are just unlinked
+The body queues are never actually freed, they are just unlinked
 =============
 */
-void BodyQueFree( gentity_t *ent ) {
+void BodyQueueFree( gentity_t *ent ) {
 	trap_UnlinkEntity( ent );
 	ent->physicsObject = qfalse;
 }
 
 /*
 =============
-CopyToBodyQue
+CopyToBodyQueue
 
 A player is respawning, so make an entity that looks
 just like the existing corpse to leave behind.
 =============
 */
-void CopyToBodyQue( gentity_t *ent ) {
+void CopyToBodyQueue( gentity_t *ent ) {
 #ifdef MISSIONPACK
 	gentity_t	*e;
 	int i;
@@ -418,8 +418,8 @@ void CopyToBodyQue( gentity_t *ent ) {
 	}
 
 	// grab a body que and cycle to the next one
-	body = level.bodyQue[ level.bodyQueIndex ];
-	level.bodyQueIndex = (level.bodyQueIndex + 1) % BODY_QUEUE_SIZE;
+	body = level.bodyQueue[ level.bodyQueueIndex ];
+	level.bodyQueueIndex = (level.bodyQueueIndex + 1) % BODY_QUEUE_SIZE;
 
 	body->s = ent->s;
 	body->s.eFlags = EF_DEAD;		// clear EF_TALK, etc
@@ -495,7 +495,7 @@ void CopyToBodyQue( gentity_t *ent ) {
 	body->r.ownerNum = ent->s.number;
 
 	body->nextthink = level.time + BODY_SINK_DELAY + BODY_SINK_TIME;
-	body->think = BodyQueFree;
+	body->think = BodyQueueFree;
 
 	body->die = body_die;
 
@@ -544,7 +544,7 @@ PlayerRespawn
 */
 void PlayerRespawn( gentity_t *ent ) {
 
-	CopyToBodyQue (ent);
+	CopyToBodyQueue (ent);
 	PlayerSpawn(ent);
 }
 
@@ -653,7 +653,7 @@ static void PlayerCleanName(const char *in, char *out, int outSize)
 			{
 				colorlessLen--;
 				
-				if(ColorIndex(*in) == 0)
+				if(ColorFromChar(*in) == 0)
 				{
 					// Disallow color black in names to prevent players
 					// from getting advantage playing in front of black backgrounds
@@ -785,12 +785,12 @@ void PlayerUserinfoChanged( int playerNum ) {
 	player->ps.stats[STAT_MAX_HEALTH] = player->pers.maxHealth;
 
 	// set model
-	if( g_gametype.integer >= GT_TEAM ) {
+	if( g_gameType.integer >= GT_TEAM ) {
 		Q_strncpyz( model, Info_ValueForKey (userinfo, "team_model"), sizeof( model ) );
-		Q_strncpyz( headModel, Info_ValueForKey (userinfo, "team_headmodel"), sizeof( headModel ) );
+		Q_strncpyz( headModel, Info_ValueForKey (userinfo, "team_headModel"), sizeof( headModel ) );
 	} else {
 		Q_strncpyz( model, Info_ValueForKey (userinfo, "model"), sizeof( model ) );
-		Q_strncpyz( headModel, Info_ValueForKey (userinfo, "headmodel"), sizeof( headModel ) );
+		Q_strncpyz( headModel, Info_ValueForKey (userinfo, "headModel"), sizeof( headModel ) );
 	}
 
 	// teamInfo
@@ -812,7 +812,7 @@ void PlayerUserinfoChanged( int playerNum ) {
 	*/
 
 	// team task (0 = none, 1 = offence, 2 = defence)
-	teamTask = atoi(Info_ValueForKey(userinfo, "teamtask"));
+	teamTask = atoi(Info_ValueForKey(userinfo, "teamTask"));
 	// team Leader (1 = leader, 0 is normal player)
 	teamLeader = player->sess.teamLeader;
 
@@ -901,7 +901,7 @@ char *PlayerConnect( int playerNum, qboolean firstTime, qboolean isBot, int conn
 		}
 	} else {
 		// Don't allow splitscreen players in single player.
-		if ( g_singlePlayer.integer ) {
+		if ( g_singlePlayerActive.integer ) {
 			return "Splitscreen not allowed in single player.";
 		}
 	}
@@ -1016,7 +1016,7 @@ void PlayerBegin( int playerNum ) {
 	// locate ent at a spawn point
 	PlayerSpawn( ent );
 
-	if ( player->pers.initialSpawn && g_gametype.integer != GT_TOURNAMENT ) {
+	if ( player->pers.initialSpawn && g_gameType.integer != GT_TOURNAMENT ) {
 		// This is only sent to bots because for humans the "joining the battle" etc
 		// make it clear that the player is now finished connecting. Bots on the other
 		// hand have "entered the game" hard coded in botfiles/match.c so continue to
@@ -1032,7 +1032,7 @@ void PlayerBegin( int playerNum ) {
 			trap_SendServerCommand( i, va("print \"%s" S_COLOR_WHITE " entered the game\n\"", player->pers.netname) );
 		}
 
-		if ( !g_singlePlayer.integer ) {
+		if ( !g_singlePlayerActive.integer ) {
 			BroadcastTeamChange( player, -1 );
 		}
 	}
@@ -1079,7 +1079,7 @@ void PlayerSpawn(gentity_t *ent) {
 	if ( player->sess.sessionTeam == TEAM_SPECTATOR ) {
 		spawnPoint = SelectSpectatorSpawnPoint ( 
 						spawn_origin, spawn_angles);
-	} else if (g_gametype.integer >= GT_CTF ) {
+	} else if (g_gameType.integer >= GT_CTF ) {
 		// all base oriented team games use the CTF spawn points
 		spawnPoint = SelectCTFSpawnPoint ( 
 						player->sess.sessionTeam, 
@@ -1170,12 +1170,12 @@ void PlayerSpawn(gentity_t *ent) {
 
 	player->ps.playerNum = index;
 
-	if ( g_instagib.integer ) {
+	if ( g_instaGib.integer ) {
 		player->ps.stats[STAT_WEAPONS] = ( 1 << WP_RAILGUN );
 		player->ps.ammo[WP_RAILGUN] = 999;
 	} else {
 		player->ps.stats[STAT_WEAPONS] = ( 1 << WP_MACHINEGUN );
-		if ( g_gametype.integer == GT_TEAM ) {
+		if ( g_gameType.integer == GT_TEAM ) {
 			player->ps.ammo[WP_MACHINEGUN] = 50;
 		} else {
 			player->ps.ammo[WP_MACHINEGUN] = 100;
@@ -1314,7 +1314,7 @@ qboolean PlayerDisconnect( int playerNum, qboolean force ) {
 		TossPlayerItems( ent );
 #ifdef MISSIONPACK
 		TossPlayerPersistantPowerups( ent );
-		if( g_gametype.integer == GT_HARVESTER ) {
+		if( g_gameType.integer == GT_HARVESTER ) {
 			TossPlayerCubes( ent );
 		}
 #endif
@@ -1324,14 +1324,14 @@ qboolean PlayerDisconnect( int playerNum, qboolean force ) {
 	G_LogPrintf( "PlayerDisconnect: %i\n", playerNum );
 
 	// if we are playing in tourney mode and losing, give a win to the other player
-	if ( (g_gametype.integer == GT_TOURNAMENT )
+	if ( (g_gameType.integer == GT_TOURNAMENT )
 		&& !level.intermissiontime
 		&& !level.warmupTime && level.sortedPlayers[1] == playerNum ) {
 		level.players[ level.sortedPlayers[0] ].sess.wins++;
 		PlayerUserinfoChanged( level.sortedPlayers[0] );
 	}
 
-	if( g_gametype.integer == GT_TOURNAMENT &&
+	if( g_gameType.integer == GT_TOURNAMENT &&
 		ent->player->sess.sessionTeam == TEAM_FREE &&
 		level.intermissiontime ) {
 

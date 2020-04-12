@@ -298,7 +298,7 @@ void trigger_teleporter_touch (gentity_t *self, gentity_t *other, trace_t *trace
 		return;
 	}
 
-	TeleportPlayer( other, dest->s.origin, dest->s.angles );
+	TeleportPlayer( other, dest->s.origin, dest->s.angles, qfalse, qfalse );
 }
 
 

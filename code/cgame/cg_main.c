@@ -152,9 +152,9 @@ weaponInfo_t		cg_weapons[MAX_WEAPONS];
 itemInfo_t			cg_items[MAX_ITEMS];
 
 
-vmCvar_t	con_conspeed;
-vmCvar_t	con_autochat;
-vmCvar_t	con_autoclear;
+vmCvar_t	con_scrollSpeed;
+vmCvar_t	con_autoChat;
+vmCvar_t	con_autoClear;
 vmCvar_t	cg_dedicated;
 
 vmCvar_t	cg_railTrailTime;
@@ -265,7 +265,7 @@ vmCvar_t	cg_atmosphericEffects;
 vmCvar_t	cg_teamDmLeadAnnouncements;
 vmCvar_t	cg_voipShowMeter;
 vmCvar_t	cg_voipShowCrosshairMeter;
-vmCvar_t	cg_consoleLatency;
+vmCvar_t	con_latency;
 vmCvar_t	cg_drawShaderInfo;
 vmCvar_t	cg_coronafardist;
 vmCvar_t	cg_coronas;
@@ -282,8 +282,8 @@ vmCvar_t	cg_antiLag;
 vmCvar_t	cg_forceBitmapFonts;
 vmCvar_t	cg_drawGrappleHook;
 vmCvar_t	cg_drawBBox;
-vmCvar_t	cg_consoleFont;
-vmCvar_t	cg_consoleFontSize;
+vmCvar_t	con_font;
+vmCvar_t	con_fontSize;
 vmCvar_t	cg_hudFont;
 vmCvar_t	cg_hudFontBorder;
 vmCvar_t	cg_numberFont;
@@ -362,9 +362,9 @@ typedef struct {
 static cvarTable_t cgameCvarTable[] = {
 	{ NULL, "cgameversion", PRODUCT_NAME " " PRODUCT_VERSION " " PLATFORM_STRING " " PRODUCT_DATE, CVAR_ROM, RANGE_ALL },
 
-	{ &con_conspeed, "scr_conspeed", "3", 0, RANGE_FLOAT(0.1, 100) },
-	{ &con_autochat, "con_autochat", "0", CVAR_ARCHIVE, RANGE_ALL },
-	{ &con_autoclear, "con_autoclear", "0", CVAR_ARCHIVE, RANGE_ALL },
+	{ &con_scrollSpeed, "con_scrollSpeed", "3", 0, RANGE_FLOAT(0.1, 100) },
+	{ &con_autoChat, "con_autoChat", "0", CVAR_ARCHIVE, RANGE_ALL },
+	{ &con_autoClear, "con_autoClear", "0", CVAR_ARCHIVE, RANGE_ALL },
 	{ &cg_dedicated, "dedicated", "0", 0, RANGE_ALL },
 
 	{ &cg_ignore, "cg_ignore", "0", 0, RANGE_ALL },	// used for debugging
@@ -451,12 +451,12 @@ static cvarTable_t cgameCvarTable[] = {
 	{ &cg_buildScript, "com_buildScript", "0", 0, RANGE_ALL },	// force loading of all possible data amd error on failures
 	{ &cg_paused, "cl_paused", "0", CVAR_ROM, RANGE_ALL },
 	{ &cg_blood, "com_blood", "1", CVAR_ARCHIVE, RANGE_ALL },
-	{ NULL,  "g_gametype", "0", CVAR_SERVERINFO | CVAR_USERINFO | CVAR_LATCH, RANGE_INT(0, GT_MAX_GAME_TYPE-1) },
+	{ NULL,  "g_gameType", "0", CVAR_SERVERINFO | CVAR_USERINFO | CVAR_LATCH, RANGE_INT(0, GT_MAX_GAME_TYPE-1) },
 	{ &cg_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO, RANGE_BOOL },
 	{ &cg_singlePlayer, "ui_singlePlayerActive", "0", CVAR_SYSTEMINFO | CVAR_ROM, RANGE_ALL },
 #ifdef MISSIONPACK
-	{ &cg_redTeamName, "g_redteam", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE | CVAR_SYSTEMINFO, RANGE_ALL },
-	{ &cg_blueTeamName, "g_blueteam", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE | CVAR_SYSTEMINFO, RANGE_ALL },
+	{ &cg_redTeamName, "g_redTeamName", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE | CVAR_SYSTEMINFO, RANGE_ALL },
+	{ &cg_blueTeamName, "g_blueTeamName", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE | CVAR_SYSTEMINFO, RANGE_ALL },
 	{ &cg_enableDust, "cg_enableDust", "0", 0, RANGE_BOOL },
 	{ &cg_enableBreath, "cg_enableBreath", "0", 0, RANGE_BOOL },
 	{ &cg_recordSPDemo, "ui_recordSPDemo", "0", CVAR_ARCHIVE, RANGE_ALL },
@@ -496,7 +496,7 @@ static cvarTable_t cgameCvarTable[] = {
 	{ &cg_teamDmLeadAnnouncements, "cg_teamDmLeadAnnouncements", "1", CVAR_ARCHIVE, RANGE_BOOL },
 	{ &cg_voipShowMeter, "cg_voipShowMeter", "1", CVAR_ARCHIVE, RANGE_BOOL },
 	{ &cg_voipShowCrosshairMeter, "cg_voipShowCrosshairMeter", "1", CVAR_ARCHIVE, RANGE_BOOL },
-	{ &cg_consoleLatency, "cg_consoleLatency", "3000", CVAR_ARCHIVE, RANGE_ALL },
+	{ &con_latency, "con_latency", "3000", CVAR_ARCHIVE, RANGE_ALL },
 	{ &cg_drawShaderInfo, "cg_drawShaderInfo", "0", 0, RANGE_BOOL },
 	{ &cg_coronafardist, "cg_coronafardist", "1536", CVAR_ARCHIVE, RANGE_ALL },
 	{ &cg_coronas, "cg_coronas", "1", CVAR_ARCHIVE, RANGE_INT( 0, 3 ) },
@@ -515,8 +515,8 @@ static cvarTable_t cgameCvarTable[] = {
 	{ &cg_forceBitmapFonts, "cg_forceBitmapFonts", "0", CVAR_ARCHIVE | CVAR_LATCH, RANGE_BOOL },
 	{ &cg_drawGrappleHook, "cg_drawGrappleHook", "1", CVAR_ARCHIVE, RANGE_BOOL },
 	{ &cg_drawBBox, "cg_drawBBox", "0", CVAR_CHEAT, RANGE_BOOL },
-	{ &cg_consoleFont, "cg_consoleFont", "fonts/LiberationMono-Regular.ttf", CVAR_ARCHIVE | CVAR_LATCH, RANGE_ALL },
-	{ &cg_consoleFontSize, "cg_consoleFontSize", "8", CVAR_ARCHIVE | CVAR_LATCH, RANGE_INT( 4, 24 ) },
+	{ &con_font, "con_font", "fonts/LiberationMono-Regular.ttf", CVAR_ARCHIVE | CVAR_LATCH, RANGE_ALL },
+	{ &con_fontSize, "con_fontSize", "8", CVAR_ARCHIVE | CVAR_LATCH, RANGE_INT( 4, 24 ) },
 	{ &cg_hudFont, "cg_hudFont", "fonts/LiberationSans-Bold.ttf", CVAR_ARCHIVE | CVAR_LATCH, RANGE_ALL },
 	{ &cg_hudFontBorder, "cg_hudFontBorder", "2", CVAR_ARCHIVE | CVAR_LATCH, RANGE_FLOAT( 0, 10 ) },
 	{ &cg_numberFont, "cg_numberFont", "", CVAR_ARCHIVE | CVAR_LATCH, RANGE_ALL },
@@ -542,7 +542,7 @@ static userCvarTable_t userCvarTable[] = {
 	{ cg_color1, "color1", XSTRING( DEFAULT_PLAYER_COLOR1 ), CVAR_USERINFO | CVAR_ARCHIVE, RANGE_ALL },
 	{ cg_color2, "color2", XSTRING( DEFAULT_PLAYER_COLOR2 ), CVAR_USERINFO | CVAR_ARCHIVE, RANGE_ALL },
 	{ cg_handicap, "handicap", "100", CVAR_USERINFO | CVAR_ARCHIVE, RANGE_ALL },
-	{ cg_teamtask, "teamtask", "0", CVAR_USERINFO, RANGE_ALL },
+	{ cg_teamtask, "teamTask", "0", CVAR_USERINFO, RANGE_ALL },
 	{ cg_teampref, "teampref", "", CVAR_USERINFO, RANGE_ALL },
 
 	{ cg_autoswitch, "cg_autoswitch", "1", CVAR_ARCHIVE, RANGE_BOOL },
@@ -641,10 +641,10 @@ void CG_RegisterUserCvars( void ) {
 		trap_Cvar_Register( NULL, Com_LocalPlayerCvarName(i, "name"), name, userInfo[i] | CVAR_ARCHIVE );
 
 		trap_Cvar_Register( NULL, Com_LocalPlayerCvarName(i, "model"), modelNames[i], userInfo[i] | CVAR_ARCHIVE );
-		trap_Cvar_Register( NULL, Com_LocalPlayerCvarName(i, "headmodel"), headModelNames[i], userInfo[i] | CVAR_ARCHIVE );
+		trap_Cvar_Register( NULL, Com_LocalPlayerCvarName(i, "headModel"), headModelNames[i], userInfo[i] | CVAR_ARCHIVE );
 
 		trap_Cvar_Register( NULL, Com_LocalPlayerCvarName(i, "team_model"), teamModelNames[i], userInfo[i] | CVAR_ARCHIVE );
-		trap_Cvar_Register( NULL, Com_LocalPlayerCvarName(i, "team_headmodel"), teamHeadModelNames[i], userInfo[i] | CVAR_ARCHIVE );
+		trap_Cvar_Register( NULL, Com_LocalPlayerCvarName(i, "team_headModel"), teamHeadModelNames[i], userInfo[i] | CVAR_ARCHIVE );
 	}
 }
 

@@ -468,7 +468,7 @@ void CG_SurfaceText( const refEntity_t *originEnt, const fontInfo_t *font, float
 	while ( s && *s && count < len ) {
 		if ( Q_IsColorString( s ) ) {
 			if ( !forceColor ) {
-				VectorCopy( g_color_table[ColorIndex(*(s+1))], newColor );
+				VectorCopy(ColorFromChar(*(s+1)), newColor );
 
 				gradientColor[0] = Com_Clamp( 0, 1, newColor[0] - gradient );
 				gradientColor[1] = Com_Clamp( 0, 1, newColor[1] - gradient );

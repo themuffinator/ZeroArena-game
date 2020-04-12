@@ -270,7 +270,7 @@ static void UI_AddBotsMenu_Init( void ) {
 	char	info[MAX_INFO_STRING];
 
 	trap_GetConfigString(CS_SERVERINFO, info, MAX_INFO_STRING);   
-	gametype = atoi( Info_ValueForKey( info,"g_gametype" ) );
+	gametype = atoi( Info_ValueForKey( info,"g_gameType" ) );
 
 	memset( &addBotsMenuInfo, 0 ,sizeof(addBotsMenuInfo) );
 	addBotsMenuInfo.menu.fullscreen = qfalse;

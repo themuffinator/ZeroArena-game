@@ -510,42 +510,42 @@ void CG_CheckGameSounds( void ) {
 	// reset lead change
 	cg.bestLeadChange = LEAD_NONE;
 
-	// timelimit warnings
-	if ( cgs.timelimit > 0 ) {
+	// timeLimit warnings
+	if ( cgs.timeLimit > 0 ) {
 		int		msec;
 
 		msec = cg.time - cgs.levelStartTime;
-		if ( !( cg.timelimitWarnings & 4 ) && msec > ( cgs.timelimit * 60 + 2 ) * 1000 ) {
+		if ( !( cg.timelimitWarnings & 4 ) && msec > ( cgs.timeLimit * 60 + 2 ) * 1000 ) {
 			cg.timelimitWarnings |= 1 | 2 | 4;
 			trap_S_StartLocalSound( cgs.media.suddenDeathSound, CHAN_ANNOUNCER );
 		}
-		else if ( !( cg.timelimitWarnings & 2 ) && msec > (cgs.timelimit - 1) * 60 * 1000 ) {
+		else if ( !( cg.timelimitWarnings & 2 ) && msec > (cgs.timeLimit - 1) * 60 * 1000 ) {
 			cg.timelimitWarnings |= 1 | 2;
 			trap_S_StartLocalSound( cgs.media.oneMinuteSound, CHAN_ANNOUNCER );
 		}
-		else if ( cgs.timelimit > 5 && !( cg.timelimitWarnings & 1 ) && msec > (cgs.timelimit - 5) * 60 * 1000 ) {
+		else if ( cgs.timeLimit > 5 && !( cg.timelimitWarnings & 1 ) && msec > (cgs.timeLimit - 5) * 60 * 1000 ) {
 			cg.timelimitWarnings |= 1;
 			trap_S_StartLocalSound( cgs.media.fiveMinuteSound, CHAN_ANNOUNCER );
 		}
 	}
 
-	// fraglimit warnings
-	if ( cgs.fraglimit > 0 && cgs.gametype < GT_CTF) {
+	// fragLimit warnings
+	if ( cgs.fragLimit > 0 && cgs.gametype < GT_CTF) {
 		highScore = cgs.scores1;
 
 		if (cgs.gametype == GT_TEAM && cgs.scores2 > highScore) {
 			highScore = cgs.scores2;
 		}
 
-		if ( !( cg.fraglimitWarnings & 4 ) && highScore == (cgs.fraglimit - 1) ) {
+		if ( !( cg.fraglimitWarnings & 4 ) && highScore == (cgs.fragLimit - 1) ) {
 			cg.fraglimitWarnings |= 1 | 2 | 4;
 			CG_AddBufferedSound(cgs.media.oneFragSound);
 		}
-		else if ( cgs.fraglimit > 2 && !( cg.fraglimitWarnings & 2 ) && highScore == (cgs.fraglimit - 2) ) {
+		else if ( cgs.fragLimit > 2 && !( cg.fraglimitWarnings & 2 ) && highScore == (cgs.fragLimit - 2) ) {
 			cg.fraglimitWarnings |= 1 | 2;
 			CG_AddBufferedSound(cgs.media.twoFragSound);
 		}
-		else if ( cgs.fraglimit > 3 && !( cg.fraglimitWarnings & 1 ) && highScore == (cgs.fraglimit - 3) ) {
+		else if ( cgs.fragLimit > 3 && !( cg.fraglimitWarnings & 1 ) && highScore == (cgs.fragLimit - 3) ) {
 			cg.fraglimitWarnings |= 1;
 			CG_AddBufferedSound(cgs.media.threeFragSound);
 		}

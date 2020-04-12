@@ -247,7 +247,7 @@ int G_CountBotPlayersByName( const char *name, int team ) {
 	gplayer_t	*cl;
 
 	num = 0;
-	for ( i=0 ; i< g_maxplayers.integer ; i++ ) {
+	for ( i=0 ; i< g_maxClients.integer ; i++ ) {
 		cl = level.players + i;
 		if ( cl->pers.connected == CON_DISCONNECTED ) {
 			continue;
@@ -282,7 +282,7 @@ char *G_SelectRandomBotInfo( int team ) {
 	char	**botInfos;
 
 #ifdef MISSIONPACK
-	if ( g_gametype.integer >= GT_TEAM ) {
+	if ( g_gameType.integer >= GT_TEAM ) {
 		numBots = g_numTeamBots;
 		botInfos = g_teamBotInfos;
 	} else
@@ -354,7 +354,7 @@ int G_RemoveRandomBot( int team ) {
 	int i;
 	gplayer_t	*cl;
 
-	for ( i=0 ; i< g_maxplayers.integer ; i++ ) {
+	for ( i=0 ; i< g_maxClients.integer ; i++ ) {
 		cl = level.players + i;
 		if ( cl->pers.connected != CON_CONNECTED ) {
 			continue;
@@ -381,7 +381,7 @@ int G_CountHumanPlayers( int team ) {
 	gplayer_t	*cl;
 
 	num = 0;
-	for ( i=0 ; i< g_maxplayers.integer ; i++ ) {
+	for ( i=0 ; i< g_maxClients.integer ; i++ ) {
 		cl = level.players + i;
 		if ( cl->pers.connected != CON_CONNECTED ) {
 			continue;
@@ -409,7 +409,7 @@ int G_CountBotPlayers( int team ) {
 	gplayer_t	*cl;
 
 	num = 0;
-	for ( i=0 ; i< g_maxplayers.integer ; i++ ) {
+	for ( i=0 ; i< g_maxClients.integer ; i++ ) {
 		cl = level.players + i;
 		if ( cl->pers.connected == CON_DISCONNECTED ) {
 			continue;
@@ -445,9 +445,9 @@ void G_CheckMinimumPlayers( void ) {
 	minplayers = bot_minplayers.integer;
 	if (minplayers <= 0) return;
 
-	if (g_gametype.integer >= GT_TEAM) {
-		if (minplayers >= g_maxplayers.integer / 2) {
-			minplayers = (g_maxplayers.integer / 2) -1;
+	if (g_gameType.integer >= GT_TEAM) {
+		if (minplayers >= g_maxClients.integer / 2) {
+			minplayers = (g_maxClients.integer / 2) -1;
 		}
 
 		humanplayers = G_CountHumanPlayers( TEAM_RED );
@@ -468,9 +468,9 @@ void G_CheckMinimumPlayers( void ) {
 			G_RemoveRandomBot( TEAM_BLUE );
 		}
 	}
-	else if (g_gametype.integer == GT_TOURNAMENT ) {
-		if (minplayers >= g_maxplayers.integer) {
-			minplayers = g_maxplayers.integer-1;
+	else if (g_gameType.integer == GT_TOURNAMENT ) {
+		if (minplayers >= g_maxClients.integer) {
+			minplayers = g_maxClients.integer-1;
 		}
 		humanplayers = G_CountHumanPlayers( -1 );
 		botplayers = G_CountBotPlayers( -1 );
@@ -485,9 +485,9 @@ void G_CheckMinimumPlayers( void ) {
 			}
 		}
 	}
-	else if (g_gametype.integer == GT_FFA) {
-		if (minplayers >= g_maxplayers.integer) {
-			minplayers = g_maxplayers.integer-1;
+	else if (g_gameType.integer == GT_FFA) {
+		if (minplayers >= g_maxClients.integer) {
+			minplayers = g_maxClients.integer-1;
 		}
 		humanplayers = G_CountHumanPlayers( TEAM_FREE );
 		botplayers = G_CountBotPlayers( TEAM_FREE );
@@ -521,7 +521,7 @@ void G_CheckBotSpawn( void ) {
 		PlayerBegin( botSpawnQueue[n].playerNum );
 		botSpawnQueue[n].spawnTime = 0;
 
-		if( g_gametype.integer == GT_SINGLE_PLAYER ) {
+		if( g_gameType.integer == GT_SINGLE_PLAYER ) {
 			trap_GetUserinfo( botSpawnQueue[n].playerNum, userinfo, sizeof(userinfo) );
 			PlayerIntroSound( Info_ValueForKey (userinfo, "model") );
 		}
@@ -630,7 +630,7 @@ static void G_AddBot( const char *name, float skill, const char *team, int delay
 	char			*s;
 	char			*botname;
 	char			*model;
-	char			*headmodel;
+	char			*headModel;
 	char			userinfo[MAX_INFO_STRING];
 	qboolean		modelSet;
 
@@ -648,7 +648,7 @@ static void G_AddBot( const char *name, float skill, const char *team, int delay
 
 	// set default team
 	if( !team || !*team ) {
-		if( g_gametype.integer >= GT_TEAM ) {
+		if( g_gameType.integer >= GT_TEAM ) {
 			if( PickTeam(playerNum) == TEAM_RED) {
 				team = "red";
 			}
@@ -731,18 +731,18 @@ static void G_AddBot( const char *name, float skill, const char *team, int delay
 	key = "team_model";
 	Info_SetValueForKey( userinfo, key, model );
 
-	key = "headmodel";
-	headmodel = Info_ValueForKey( botinfo, key );
-	if ( !*headmodel ) {
+	key = "headModel";
+	headModel = Info_ValueForKey( botinfo, key );
+	if ( !*headModel ) {
 		if ( !modelSet ) {
-			headmodel = DEFAULT_HEAD;
+			headModel = DEFAULT_HEAD;
 		} else {
-			headmodel = model;
+			headModel = model;
 		}
 	}
-	Info_SetValueForKey( userinfo, key, headmodel );
-	key = "team_headmodel";
-	Info_SetValueForKey( userinfo, key, headmodel );
+	Info_SetValueForKey( userinfo, key, headModel );
+	key = "team_headModel";
+	Info_SetValueForKey( userinfo, key, headModel );
 
 	key = "color1";
 	s = Info_ValueForKey( botinfo, key );
@@ -1153,7 +1153,7 @@ static void G_ParseTeamInfo( const char *filename ) {
 
 	g_numTeamBots = 0;
 
-	if ( g_gametype.integer < GT_TEAM ) {
+	if ( g_gameType.integer < GT_TEAM ) {
 		return;
 	}
 
@@ -1233,7 +1233,7 @@ void G_InitBots( qboolean restart ) {
 
 	trap_Cvar_Register( &bot_minplayers, "bot_minplayers", "0", CVAR_SERVERINFO );
 
-	if( g_gametype.integer == GT_SINGLE_PLAYER ) {
+	if( g_gameType.integer == GT_SINGLE_PLAYER ) {
 		trap_GetServerinfo( serverinfo, sizeof(serverinfo) );
 		Q_strncpyz( map, Info_ValueForKey( serverinfo, "mapname" ), sizeof(map) );
 		arenainfo = G_GetArenaInfoByMap( map );
@@ -1241,16 +1241,16 @@ void G_InitBots( qboolean restart ) {
 			return;
 		}
 
-		fragLimit = atoi( Info_ValueForKey( arenainfo, "fraglimit" ) );
-		timeLimit = atoi( Info_ValueForKey( arenainfo, "timelimit" ) );
+		fragLimit = atoi( Info_ValueForKey( arenainfo, "fragLimit" ) );
+		timeLimit = atoi( Info_ValueForKey( arenainfo, "timeLimit" ) );
 
 		if ( !fragLimit && !timeLimit ) {
-			trap_Cvar_SetValue( "fraglimit", 10 );
-			trap_Cvar_SetValue( "timelimit", 0 );
+			trap_Cvar_SetValue( "fragLimit", 10 );
+			trap_Cvar_SetValue( "timeLimit", 0 );
 		}
 		else {
-			trap_Cvar_SetValue( "fraglimit", fragLimit );
-			trap_Cvar_SetValue( "timelimit", timeLimit );
+			trap_Cvar_SetValue( "fragLimit", fragLimit );
+			trap_Cvar_SetValue( "timeLimit", timeLimit );
 		}
 
 		basedelay = BOT_BEGIN_DELAY_BASE;

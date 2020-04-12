@@ -114,7 +114,7 @@ void G_InitSessionData( gplayer_t *player, char *userinfo ) {
 	sess = &player->sess;
 
 	// initial team determination
-	if ( g_gametype.integer >= GT_TEAM ) {
+	if ( g_gameType.integer >= GT_TEAM ) {
 		// always spawn as spectator in team games
 		sess->sessionTeam = TEAM_SPECTATOR;
 		sess->spectatorState = SPECTATOR_FREE;
@@ -131,12 +131,12 @@ void G_InitSessionData( gplayer_t *player, char *userinfo ) {
 			// a willing spectator, not a waiting-in-line
 			sess->sessionTeam = TEAM_SPECTATOR;
 		} else {
-			switch ( g_gametype.integer ) {
+			switch ( g_gameType.integer ) {
 			default:
 			case GT_FFA:
 			case GT_SINGLE_PLAYER:
-				if ( g_maxGamePlayers.integer > 0 && 
-					level.numNonSpectatorPlayers >= g_maxGamePlayers.integer ) {
+				if ( g_maxGameClients.integer > 0 && 
+					level.numNonSpectatorPlayers >= g_maxGameClients.integer ) {
 					sess->sessionTeam = TEAM_SPECTATOR;
 				} else {
 					sess->sessionTeam = TEAM_FREE;
@@ -177,7 +177,7 @@ void G_InitWorldSession( void ) {
 	
 	// if the gametype changed since the last session, don't use any
 	// player sessions
-	if ( g_gametype.integer != gt ) {
+	if ( g_gameType.integer != gt ) {
 		level.newSession = qtrue;
 		G_Printf( "Gametype changed, clearing session data.\n" );
 	}
@@ -192,7 +192,7 @@ G_WriteSessionData
 void G_WriteSessionData( void ) {
 	int		i;
 
-	trap_Cvar_SetValue( "session", g_gametype.integer );
+	trap_Cvar_SetValue( "session", g_gameType.integer );
 
 	for ( i = 0 ; i < level.maxplayers ; i++ ) {
 		if ( level.players[i].pers.connected == CON_CONNECTED ) {

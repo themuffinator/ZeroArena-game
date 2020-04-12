@@ -45,7 +45,7 @@ typedef struct {
 
 	int		topline; // 0 <= topline < CON_MAXLINES
 
-	float	displayFrac;	// aproaches finalFrac at scr_conspeed
+	float	displayFrac;	// aproaches finalFrac at con_scrollSpeed
 	float	finalFrac;		// 0.0 to 1.0 lines of console to display
 
 	char		version[80];
@@ -100,7 +100,7 @@ void Con_ToggleConsole_f (void) {
 		return;
 	}
 
-	if ( con_autoclear.integer ) {
+	if ( con_autoClear.integer ) {
 		MField_Clear( &g_consoleField );
 	}
 
@@ -423,14 +423,14 @@ void CG_RunConsole( connstate_t state ) {
 	// scroll towards the destination height
 	if (con.finalFrac < con.displayFrac)
 	{
-		con.displayFrac -= con_conspeed.value*cg.realFrameTime*0.001;
+		con.displayFrac -= con_scrollSpeed.value*cg.realFrameTime*0.001;
 		if (con.finalFrac > con.displayFrac)
 			con.displayFrac = con.finalFrac;
 
 	}
 	else if (con.finalFrac > con.displayFrac)
 	{
-		con.displayFrac += con_conspeed.value*cg.realFrameTime*0.001;
+		con.displayFrac += con_scrollSpeed.value*cg.realFrameTime*0.001;
 		if (con.finalFrac < con.displayFrac)
 			con.displayFrac = con.finalFrac;
 	}
@@ -512,7 +512,7 @@ void Console_Key ( int key, qboolean down ) {
 		editLine = MField_Buffer( &g_consoleField );
 
 		// if not in the game explicitly prepend a slash if needed
-		if ( cg.connState != CA_ACTIVE && con_autochat.integer &&
+		if ( cg.connState != CA_ACTIVE && con_autoChat.integer &&
 				editLine[0] &&
 				editLine[0] != '\\' &&
 				editLine[0] != '/' ) {
@@ -533,7 +533,7 @@ void Console_Key ( int key, qboolean down ) {
 			if ( !editLine[0] ) {
 				return;	// empty lines just scroll the console without adding to history
 			} else {
-				if ( con_autochat.integer ) {
+				if ( con_autoChat.integer ) {
 					trap_Cmd_ExecuteText( EXEC_APPEND, "cmd say " );
 				}
 				trap_Cmd_ExecuteText( EXEC_APPEND, editLine );
@@ -794,8 +794,8 @@ void CG_ConsoleInit( void ) {
 	char engineString[MAX_CVAR_VALUE_STRING];
 	char *cgameString;
 
-	if ( !CG_InitTrueTypeFont( cg_consoleFont.string, cg_consoleFontSize.integer, 0, &cgs.media.consoleFont ) ) {
-		CG_InitBitmapFont( &cgs.media.consoleFont, cg_consoleFontSize.integer, ( cg_consoleFontSize.integer / 2 ) );
+	if ( !CG_InitTrueTypeFont( con_font.string, con_fontSize.integer, 0, &cgs.media.consoleFont ) ) {
+		CG_InitBitmapFont( &cgs.media.consoleFont, con_fontSize.integer, ( con_fontSize.integer / 2 ) );
 	}
 
 	trap_Cvar_VariableStringBuffer( "versionshort", engineString, sizeof ( engineString ) );
@@ -812,7 +812,7 @@ void CG_ConsoleInit( void ) {
 
 	Com_sprintf( con.version, sizeof ( con.version ), "%s / %s", engineString, cgameString );
 
-	con.sideMargin = ( cg_consoleFontSize.integer / 2 );
+	con.sideMargin = ( con_fontSize.integer / 2 );
 
 	MField_Clear( &g_consoleField );
 
@@ -838,7 +838,7 @@ void CG_ConsoleResized( void ) {
 	// fit across whole screen inside of a 640x480 box
 	con.screenFakeWidth = cgs.glconfig.vidWidth / cgs.screenXScale;
 
-	g_console_field_width = ( con.screenFakeWidth - con.sideMargin * 2 ) / ( cg_consoleFontSize.integer / 2 );
+	g_console_field_width = ( con.screenFakeWidth - con.sideMargin * 2 ) / ( con_fontSize.integer / 2 );
 
 	if ( g_console_field_width > MAX_EDIT_LINE ) {
 		g_console_field_width = MAX_EDIT_LINE;

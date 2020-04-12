@@ -187,8 +187,8 @@ typedef struct
 	menuaction_s		backpedal;
 	menuaction_s		stepleft;
 	menuaction_s		stepright;
-	menuaction_s		moveup;
-	menuaction_s		movedown;
+	menuaction_s		moveUp;
+	menuaction_s		moveDown;
 	menuaction_s		turnleft;
 	menuaction_s		turnright;
 	menuaction_s		sidestep;
@@ -210,11 +210,11 @@ typedef struct
 	menuaction_s		attack;
 	menuaction_s		prevweapon;
 	menuaction_s		nextweapon;
-	menuaction_s		lookup;
-	menuaction_s		lookdown;
+	menuaction_s		lookUp;
+	menuaction_s		lookDown;
 	menuaction_s		mouselook;
 	menuradiobutton_s	freelook;
-	menuaction_s		centerview;
+	menuaction_s		centerView;
 	menuaction_s		zoomview;
 	menuaction_s		gesture;
 	menuradiobutton_s	invertmouse;
@@ -224,7 +224,7 @@ typedef struct
 	menuaction_s		showscores;
 	menuradiobutton_s	cyclepastgauntlet;
 	menuradiobutton_s	autoswitch;
-	menuaction_s		useitem;
+	menuaction_s		useItem;
 	uiPlayerInfo_t		playerinfo;
 	qboolean			changesmade;
 	menuaction_s		chat;
@@ -265,17 +265,17 @@ static bind_t g_bindings[] =
 	{"+speed", 			"run / walk",		ID_SPEED,		ANIM_RUN,		K_LEFTSHIFT,	K_RIGHTSHIFT, -1, -1},
 	{"+forward", 		"walk forward",		ID_FORWARD,		ANIM_WALK,		K_UPARROW,		-1,		-1, -1},
 	{"+back", 			"backpedal",		ID_BACKPEDAL,	ANIM_BACK,		K_DOWNARROW,	-1,		-1, -1},
-	{"+moveleft", 		"step left",		ID_MOVELEFT,	ANIM_STEPLEFT,	',',			-1,		-1, -1},
-	{"+moveright", 		"step right",		ID_MOVERIGHT,	ANIM_STEPRIGHT,	'.',			-1,		-1, -1},
-	{"+moveup",			"up / jump",		ID_MOVEUP,		ANIM_JUMP,		K_SPACE,		-1,		-1, -1},
-	{"+movedown",		"down / crouch",	ID_MOVEDOWN,	ANIM_CROUCH,	'c',			-1,		-1, -1},
+	{"+moveLeft", 		"step left",		ID_MOVELEFT,	ANIM_STEPLEFT,	',',			-1,		-1, -1},
+	{"+moveRight", 		"step right",		ID_MOVERIGHT,	ANIM_STEPRIGHT,	'.',			-1,		-1, -1},
+	{"+moveUp",			"up / jump",		ID_MOVEUP,		ANIM_JUMP,		K_SPACE,		-1,		-1, -1},
+	{"+moveDown",		"down / crouch",	ID_MOVEDOWN,	ANIM_CROUCH,	'c',			-1,		-1, -1},
 	{"+left", 			"turn left",		ID_LEFT,		ANIM_TURNLEFT,	K_LEFTARROW,	-1,		-1, -1},
 	{"+right", 			"turn right",		ID_RIGHT,		ANIM_TURNRIGHT,	K_RIGHTARROW,	-1,		-1, -1},
 	{"+strafe", 		"sidestep / turn",	ID_STRAFE,		ANIM_IDLE,		K_LEFTALT,		K_RIGHTALT, -1, -1},
-	{"+lookup", 		"look up",			ID_LOOKUP,		ANIM_LOOKUP,	K_PGDN,			-1,		-1, -1},
-	{"+lookdown", 		"look down",		ID_LOOKDOWN,	ANIM_LOOKDOWN,	K_DEL,			-1,		-1, -1},
-	{"+mlook", 			"mouse look",		ID_MOUSELOOK,	ANIM_IDLE,		'/',			-1,		-1, -1},
-	{"centerview", 		"center view",		ID_CENTERVIEW,	ANIM_IDLE,		K_END,			-1,		-1, -1},
+	{"+lookUp", 		"look up",			ID_LOOKUP,		ANIM_LOOKUP,	K_PGDN,			-1,		-1, -1},
+	{"+lookDown", 		"look down",		ID_LOOKDOWN,	ANIM_LOOKDOWN,	K_DEL,			-1,		-1, -1},
+	{"+mouseLook", 			"mouse look",		ID_MOUSELOOK,	ANIM_IDLE,		'/',			-1,		-1, -1},
+	{"centerView", 		"center view",		ID_CENTERVIEW,	ANIM_IDLE,		K_END,			-1,		-1, -1},
 	{"+zoom", 			"zoom view",		ID_ZOOMVIEW,	ANIM_IDLE,		-1,				-1,		-1, -1},
 	{"weapon 1",		"gauntlet",			ID_WEAPON1,		ANIM_WEAPON1,	'1',			-1,		-1, -1},
 	{"weapon 2",		"machinegun",		ID_WEAPON2,		ANIM_WEAPON2,	'2',			-1,		-1, -1},
@@ -292,8 +292,8 @@ static bind_t g_bindings[] =
 	{"weapon 13",		"chain gun",		ID_WEAPON13,	ANIM_WEAPON13,	-1,				-1,		-1, -1},
 #endif
 	{"+attack", 		"attack",			ID_ATTACK,		ANIM_ATTACK,	K_LEFTCTRL,		K_RIGHTCTRL, -1, -1},
-	{"weapprev",		"previous weapon",	ID_WEAPPREV,	ANIM_IDLE,		'[',			-1,		-1, -1},
-	{"weapnext", 		"next weapon",		ID_WEAPNEXT,	ANIM_IDLE,		']',			-1,		-1, -1},
+	{"weaponPrevious",		"previous weapon",	ID_WEAPPREV,	ANIM_IDLE,		'[',			-1,		-1, -1},
+	{"weaponNext", 		"next weapon",		ID_WEAPNEXT,	ANIM_IDLE,		']',			-1,		-1, -1},
 	{"+button3", 		"gesture",			ID_GESTURE,		ANIM_GESTURE,	K_MOUSE3,		-1,		-1, -1},
 	{"messagemode", 	"chat",				ID_CHAT,		ANIM_CHAT,		't',			-1,		-1, -1},
 	{"messagemode2", 	"chat - team",		ID_CHAT2,		ANIM_CHAT,		-1,				-1,		-1, -1},
@@ -453,8 +453,8 @@ static menucommon_s *g_movement_controls[] =
 	(menucommon_s *)&s_controls.backpedal,
 	(menucommon_s *)&s_controls.stepleft,      
 	(menucommon_s *)&s_controls.stepright,     
-	(menucommon_s *)&s_controls.moveup,        
-	(menucommon_s *)&s_controls.movedown,      
+	(menucommon_s *)&s_controls.moveUp,        
+	(menucommon_s *)&s_controls.moveDown,      
 	(menucommon_s *)&s_controls.turnleft,      
 	(menucommon_s *)&s_controls.turnright,     
 	(menucommon_s *)&s_controls.sidestep,
@@ -488,18 +488,18 @@ static menucommon_s *g_looking_controls[] = {
 	(menucommon_s *)&s_controls.sensitivity,
 	(menucommon_s *)&s_controls.smoothmouse,
 	(menucommon_s *)&s_controls.invertmouse,
-	(menucommon_s *)&s_controls.lookup,
-	(menucommon_s *)&s_controls.lookdown,
+	(menucommon_s *)&s_controls.lookUp,
+	(menucommon_s *)&s_controls.lookDown,
 	(menucommon_s *)&s_controls.mouselook,
 	(menucommon_s *)&s_controls.freelook,
-	(menucommon_s *)&s_controls.centerview,
+	(menucommon_s *)&s_controls.centerView,
 	(menucommon_s *)&s_controls.zoomview,
 	NULL,
 };
 
 static menucommon_s *g_misc_controls[] = {
 	(menucommon_s *)&s_controls.showscores, 
-	(menucommon_s *)&s_controls.useitem,
+	(menucommon_s *)&s_controls.useItem,
 	(menucommon_s *)&s_controls.gesture,
 	(menucommon_s *)&s_controls.chat,
 	(menucommon_s *)&s_controls.chat2,
@@ -526,16 +526,16 @@ static menucommon_s **g_controls[] = {
 };
 
 static menucommon_s *g_looking_mini_controls[] = {
-	(menucommon_s *)&s_controls.lookup,
-	(menucommon_s *)&s_controls.lookdown,
-	(menucommon_s *)&s_controls.centerview,
+	(menucommon_s *)&s_controls.lookUp,
+	(menucommon_s *)&s_controls.lookDown,
+	(menucommon_s *)&s_controls.centerView,
 	(menucommon_s *)&s_controls.zoomview,
 	NULL,
 };
 
 static menucommon_s *g_misc_mini_controls[] = {
 	(menucommon_s *)&s_controls.showscores,
-	(menucommon_s *)&s_controls.useitem,
+	(menucommon_s *)&s_controls.useItem,
 	(menucommon_s *)&s_controls.gesture,
 	NULL,
 };
@@ -964,14 +964,14 @@ Controls_DrawPlayer
 */
 static void Controls_DrawPlayer( void *self ) {
 	menubitmap_s	*b;
-	char			model[MAX_QPATH], headmodel[MAX_QPATH];
+	char			model[MAX_QPATH], headModel[MAX_QPATH];
 
 	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "model"), model, sizeof( model ) );
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "headmodel"), headmodel, sizeof( headmodel ) );
-	if ( strcmp( model, s_controls.playerModel ) != 0 || strcmp( headmodel, s_controls.playerHead ) != 0 ) {
-		UI_PlayerInfo_SetModel( &s_controls.playerinfo, model, headmodel, NULL );
+	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "headModel"), headModel, sizeof( headModel ) );
+	if ( strcmp( model, s_controls.playerModel ) != 0 || strcmp( headModel, s_controls.playerHead ) != 0 ) {
+		UI_PlayerInfo_SetModel( &s_controls.playerinfo, model, headModel, NULL );
 		strcpy( s_controls.playerModel, model );
-		strcpy( s_controls.playerHead, headmodel );
+		strcpy( s_controls.playerHead, headModel );
 		Controls_UpdateModel( ANIM_IDLE );
 	}
 
@@ -1456,14 +1456,14 @@ Controls_InitModel
 */
 static void Controls_InitModel( void )
 {
-	char model[MAX_QPATH], headmodel[MAX_QPATH];
+	char model[MAX_QPATH], headModel[MAX_QPATH];
 
 	memset( &s_controls.playerinfo, 0, sizeof(uiPlayerInfo_t) );
 
 	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "model"), model, sizeof ( model ) );
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "headmodel"), headmodel, sizeof ( headmodel ) );
+	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "headModel"), headModel, sizeof ( headModel ) );
 
-	UI_PlayerInfo_SetModel( &s_controls.playerinfo, model, headmodel, NULL );
+	UI_PlayerInfo_SetModel( &s_controls.playerinfo, model, headModel, NULL );
 
 	Controls_UpdateModel( ANIM_IDLE );
 }
@@ -1645,17 +1645,17 @@ static void Controls_MenuInit( int localPlayerNum )
 	s_controls.stepright.generic.ownerdraw = Controls_DrawKeyBinding;
 	s_controls.stepright.generic.id        = ID_MOVERIGHT;
 
-	s_controls.moveup.generic.type	    = MTYPE_ACTION;
-	s_controls.moveup.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
-	s_controls.moveup.generic.callback  = Controls_ActionEvent;
-	s_controls.moveup.generic.ownerdraw = Controls_DrawKeyBinding;
-	s_controls.moveup.generic.id        = ID_MOVEUP;
+	s_controls.moveUp.generic.type	    = MTYPE_ACTION;
+	s_controls.moveUp.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
+	s_controls.moveUp.generic.callback  = Controls_ActionEvent;
+	s_controls.moveUp.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.moveUp.generic.id        = ID_MOVEUP;
 
-	s_controls.movedown.generic.type	  = MTYPE_ACTION;
-	s_controls.movedown.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
-	s_controls.movedown.generic.callback  = Controls_ActionEvent;
-	s_controls.movedown.generic.ownerdraw = Controls_DrawKeyBinding;
-	s_controls.movedown.generic.id        = ID_MOVEDOWN;
+	s_controls.moveDown.generic.type	  = MTYPE_ACTION;
+	s_controls.moveDown.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
+	s_controls.moveDown.generic.callback  = Controls_ActionEvent;
+	s_controls.moveDown.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.moveDown.generic.id        = ID_MOVEDOWN;
 
 	s_controls.turnleft.generic.type	  = MTYPE_ACTION;
 	s_controls.turnleft.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
@@ -1773,17 +1773,17 @@ static void Controls_MenuInit( int localPlayerNum )
 	s_controls.nextweapon.generic.ownerdraw = Controls_DrawKeyBinding;
 	s_controls.nextweapon.generic.id        = ID_WEAPNEXT;
 
-	s_controls.lookup.generic.type	    = MTYPE_ACTION;
-	s_controls.lookup.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
-	s_controls.lookup.generic.callback  = Controls_ActionEvent;
-	s_controls.lookup.generic.ownerdraw = Controls_DrawKeyBinding;
-	s_controls.lookup.generic.id        = ID_LOOKUP;
+	s_controls.lookUp.generic.type	    = MTYPE_ACTION;
+	s_controls.lookUp.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
+	s_controls.lookUp.generic.callback  = Controls_ActionEvent;
+	s_controls.lookUp.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.lookUp.generic.id        = ID_LOOKUP;
 
-	s_controls.lookdown.generic.type	  = MTYPE_ACTION;
-	s_controls.lookdown.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
-	s_controls.lookdown.generic.callback  = Controls_ActionEvent;
-	s_controls.lookdown.generic.ownerdraw = Controls_DrawKeyBinding;
-	s_controls.lookdown.generic.id        = ID_LOOKDOWN;
+	s_controls.lookDown.generic.type	  = MTYPE_ACTION;
+	s_controls.lookDown.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
+	s_controls.lookDown.generic.callback  = Controls_ActionEvent;
+	s_controls.lookDown.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.lookDown.generic.id        = ID_LOOKDOWN;
 
 	s_controls.mouselook.generic.type	   = MTYPE_ACTION;
 	s_controls.mouselook.generic.flags     = QMF_LEFT_JUSTIFY|QMF_HIGHLIGHT_IF_FOCUS|QMF_GRAYED|QMF_HIDDEN;
@@ -1799,11 +1799,11 @@ static void Controls_MenuInit( int localPlayerNum )
 	s_controls.freelook.generic.callback	= Controls_MenuEvent;
 	s_controls.freelook.generic.statusbar	= Controls_StatusBar;
 
-	s_controls.centerview.generic.type	    = MTYPE_ACTION;
-	s_controls.centerview.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
-	s_controls.centerview.generic.callback  = Controls_ActionEvent;
-	s_controls.centerview.generic.ownerdraw = Controls_DrawKeyBinding;
-	s_controls.centerview.generic.id        = ID_CENTERVIEW;
+	s_controls.centerView.generic.type	    = MTYPE_ACTION;
+	s_controls.centerView.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
+	s_controls.centerView.generic.callback  = Controls_ActionEvent;
+	s_controls.centerView.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.centerView.generic.id        = ID_CENTERVIEW;
 
 	s_controls.zoomview.generic.type	  = MTYPE_ACTION;
 	s_controls.zoomview.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
@@ -1811,11 +1811,11 @@ static void Controls_MenuInit( int localPlayerNum )
 	s_controls.zoomview.generic.ownerdraw = Controls_DrawKeyBinding;
 	s_controls.zoomview.generic.id        = ID_ZOOMVIEW;
 
-	s_controls.useitem.generic.type	     = MTYPE_ACTION;
-	s_controls.useitem.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
-	s_controls.useitem.generic.callback  = Controls_ActionEvent;
-	s_controls.useitem.generic.ownerdraw = Controls_DrawKeyBinding;
-	s_controls.useitem.generic.id        = ID_USEITEM;
+	s_controls.useItem.generic.type	     = MTYPE_ACTION;
+	s_controls.useItem.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
+	s_controls.useItem.generic.callback  = Controls_ActionEvent;
+	s_controls.useItem.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.useItem.generic.id        = ID_USEITEM;
 
 	s_controls.showscores.generic.type	    = MTYPE_ACTION;
 	s_controls.showscores.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
@@ -1960,11 +1960,11 @@ static void Controls_MenuInit( int localPlayerNum )
 	Menu_AddItem( &s_controls.menu, &s_controls.sensitivity );
 	Menu_AddItem( &s_controls.menu, &s_controls.smoothmouse );
 	Menu_AddItem( &s_controls.menu, &s_controls.invertmouse );
-	Menu_AddItem( &s_controls.menu, &s_controls.lookup );
-	Menu_AddItem( &s_controls.menu, &s_controls.lookdown );
+	Menu_AddItem( &s_controls.menu, &s_controls.lookUp );
+	Menu_AddItem( &s_controls.menu, &s_controls.lookDown );
 	Menu_AddItem( &s_controls.menu, &s_controls.mouselook );
 	Menu_AddItem( &s_controls.menu, &s_controls.freelook );
-	Menu_AddItem( &s_controls.menu, &s_controls.centerview );
+	Menu_AddItem( &s_controls.menu, &s_controls.centerView );
 	Menu_AddItem( &s_controls.menu, &s_controls.zoomview );
 	Menu_AddItem( &s_controls.menu, &s_controls.selectjoy );
 	Menu_AddItem( &s_controls.menu, &s_controls.joythreshold );
@@ -1976,8 +1976,8 @@ static void Controls_MenuInit( int localPlayerNum )
 	Menu_AddItem( &s_controls.menu, &s_controls.backpedal );
 	Menu_AddItem( &s_controls.menu, &s_controls.stepleft );
 	Menu_AddItem( &s_controls.menu, &s_controls.stepright );
-	Menu_AddItem( &s_controls.menu, &s_controls.moveup );
-	Menu_AddItem( &s_controls.menu, &s_controls.movedown );
+	Menu_AddItem( &s_controls.menu, &s_controls.moveUp );
+	Menu_AddItem( &s_controls.menu, &s_controls.moveDown );
 	Menu_AddItem( &s_controls.menu, &s_controls.turnleft );
 	Menu_AddItem( &s_controls.menu, &s_controls.turnright );
 	Menu_AddItem( &s_controls.menu, &s_controls.sidestep );
@@ -2003,7 +2003,7 @@ static void Controls_MenuInit( int localPlayerNum )
 #endif
 
 	Menu_AddItem( &s_controls.menu, &s_controls.showscores );
-	Menu_AddItem( &s_controls.menu, &s_controls.useitem );
+	Menu_AddItem( &s_controls.menu, &s_controls.useItem );
 	Menu_AddItem( &s_controls.menu, &s_controls.gesture );
 	Menu_AddItem( &s_controls.menu, &s_controls.chat );
 	Menu_AddItem( &s_controls.menu, &s_controls.chat2 );

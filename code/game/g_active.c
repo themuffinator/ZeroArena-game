@@ -108,7 +108,7 @@ void P_WorldEffects( gentity_t *ent ) {
 	qboolean	envirosuit;
 	int			waterlevel;
 
-	if ( ent->player->noclip ) {
+	if ( ent->player->noClip ) {
 		ent->player->airOutTime = level.time + 12000;	// don't need air
 		return;
 	}
@@ -330,7 +330,7 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd ) {
 
 	if ( player->sess.spectatorState != SPECTATOR_FOLLOW || !( player->ps.pm_flags & PMF_FOLLOW ) ) {
 		if ( player->sess.spectatorState == SPECTATOR_FREE ) {
-			if ( player->noclip ) {
+			if ( player->noClip ) {
 				player->ps.pm_type = PM_NOCLIP;
 			} else {
 				player->ps.pm_type = PM_SPECTATOR;
@@ -549,7 +549,7 @@ void PlayerEvents( gentity_t *ent, int oldEventSequence ) {
 			if ( ent->s.eType != ET_PLAYER ) {
 				break;		// not in the player model
 			}
-			if ( g_dmflags.integer & DF_NO_FALLING ) {
+			if ( g_dmFlags.integer & DF_NO_FALLING ) {
 				break;
 			}
 			if ( event == EV_FALL_FAR ) {
@@ -592,7 +592,7 @@ void PlayerEvents( gentity_t *ent, int oldEventSequence ) {
 			case HI_TELEPORTER:
 				TossPlayerGametypeItems( ent );
 				SelectSpawnPoint( ent->player->ps.origin, origin, angles, qfalse );
-				TeleportPlayer( ent, origin, angles );
+				TeleportPlayer( ent, origin, angles, qtrue, qfalse );
 				break;
 
 			case HI_MEDKIT:
@@ -814,7 +814,7 @@ void PlayerThink_real( gentity_t *ent ) {
 		player->ps.eFlags &= ~(EF_AWARD_IMPRESSIVE | EF_AWARD_EXCELLENT | EF_AWARD_GAUNTLET | EF_AWARD_ASSIST | EF_AWARD_DEFEND | EF_AWARD_CAP );
 	}
 
-	if ( player->noclip ) {
+	if ( player->noClip ) {
 		player->ps.pm_type = PM_NOCLIP;
 	} else if ( player->ps.stats[STAT_HEALTH] <= 0 ) {
 		player->ps.pm_type = PM_DEAD;
@@ -905,7 +905,7 @@ void PlayerThink_real( gentity_t *ent ) {
 	}
 	pm.pointcontents = trap_PointContents;
 	pm.debugLevel = g_debugMove.integer;
-	pm.noFootsteps = ( g_dmflags.integer & DF_NO_FOOTSTEPS ) > 0;
+	pm.noFootsteps = ( g_dmFlags.integer & DF_NO_FOOTSTEPS ) > 0;
 
 	pm.pmove_fixed = pmove_fixed.integer | player->pers.pmoveFixed;
 	pm.pmove_msec = pmove_msec.integer;
@@ -915,14 +915,14 @@ void PlayerThink_real( gentity_t *ent ) {
 	VectorCopy( player->ps.origin, player->oldOrigin );
 
 #ifdef MISSIONPACK
-	if ( level.intermissionQueued != 0 && g_singlePlayer.integer ) {
+	if ( level.intermissionQueued != 0 && g_singlePlayerActive.integer ) {
 		if ( level.time - level.intermissionQueued >= 1000 ) {
 			pm.cmd.buttons = 0;
 			pm.cmd.forwardmove = 0;
 			pm.cmd.rightmove = 0;
 			pm.cmd.upmove = 0;
 			if ( level.time - level.intermissionQueued >= 2000 && level.time - level.intermissionQueued <= 2500 ) {
-				trap_Cmd_ExecuteText( EXEC_APPEND, "centerview\n" );
+				trap_Cmd_ExecuteText( EXEC_APPEND, "centerView\n" );
 			}
 			ent->player->ps.pm_type = PM_SPINTERMISSION;
 		}
@@ -958,7 +958,7 @@ void PlayerThink_real( gentity_t *ent ) {
 
 	// link entity now, after any personal teleporters have been used
 	trap_LinkEntity (ent);
-	if ( !ent->player->noclip ) {
+	if ( !ent->player->noClip ) {
 		G_TouchTriggers( ent );
 	}
 
@@ -986,8 +986,8 @@ void PlayerThink_real( gentity_t *ent ) {
 		// wait for the attack button to be pressed
 		if ( level.time > player->respawnTime ) {
 			// forcerespawn is to prevent users from waiting out powerups
-			if ( g_forcerespawn.integer > 0 && 
-				( level.time - player->respawnTime ) > g_forcerespawn.integer * 1000 ) {
+			if ( g_forcePlayerRespawnTime.integer > 0 && 
+				( level.time - player->respawnTime ) > g_forcePlayerRespawnTime.integer * 1000 ) {
 				PlayerRespawn( ent );
 				return;
 			}

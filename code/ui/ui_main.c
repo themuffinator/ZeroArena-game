@@ -790,8 +790,8 @@ static void UI_SetCapFragLimits(qboolean uiVars) {
 		trap_Cvar_SetValue("ui_captureLimit", cap);
 		trap_Cvar_SetValue("ui_fragLimit", frag);
 	} else {
-		trap_Cvar_SetValue("capturelimit", cap);
-		trap_Cvar_SetValue("fraglimit", frag);
+		trap_Cvar_SetValue("captureLimit", cap);
+		trap_Cvar_SetValue("fragLimit", frag);
 	}
 }
 // ui_gameType assumes gametype 0 is -1 ALL and will not show
@@ -1018,7 +1018,7 @@ static void UI_DrawPlayerModel(rectDef_t *rect) {
 
 	  if (trap_Cvar_VariableValue("ui_Q3Model")) {
 		Q_strncpyz(model, CG_Cvar_VariableString("model"), sizeof(model));
-		Q_strncpyz(head, CG_Cvar_VariableString("headmodel"), sizeof(head));
+		Q_strncpyz(head, CG_Cvar_VariableString("headModel"), sizeof(head));
 		if (!q3Model) {
 			q3Model = qtrue;
 			updateModel = qtrue;
@@ -1028,7 +1028,7 @@ static void UI_DrawPlayerModel(rectDef_t *rect) {
 
 		Q_strncpyz(team, CG_Cvar_VariableString("ui_teamName"), sizeof(team));
 		Q_strncpyz(model, CG_Cvar_VariableString("team_model"), sizeof(model));
-		Q_strncpyz(head, CG_Cvar_VariableString("team_headmodel"), sizeof(head));
+		Q_strncpyz(head, CG_Cvar_VariableString("team_headModel"), sizeof(head));
 		if (q3Model) {
 			q3Model = qfalse;
 			updateModel = qtrue;
@@ -1171,7 +1171,7 @@ static qboolean updateOpponentModel = qtrue;
 static void UI_DrawOpponent(rectDef_t *rect) {
   static uiPlayerInfo_t info2;
   char model[MAX_QPATH];
-  char headmodel[MAX_QPATH];
+  char headModel[MAX_QPATH];
   char team[256];
 	vec3_t	viewangles;
 	vec3_t	moveangles;
@@ -1179,7 +1179,7 @@ static void UI_DrawOpponent(rectDef_t *rect) {
 	if (updateOpponentModel) {
 		
 		Q_strncpyz(model, CG_Cvar_VariableString("ui_opponentModel"), sizeof(model));
-		Q_strncpyz(headmodel, CG_Cvar_VariableString("ui_opponentModel"), sizeof(headmodel));
+		Q_strncpyz(headModel, CG_Cvar_VariableString("ui_opponentModel"), sizeof(headModel));
 		team[0] = '\0';
 
   	memset( &info2, 0, sizeof(uiPlayerInfo_t) );
@@ -1187,9 +1187,9 @@ static void UI_DrawOpponent(rectDef_t *rect) {
   	viewangles[PITCH] = 0;
   	viewangles[ROLL]  = 0;
   	VectorClear( moveangles );
-    UI_PlayerInfo_SetModel( &info2, model, headmodel, "");
+    UI_PlayerInfo_SetModel( &info2, model, headModel, "");
     UI_PlayerInfo_SetInfo( &info2, LEGS_IDLE, TORSO_STAND, viewangles, vec3_origin, WP_MACHINEGUN, qfalse );
-		UI_RegisterPlayerModelname( &info2, model, headmodel, team);
+		UI_RegisterPlayerModelname( &info2, model, headModel, team);
     updateOpponentModel = qfalse;
   }
 
@@ -1437,7 +1437,7 @@ static void UI_DrawBotName(rectDef_t *rect, float scale, vec4_t color, int textS
 	// 0 - Random Bot
 	// 1..NumCharacters - Bot
 	int value = uiInfo.botIndex;
-	int game = trap_Cvar_VariableValue("g_gametype");
+	int game = trap_Cvar_VariableValue("g_gameType");
 	const char *text = "";
 	if (value == 0) {
 		text = "Random Bot";
@@ -1806,14 +1806,14 @@ static qboolean UI_OwnerDrawVisible(int flags) {
 	while (flags) {
 
 		if (flags & UI_SHOW_FFA) {
-			if (trap_Cvar_VariableValue("g_gametype") != GT_FFA) {
+			if (trap_Cvar_VariableValue("g_gameType") != GT_FFA) {
 				vis = qfalse;
 			}
 			flags &= ~UI_SHOW_FFA;
 		}
 
 		if (flags & UI_SHOW_NOTFFA) {
-			if (trap_Cvar_VariableValue("g_gametype") == GT_FFA) {
+			if (trap_Cvar_VariableValue("g_gameType") == GT_FFA) {
 				vis = qfalse;
 			}
 			flags &= ~UI_SHOW_NOTFFA;
@@ -2198,7 +2198,7 @@ static qboolean UI_BotName_HandleKey(int flags, float *special, int key) {
 	if (select != 0) {
 		// 0 - Random Bot
 		// 1..NumCharacters - Bot
-		int game = trap_Cvar_VariableValue("g_gametype");
+		int game = trap_Cvar_VariableValue("g_gameType");
 		int value = uiInfo.botIndex;
 
 		value += select;
@@ -2424,7 +2424,7 @@ void UI_ServersSort(int column, qboolean force) {
 	uiInfo.serverStatus.sortKey = sortKey;
 	qsort( &uiInfo.serverStatus.displayServers[0], uiInfo.serverStatus.numDisplayServers, sizeof(int), UI_ServersQsortCompare);
 
-	// update displayed levelshot
+	// update displayed levelShot
 	UI_FeederSelection( FEEDER_SERVERS, uiInfo.serverStatus.currentServer );
 }
 
@@ -2442,7 +2442,7 @@ static void UI_StartSinglePlayer(void) {
 	}
 
  	trap_Cvar_SetValue( "singleplayer", 1 );
- 	trap_Cvar_SetValue( "g_gametype", Com_Clamp( 0, GT_MAX_GAME_TYPE-1, tierList[i].gameTypes[j] ) );
+ 	trap_Cvar_SetValue( "g_gameType", Com_Clamp( 0, GT_MAX_GAME_TYPE-1, tierList[i].gameTypes[j] ) );
 	trap_Cmd_ExecuteText( EXEC_APPEND, va( "wait ; wait ; map %s\n", tierList[i].maps[j] ) );
 	skill = trap_Cvar_VariableValue( "g_spSkill" );
 
@@ -2617,7 +2617,7 @@ static void UI_StartSkirmish(qboolean next) {
 	}
 
 	g = uiInfo.gameTypes[ui_gameType.integer].gtEnum;
-	trap_Cvar_SetValue( "g_gametype", g );
+	trap_Cvar_SetValue( "g_gameType", g );
 	trap_Cmd_ExecuteText( EXEC_APPEND, va( "wait ; wait ; map %s\n", uiInfo.mapList[ui_currentMap.integer].mapLoadName) );
 	skill = trap_Cvar_VariableValue( "g_spSkill" );
 	trap_Cvar_Set("ui_scoreMap", uiInfo.mapList[ui_currentMap.integer].mapName);
@@ -2627,9 +2627,9 @@ static void UI_StartSkirmish(qboolean next) {
 	trap_Cvar_SetValue( "ui_singlePlayerActive", 1 );
 
 	// set up sp overrides, will be replaced on postgame
-	temp = trap_Cvar_VariableValue( "capturelimit" );
+	temp = trap_Cvar_VariableValue( "captureLimit" );
 	trap_Cvar_SetValue("ui_saveCaptureLimit", temp);
-	temp = trap_Cvar_VariableValue( "fraglimit" );
+	temp = trap_Cvar_VariableValue( "fragLimit" );
 	trap_Cvar_SetValue("ui_saveFragLimit", temp);
 
 	UI_SetCapFragLimits(qfalse);
@@ -2642,14 +2642,14 @@ static void UI_StartSkirmish(qboolean next) {
 	trap_Cvar_SetValue("ui_friendlyFire", temp);
 	temp = trap_Cvar_VariableValue( "sv_maxClients" );
 	trap_Cvar_SetValue("ui_maxClients", temp);
-	temp = trap_Cvar_VariableValue( "g_warmup" );
+	temp = trap_Cvar_VariableValue( "g_warmupCountdownTime" );
 	trap_Cvar_SetValue("ui_Warmup", temp);
 	temp = trap_Cvar_VariableValue( "sv_pure" );
 	trap_Cvar_SetValue("ui_pure", temp);
 
 	trap_Cvar_SetValue("cg_drawTimer", 1);
 	trap_Cvar_SetValue("g_doWarmup", 1);
-	trap_Cvar_SetValue("g_warmup", 15);
+	trap_Cvar_SetValue("g_warmupCountdownTime", 15);
 	trap_Cvar_SetValue("sv_pure", 0);
 	trap_Cvar_SetValue("g_friendlyFire", 0);
 	trap_Cvar_Set("g_redTeam", CG_Cvar_VariableString("ui_teamName"));
@@ -2834,7 +2834,7 @@ static void UI_RunMenuScript(char **args) {
 			trap_Cvar_SetValue( "ui_singlePlayerActive", 0 );
 			trap_Cvar_SetValue( "dedicated", Com_Clamp( 0, 2, ui_dedicated.integer ) );
 			trap_Cvar_SetValue( "sv_public", (ui_dedicated.integer == 2) );
-			trap_Cvar_SetValue( "g_gametype", uiInfo.gameTypes[ui_netGameType.integer].gtEnum );
+			trap_Cvar_SetValue( "g_gameType", uiInfo.gameTypes[ui_netGameType.integer].gtEnum );
 			trap_Cvar_Set( "g_redTeam", CG_Cvar_VariableString("ui_teamName") );
 			trap_Cvar_Set( "g_blueTeam", CG_Cvar_VariableString("ui_opponentName") );
 			trap_Cmd_ExecuteText( EXEC_APPEND, va( "wait ; wait ; map %s\n", uiInfo.mapList[ui_currentNetMap.integer].mapLoadName ) );
@@ -3040,26 +3040,26 @@ static void UI_RunMenuScript(char **args) {
 			UI_ForceMenuOff();
 		} else if (Q_stricmp(name, "voteMap") == 0) {
 			if (ui_currentNetMap.integer >=0 && ui_currentNetMap.integer < uiInfo.mapCount) {
-				trap_Cmd_ExecuteText( EXEC_APPEND, va("callvote map %s\n",uiInfo.mapList[ui_currentNetMap.integer].mapLoadName) );
+				trap_Cmd_ExecuteText( EXEC_APPEND, va("callVote map %s\n",uiInfo.mapList[ui_currentNetMap.integer].mapLoadName) );
 			}
 		} else if (Q_stricmp(name, "voteKick") == 0) {
 			if (uiInfo.playerIndex >= 0 && uiInfo.playerIndex < uiInfo.playerCount) {
-				trap_Cmd_ExecuteText( EXEC_APPEND, va("callvote kicknum %i\n",uiInfo.playerNums[uiInfo.playerIndex]) );
+				trap_Cmd_ExecuteText( EXEC_APPEND, va("callVote kicknum %i\n",uiInfo.playerNums[uiInfo.playerIndex]) );
 			}
 		} else if (Q_stricmp(name, "voteGame") == 0) {
 			if (ui_netGameType.integer >= 0 && ui_netGameType.integer < uiInfo.numGameTypes) {
-				trap_Cmd_ExecuteText( EXEC_APPEND, va("callvote g_gametype %i\n",uiInfo.gameTypes[ui_netGameType.integer].gtEnum) );
+				trap_Cmd_ExecuteText( EXEC_APPEND, va("callVote g_gameType %i\n",uiInfo.gameTypes[ui_netGameType.integer].gtEnum) );
 			}
 		} else if (Q_stricmp(name, "voteLeader") == 0) {
 			if (uiInfo.teamIndex >= 0 && uiInfo.teamIndex < uiInfo.myTeamCount) {
-				trap_Cmd_ExecuteText( EXEC_APPEND, va("callteamvote leader %s\n",uiInfo.teamPlayerNames[uiInfo.teamIndex]) );
+				trap_Cmd_ExecuteText( EXEC_APPEND, va("callTeamVote leader %s\n",uiInfo.teamPlayerNames[uiInfo.teamIndex]) );
 			}
 		} else if (Q_stricmp(name, "addBot") == 0) {
 			// 0 - Random Bot
 			// 1..NumCharacters - Bot
 			if (uiInfo.botIndex == 0) {
 				name = "random";
-			} else if (trap_Cvar_VariableValue("g_gametype") >= GT_TEAM) {
+			} else if (trap_Cvar_VariableValue("g_gameType") >= GT_TEAM) {
 				name = uiInfo.characterList[uiInfo.botIndex-1].name;
 			} else {
 				name = UI_GetBotNameByNumber(uiInfo.botIndex-1);
@@ -3301,7 +3301,7 @@ static void UI_InsertServerIntoDisplayList(int num, int position) {
 	}
 	uiInfo.serverStatus.displayServers[position] = num;
 
-	// update displayed levelshot
+	// update displayed levelShot
 	if ( position == uiInfo.serverStatus.currentServer ) {
 		UI_FeederSelection( FEEDER_SERVERS, uiInfo.serverStatus.currentServer );
 	}
@@ -3508,15 +3508,15 @@ serverStatusCvar_t serverStatusCvars[] = {
 	{"fs_game", "Game"},
 	{"sv_gametypeName", "Game type"},
 	{"sv_gametypeNetName", "Game type abbr"},
-	{"g_gametype", "Game type number"},
+	{"g_gameType", "Game type number"},
 	{"mapname", "Map"},
 	{"version", ""},
 	{"protocol", ""},
-	{"gameversion", ""},
-	{"gameprotocol", ""},
-	{"timelimit", ""},
-	{"fraglimit", ""},
-	{"capturelimit", ""},
+	{"gameVersion", ""},
+	{"gameProtocol", ""},
+	{"timeLimit", ""},
+	{"fragLimit", ""},
+	{"captureLimit", ""},
 	{NULL, NULL}
 };
 
@@ -4096,13 +4096,13 @@ static void UI_FeederSelection(float feederID, int index) {
 	index = actual;
     if (index >= 0 && index < uiInfo.characterCount) {
 		trap_Cvar_Set( "team_model", uiInfo.characterList[index].base);
-		trap_Cvar_Set( "team_headmodel", va("*%s", uiInfo.characterList[index].name)); 
+		trap_Cvar_Set( "team_headModel", va("*%s", uiInfo.characterList[index].name)); 
 		updateModel = qtrue;
     }
   } else if (feederID == FEEDER_Q3HEADS) {
     if (index >= 0 && index < uiInfo.q3HeadCount) {
       trap_Cvar_Set( "model", uiInfo.q3HeadNames[index]);
-      trap_Cvar_Set( "headmodel", uiInfo.q3HeadNames[index]);
+      trap_Cvar_Set( "headModel", uiInfo.q3HeadNames[index]);
 			updateModel = qtrue;
 		}
   } else if (feederID == FEEDER_MAPS || feederID == FEEDER_ALLMAPS) {
@@ -5454,10 +5454,10 @@ static cvarTable_t		cvarTable[] = {
 	{ &ui_hudFiles, "cg_hudFiles", "ui/hud.txt", CVAR_ARCHIVE},
 	{ &ui_recordSPDemo, "ui_recordSPDemo", "0", CVAR_ARCHIVE},
 	{ &ui_teamArenaFirstRun, "ui_teamArenaFirstRun", "0", CVAR_ARCHIVE},
-	{ NULL, "g_warmup", "20", CVAR_ARCHIVE},
-	{ NULL, "timelimit", "0", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART},
-	{ NULL, "fraglimit", "20", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART},
-	{ NULL, "capturelimit", "8", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART},
+	{ NULL, "g_warmupCountdownTime", "20", CVAR_ARCHIVE},
+	{ NULL, "timeLimit", "0", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART},
+	{ NULL, "fragLimit", "20", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART},
+	{ NULL, "captureLimit", "8", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART},
 	{ &ui_serverStatusTimeOut, "ui_serverStatusTimeOut", "7000", CVAR_ARCHIVE},
 	{ &ui_defaultMaleTeamModel, "default_male_team_model", DEFAULT_TEAM_MODEL_MALE, CVAR_ARCHIVE},
 	{ &ui_defaultFemaleTeamModel, "default_female_team_model", DEFAULT_TEAM_MODEL_FEMALE, CVAR_ARCHIVE},

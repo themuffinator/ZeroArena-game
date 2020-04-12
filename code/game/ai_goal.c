@@ -465,7 +465,7 @@ void BotUnlinkSolidItems(qboolean unlink) {
 	int i;
 	gentity_t *ent;
 
-	if (g_gametype.integer != GT_OBELISK) {
+	if (g_gameType.integer != GT_OBELISK) {
 		return;
 	}
 
@@ -591,7 +591,7 @@ void BotInitLevelItems(void)
 			li->flags |= IFL_ROAM;
 			trap_AAS_FloatForBSPEpairKey(ent, "weight", &li->weight);
 		} //end if
-		else if (g_instagib.integer && Q_stricmpn(classname, "team_", 5) != 0)
+		else if (g_instaGib.integer && Q_stricmpn(classname, "team_", 5) != 0)
 		{
 			// instagib only spawns IT_TEAM items. treat non-team items as item_botroam so bots can still navigate the map.
 			li->flags |= IFL_ROAM;
@@ -841,10 +841,10 @@ int BotGetLevelItemGoal(int index, char *name, bot_goal_t *goal)
 	for (; li; li = li->next)
 	{
 		//
-		if (g_gametype.integer == GT_SINGLE_PLAYER) {
+		if (g_gameType.integer == GT_SINGLE_PLAYER) {
 			if (li->flags & IFL_NOTSINGLE) continue;
 		}
-		if (g_gametype.integer >= GT_TEAM) {
+		if (g_gameType.integer >= GT_TEAM) {
 			if (li->flags & IFL_NOTTEAM) continue;
 		}
 		else {
@@ -1061,10 +1061,10 @@ void BotUpdateEntityItems(void)
 			//if this level item is already linked
 			if (li->entitynum) continue;
 			//
-			if (g_gametype.integer == GT_SINGLE_PLAYER) {
+			if (g_gameType.integer == GT_SINGLE_PLAYER) {
 				if (li->flags & IFL_NOTSINGLE) continue;
 			}
-			if (g_gametype.integer >= GT_TEAM) {
+			if (g_gameType.integer >= GT_TEAM) {
 				if (li->flags & IFL_NOTTEAM) continue;
 			}
 			else {
@@ -1292,11 +1292,11 @@ int BotChooseLTGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 	//go through the items in the level
 	for (li = levelitems; li; li = li->next)
 	{
-		if (g_gametype.integer == GT_SINGLE_PLAYER) {
+		if (g_gameType.integer == GT_SINGLE_PLAYER) {
 			if (li->flags & IFL_NOTSINGLE)
 				continue;
 		}
-		if (g_gametype.integer >= GT_TEAM) {
+		if (g_gameType.integer >= GT_TEAM) {
 			if (li->flags & IFL_NOTTEAM)
 				continue;
 		}
@@ -1461,11 +1461,11 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 	//go through the items in the level
 	for (li = levelitems; li; li = li->next)
 	{
-		if (g_gametype.integer == GT_SINGLE_PLAYER) {
+		if (g_gameType.integer == GT_SINGLE_PLAYER) {
 			if (li->flags & IFL_NOTSINGLE)
 				continue;
 		}
-		if (g_gametype.integer >= GT_TEAM) {
+		if (g_gameType.integer >= GT_TEAM) {
 			if (li->flags & IFL_NOTTEAM)
 				continue;
 		}

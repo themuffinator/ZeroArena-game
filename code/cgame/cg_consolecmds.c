@@ -165,11 +165,16 @@ CG_Viewpos_f
 Debugging command to print the current position
 =============
 */
-static void CG_Viewpos_f( int localPlayerNum ) {
-	CG_Printf ("(%i %i %i) : %i\n", (int)cg.localPlayers[localPlayerNum].lastViewPos[0],
-		(int)cg.localPlayers[localPlayerNum].lastViewPos[1],
-		(int)cg.localPlayers[localPlayerNum].lastViewPos[2],
-		(int)cg.localPlayers[localPlayerNum].lastViewAngles[YAW]);
+static void CG_Viewpos_f(int localPlayerNum) {
+	CG_Printf(
+		"(x:%i y:%i z:%i) : (pt:%i yw:%i rl:%i)\n",
+		(int)cg.refdef.vieworg[0],
+		(int)cg.refdef.vieworg[1],
+		(int)cg.refdef.vieworg[2],
+		(int)cg.refdefViewAngles[PITCH],
+		(int)cg.refdefViewAngles[YAW],
+		(int)cg.refdefViewAngles[ROLL]
+		);
 }
 
 /*
@@ -232,7 +237,7 @@ void CG_SetModel_f( int localPlayerNum ) {
 	arg = CG_Argv( 1 );
 	if ( arg[0] ) {
 		trap_Cvar_Set( cvarName, arg );
-		trap_Cvar_Set( Com_LocalPlayerCvarName( localPlayerNum, "headmodel"), arg );
+		trap_Cvar_Set( Com_LocalPlayerCvarName( localPlayerNum, "headModel"), arg );
 	} else {
 		trap_Cvar_VariableStringBuffer( cvarName, name, sizeof(name) );
 		Com_Printf("%s is set to %s\n", cvarName, name);
@@ -249,7 +254,7 @@ void CG_SetHeadmodel_f( int localPlayerNum ) {
 	char	name[256];
 	char	cvarName[32];
 
-	Q_strncpyz( cvarName, Com_LocalPlayerCvarName( localPlayerNum, "headmodel"), sizeof (cvarName) );
+	Q_strncpyz( cvarName, Com_LocalPlayerCvarName( localPlayerNum, "headModel"), sizeof (cvarName) );
 
 	arg = CG_Argv( 1 );
 	if ( arg[0] ) {
@@ -275,7 +280,7 @@ void CG_SetTeamModel_f( int localPlayerNum ) {
 	arg = CG_Argv( 1 );
 	if ( arg[0] ) {
 		trap_Cvar_Set( cvarName, arg );
-		trap_Cvar_Set( Com_LocalPlayerCvarName( localPlayerNum, "team_headmodel"), arg );
+		trap_Cvar_Set( Com_LocalPlayerCvarName( localPlayerNum, "team_headModel"), arg );
 	} else {
 		trap_Cvar_VariableStringBuffer( cvarName, name, sizeof(name) );
 		Com_Printf("%s is set to %s\n", cvarName, name);
@@ -292,7 +297,7 @@ void CG_SetTeamHeadmodel_f( int localPlayerNum ) {
 	char	name[256];
 	char	cvarName[32];
 
-	Q_strncpyz( cvarName, Com_LocalPlayerCvarName( localPlayerNum, "team_headmodel"), sizeof (cvarName) );
+	Q_strncpyz( cvarName, Com_LocalPlayerCvarName( localPlayerNum, "team_headModel"), sizeof (cvarName) );
 
 	arg = CG_Argv( 1 );
 	if ( arg[0] ) {
@@ -822,7 +827,7 @@ static void CG_ConfirmOrder_f( int localPlayerNum ) {
 	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %d %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vtell"), player->acceptLeader, VOICECHAT_YES));
 	trap_Cmd_ExecuteText(EXEC_NOW, "+button5; wait; -button5");
 	if (cg.time < player->acceptOrderTime) {
-		trap_SendClientCommand(va("teamtask %d\n", player->acceptTask));
+		trap_SendClientCommand(va("teamTask %d\n", player->acceptTask));
 		player->acceptOrderTime = 0;
 	}
 }
@@ -849,37 +854,37 @@ static void CG_TaskOffense_f( int localPlayerNum ) {
 	} else {
 		trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONOFFENSE));
 	}
-	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamtask"), TEAMTASK_OFFENSE));
+	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), TEAMTASK_OFFENSE));
 }
 
 static void CG_TaskDefense_f( int localPlayerNum ) {
 	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONDEFENSE));
-	trap_SendClientCommand(va("teamtask %d\n", TEAMTASK_DEFENSE));
+	trap_SendClientCommand(va("teamTask %d\n", TEAMTASK_DEFENSE));
 }
 
 static void CG_TaskPatrol_f( int localPlayerNum ) {
 	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONPATROL));
-	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamtask"), TEAMTASK_PATROL));
+	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), TEAMTASK_PATROL));
 }
 
 static void CG_TaskCamp_f( int localPlayerNum ) {
 	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONCAMPING));
-	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamtask"), TEAMTASK_CAMP));
+	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), TEAMTASK_CAMP));
 }
 
 static void CG_TaskFollow_f( int localPlayerNum ) {
 	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONFOLLOW));
-	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamtask"), TEAMTASK_FOLLOW));
+	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), TEAMTASK_FOLLOW));
 }
 
 static void CG_TaskRetrieve_f( int localPlayerNum ) {
 	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONRETURNFLAG));
-	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamtask"), TEAMTASK_RETRIEVE));
+	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), TEAMTASK_RETRIEVE));
 }
 
 static void CG_TaskEscort_f( int localPlayerNum ) {
 	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONFOLLOWCARRIER));
-	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamtask"), TEAMTASK_ESCORT));
+	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), TEAMTASK_ESCORT));
 }
 
 static void CG_TaskOwnFlag_f( int localPlayerNum ) {
@@ -1503,7 +1508,7 @@ CG_CallVoteComplete
 */
 static void CG_CallVoteComplete( int localPlayerNum, char *args, int argNum ) {
 	if ( argNum == 2 ) {
-		trap_Field_CompleteList( "capturelimit\0fraglimit\0g_doWarmup\0g_gametype\0g_instagib\0kick\0kicknum\0map\0map_restart\0nextmap\0timelimit\0" );
+		trap_Field_CompleteList( "captureLimit\0fraglimit\0g_doWarmup\0g_gametype\0g_instagib\0kick\0kicknum\0map\0map_restart\0nextmap\0timelimit\0" );
 	}
 	if ( argNum == 3 && !Q_stricmp( CG_Argv( 1 ), "kick" ) ) {
 		CG_Field_CompletePlayerName( -1, qfalse, qfalse );
@@ -1647,20 +1652,20 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "-gesture",IN_Button3Up, 0 },
 	{ "+left",IN_LeftDown, 0 },
 	{ "-left",IN_LeftUp, 0 },
-	{ "+lookdown", IN_LookdownDown, 0 },
-	{ "-lookdown", IN_LookdownUp, 0 },
-	{ "+lookup", IN_LookupDown, 0 },
-	{ "-lookup", IN_LookupUp, 0 },
-	{ "+mlook", IN_MLookDown, 0 },
-	{ "-mlook", IN_MLookUp, 0 },
-	{ "+movedown",IN_DownDown, 0 },
-	{ "-movedown",IN_DownUp, 0 },
-	{ "+moveleft", IN_MoveleftDown, 0 },
-	{ "-moveleft", IN_MoveleftUp, 0 },
-	{ "+moveright", IN_MoverightDown, 0 },
-	{ "-moveright", IN_MoverightUp, 0 },
-	{ "+moveup",IN_UpDown, 0 },
-	{ "-moveup",IN_UpUp, 0 },
+	{ "+lookDown", IN_LookdownDown, 0 },
+	{ "-lookDown", IN_LookdownUp, 0 },
+	{ "+lookUp", IN_LookupDown, 0 },
+	{ "-lookUp", IN_LookupUp, 0 },
+	{ "+mouseLook", IN_MLookDown, 0 },
+	{ "-mouseLook", IN_MLookUp, 0 },
+	{ "+moveDown",IN_DownDown, 0 },
+	{ "-moveDown",IN_DownUp, 0 },
+	{ "+moveLeft", IN_MoveleftDown, 0 },
+	{ "-moveLeft", IN_MoveleftUp, 0 },
+	{ "+moveRight", IN_MoverightDown, 0 },
+	{ "-moveRight", IN_MoverightUp, 0 },
+	{ "+moveUp",IN_UpDown, 0 },
+	{ "-moveUp",IN_UpUp, 0 },
 	{ "+right",IN_RightDown, 0 },
 	{ "-right",IN_RightUp, 0 },
 	{ "+scores", CG_ScoresDown_f, CMD_INGAME },
@@ -1669,16 +1674,16 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "-speed", IN_SpeedUp, 0 },
 	{ "+strafe", IN_StrafeDown, 0 },
 	{ "-strafe", IN_StrafeUp, 0 },
-	{ "+useitem",IN_Button2Down, 0 },
-	{ "-useitem",IN_Button2Up, 0 },
+	{ "+useItem",IN_Button2Down, 0 },
+	{ "-useItem",IN_Button2Up, 0 },
 	{ "+zoom", CG_ZoomDown_f, CMD_INGAME },
 	{ "-zoom", CG_ZoomUp_f, CMD_INGAME },
-	{ "centerecho", CG_CenterEcho_f, CMD_INGAME },
-	{ "centerview", IN_CenterView, 0 },
-	{ "headmodel", CG_SetHeadmodel_f, 0, CG_HeadmodelComplete },
-	{ "tcmd", CG_TargetCommand_f, CMD_INGAME },
+	{ "centerEcho", CG_CenterEcho_f, CMD_INGAME },
+	{ "centerView", IN_CenterView, 0 },
+	{ "headModel", CG_SetHeadmodel_f, 0, CG_HeadmodelComplete },
+	{ "targetCommand", CG_TargetCommand_f, CMD_INGAME },
 	{ "team_model", CG_SetTeamModel_f, 0, CG_TeamModelComplete },
-	{ "team_headmodel", CG_SetTeamHeadmodel_f, 0, CG_TeamHeadmodelComplete },
+	{ "team_headModel", CG_SetTeamHeadmodel_f, 0, CG_TeamHeadmodelComplete },
 	{ "tell_target", CG_TellTarget_f, CMD_INGAME },
 	{ "tell_attacker", CG_TellAttacker_f, CMD_INGAME },
 #ifdef MISSIONPACK
@@ -1709,9 +1714,9 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "scoresUp", CG_ScrollScoresUp_f, CMD_INGAME },
 #endif
 	{ "model", CG_SetModel_f, 0, CG_ModelComplete },
-	{ "viewpos", CG_Viewpos_f, CMD_INGAME },
-	{ "weapnext", CG_NextWeapon_f, CMD_INGAME },
-	{ "weapprev", CG_PrevWeapon_f, CMD_INGAME },
+	{ "viewPos", CG_Viewpos_f, CMD_INGAME },
+	{ "weaponNext", CG_NextWeapon_f, CMD_INGAME },
+	{ "weaponPrevious", CG_PrevWeapon_f, CMD_INGAME },
 	{ "weapon", CG_Weapon_f, CMD_INGAME },
 	{ "weaponToggle", CG_WeaponToggle_f, CMD_INGAME },
 
@@ -1732,21 +1737,21 @@ static playerConsoleCommand_t	playerCommands[] = {
 #endif
 	{ "give", CG_ForwardToServer_f, CMD_INGAME, CG_GiveComplete },
 	{ "god", CG_ForwardToServer_f, CMD_INGAME },
-	{ "notarget", CG_ForwardToServer_f, CMD_INGAME },
-	{ "noclip", CG_ForwardToServer_f, CMD_INGAME },
+	{ "noTarget", CG_ForwardToServer_f, CMD_INGAME },
+	{ "noClip", CG_ForwardToServer_f, CMD_INGAME },
 	{ "where", CG_ForwardToServer_f, CMD_INGAME },
 	{ "kill", CG_ForwardToServer_f, CMD_INGAME },
-	{ "teamtask", CG_ForwardToServer_f, CMD_INGAME },
-	{ "levelshot", CG_ForwardToServer_f, CMD_INGAME },
+	{ "teamTask", CG_ForwardToServer_f, CMD_INGAME },
+	{ "levelShot", CG_ForwardToServer_f, CMD_INGAME },
 	{ "follow", CG_ForwardToServer_f, CMD_INGAME, CG_FollowComplete },
-	{ "follownext", CG_ForwardToServer_f, CMD_INGAME },
-	{ "followprev", CG_ForwardToServer_f, CMD_INGAME },
+	{ "followNext", CG_ForwardToServer_f, CMD_INGAME },
+	{ "followPrevious", CG_ForwardToServer_f, CMD_INGAME },
 	{ "team", CG_ForwardToServer_f, CMD_INGAME, CG_TeamComplete },
-	{ "callvote", CG_ForwardToServer_f, CMD_INGAME, CG_CallVoteComplete },
+	{ "callVote", CG_ForwardToServer_f, CMD_INGAME, CG_CallVoteComplete },
 	{ "vote", CG_ForwardToServer_f, CMD_INGAME, CG_VoteComplete },
-	{ "callteamvote", CG_ForwardToServer_f, CMD_INGAME, CG_CallTeamVoteComplete },
-	{ "teamvote", CG_ForwardToServer_f, CMD_INGAME, CG_VoteComplete },
-	{ "setviewpos", CG_ForwardToServer_f, CMD_INGAME },
+	{ "callTeamVote", CG_ForwardToServer_f, CMD_INGAME, CG_CallTeamVoteComplete },
+	{ "teamVote", CG_ForwardToServer_f, CMD_INGAME, CG_VoteComplete },
+	{ "setViewPos", CG_ForwardToServer_f, CMD_INGAME },
 	{ "stats", CG_ForwardToServer_f, CMD_INGAME }
 };
 

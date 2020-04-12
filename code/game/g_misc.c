@@ -97,7 +97,7 @@ TELEPORTERS
 =================================================================================
 */
 
-void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles ) {
+void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles, const qboolean freezeVelocity, const qboolean saveAngles) {
 	gentity_t	*tent;
 	qboolean noAngles;
 
@@ -119,12 +119,18 @@ void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles ) {
 	player->player->ps.origin[2] += 1;
 	if (!noAngles) {
 	// spit the player out
-	AngleVectors( angles, player->player->ps.velocity, NULL, NULL );
-	VectorScale( player->player->ps.velocity, 400, player->player->ps.velocity );
-	player->player->ps.pm_time = 160;		// hold time
-	player->player->ps.pm_flags |= PMF_TIME_KNOCKBACK;
-	// set angles
-	SetPlayerViewAngle(player, angles);
+		if (!freezeVelocity) {
+			AngleVectors(angles, player->player->ps.velocity, NULL, NULL);
+			VectorScale(player->player->ps.velocity, 400, player->player->ps.velocity);
+		}
+		else {
+			AngleVectors(angles, player->player->ps.velocity, NULL, NULL);
+			VectorSet(player->player->ps.velocity, 0, 0, 0);
+		}
+		player->player->ps.pm_time = 160;		// hold time
+		player->player->ps.pm_flags |= PMF_TIME_KNOCKBACK;
+		// set angles
+		if (!saveAngles) SetPlayerViewAngle(player, angles);
 	}
 	// toggle the teleport bit so the client knows to not lerp
 	player->player->ps.eFlags ^= EF_TELEPORT_BIT;
@@ -729,13 +735,13 @@ static void PortalTouch( gentity_t *self, gentity_t *other, trace_t *trace) {
 	// if there is not one, die!
 	if( !destination ) {
 		if( self->pos1[0] || self->pos1[1] || self->pos1[2] ) {
-			TeleportPlayer( other, self->pos1, self->s.angles );
+			TeleportPlayer( other, self->pos1, self->s.angles, qfalse, qfalse );
 		}
 		G_Damage( other, other, other, NULL, NULL, 100000, DAMAGE_NO_PROTECTION, MOD_TELEFRAG );
 		return;
 	}
 
-	TeleportPlayer( other, destination->s.pos.trBase, destination->s.angles );
+	TeleportPlayer( other, destination->s.pos.trBase, destination->s.angles, qfalse, qfalse );
 }
 
 
