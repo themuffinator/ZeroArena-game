@@ -262,7 +262,7 @@ Add continuous entity effects, like local entity emission and lighting
 static void CG_EntityEffects( centity_t *cent ) {
 
 	// update sound origins
-	CG_SetEntitySoundPosition( cent );
+	//CG_SetEntitySoundPosition( cent );	//muff: this fucks up looping mover sound origins, move this after it
 
 	// add loop sound
 	if ( cent->currentState.loopSound ) {
@@ -274,7 +274,8 @@ static void CG_EntityEffects( centity_t *cent ) {
 				cgs.gameSounds[ cent->currentState.loopSound ] );
 		}
 	}
-
+	// update sound origins
+	CG_SetEntitySoundPosition( cent );
 
 	// constant light glow
 	if(cent->currentState.constantLight)

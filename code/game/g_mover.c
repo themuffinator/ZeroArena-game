@@ -1513,9 +1513,9 @@ Plats are always drawn in the extended position so they will light correctly.
 void SP_func_plat (gentity_t *ent) {
 	float		lip, height;
 
-	ent->sound1to2 = ent->sound2to1 = G_SoundIndex("sound/movers/plats/pt2_strt.wav");
-	ent->soundPos1 = ent->soundPos2 = G_SoundIndex("sound/movers/plats/pt2_end.wav");
-	ent->soundLoop = G_SoundIndex("sound/movers/plats/pt2_mid.wav");
+	ent->sound1to2 = ent->sound2to1 = G_SoundIndex("sound/movers/plats/pt1_strt.wav");
+	ent->soundPos1 = ent->soundPos2 = G_SoundIndex("sound/movers/plats/pt1_end.wav");
+	ent->soundLoop = G_SoundIndex("sound/movers/plats/pt1_mid.wav");
 
 	VectorClear (ent->s.angles);
 
