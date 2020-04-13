@@ -36,9 +36,6 @@ Suite 120, Rockville, Maryland 20850 USA.
 #ifdef MISSIONPACK
 #include "../ui/ui_shared.h"
 #endif
-#ifdef MISSIONPACK_HUD
-extern menuDef_t *menuScoreboard;
-#endif
 
 
 
@@ -185,9 +182,6 @@ CG_ScoresDown
 static void CG_ScoresDown_f(int localPlayerNum) {
 	localPlayer_t *player = &cg.localPlayers[localPlayerNum];
 
-#ifdef MISSIONPACK_HUD
-	CG_BuildSpectatorString();
-#endif
 	if ( cg.scoresRequestTime + 2000 < cg.time ) {
 		// the scores are more than two seconds out of data,
 		// so request new ones
@@ -557,121 +551,6 @@ static void CG_TeamHeadmodelComplete( int localPlayerNum, char *args, int argNum
 	}
 }
 
-#ifdef MISSIONPACK_HUD
-extern menuDef_t *menuScoreboard;
-extern displayContextDef_t cgDC;
-void Menu_Reset( void );			// FIXME: add to right include file
-#ifdef MISSIONPACK
-void UI_Load( void );
-#endif
-
-static void CG_LoadHud_f( void) {
-  char buff[1024];
-	const char *hudSet;
-  memset(buff, 0, sizeof(buff));
-
-#ifdef MISSIONPACK
-	// must reload both ui and hud at once, they share the string memory pool
-	UI_Load();
-
-	Init_Display(&cgDC);
-#else
-	Init_Display(&cgDC);
-
-	String_Init();
-#endif
-
-	Menu_Reset();
-	
-	trap_Cvar_VariableStringBuffer("cg_hudFiles", buff, sizeof(buff));
-	hudSet = buff;
-	if (hudSet[0] == '\0') {
-		hudSet = "ui/hud.txt";
-	}
-
-	CG_LoadMenus(hudSet);
-	CG_HudMenuHacks();
-  menuScoreboard = NULL;
-}
-
-// In team gametypes skip spectators and scroll through entire team.
-// First time through list only use red player then switch to only blue players, etc.
-static int CG_ScrollScores( int scoreIndex, int dir ) {
-	int i, team;
-
-	if ( cg.numScores == 0 )
-		return 0;
-
-	if ( cgs.gametype < GT_TEAM ) {
-		scoreIndex += dir;
-
-		if ( scoreIndex < 0 )
-			scoreIndex = cg.numScores - 1;
-		else if ( scoreIndex >= cg.numScores )
-			scoreIndex = 0;
-
-		return scoreIndex;
-	}
-
-	team = cg.scores[scoreIndex].team;
-
-	if ( team == TEAM_SPECTATOR ) {
-		team = TEAM_RED;
-	}
-
-	for ( i = scoreIndex + dir; i < cg.numScores && i >= 0; i += dir ) {
-		if ( cg.scores[i].team == team ) {
-			return i;
-		}
-	}
-
-	// didn't find any more players on this team in this direction,
-	// wrap around and switch teams
-	if ( cgs.gametype >= GT_TEAM ) {
-		if ( team == TEAM_RED ) {
-			team = TEAM_BLUE;
-		} else {
-			team = TEAM_RED;
-		}
-	}
-
-	if ( dir > 0 )
-		i = 0;
-	else
-		i = cg.numScores - 1;
-
-	for ( /**/; i < cg.numScores && i >= 0; i += dir ) {
-		if ( cg.scores[i].team == team ) {
-			return i;
-		}
-	}
-
-	// no change
-	return scoreIndex;
-}
-
-static void CG_ScrollScoresDown_f( int localPlayerNum ) {
-	if ( cg.snap && cg.snap->pss[localPlayerNum].pm_type == PM_INTERMISSION ) {
-		cg.intermissionSelectedScore = CG_ScrollScores( cg.intermissionSelectedScore, 1 );
-	}
-
-	if ( cg.localPlayers[localPlayerNum].scoreBoardShowing ) {
-		cg.localPlayers[localPlayerNum].selectedScore = CG_ScrollScores( cg.localPlayers[localPlayerNum].selectedScore, 1 );
-	}
-}
-
-
-static void CG_ScrollScoresUp_f( int localPlayerNum ) {
-	if ( cg.snap && cg.snap->pss[localPlayerNum].pm_type == PM_INTERMISSION ) {
-		cg.intermissionSelectedScore = CG_ScrollScores( cg.intermissionSelectedScore, -1 );
-	}
-
-	if ( cg.localPlayers[localPlayerNum].scoreBoardShowing ) {
-		cg.localPlayers[localPlayerNum].selectedScore = CG_ScrollScores( cg.localPlayers[localPlayerNum].selectedScore, -1 );
-	}
-}
-#endif
-
 static void CG_CameraOrbit( int localPlayerNum, float speed ) {
 	localPlayer_t *player;
 
@@ -729,233 +608,6 @@ static void CG_TellAttacker_f( int localPlayerNum ) {
 	trap_SendClientCommand( command );
 }
 
-#ifdef MISSIONPACK
-static void CG_VoiceTellTarget_f( int localPlayerNum ) {
-	int		playerNum;
-	char	command[MAX_SAY_TEXT + 16];
-	char	message[MAX_SAY_TEXT];
-
-	playerNum = CG_CrosshairPlayer( localPlayerNum );
-	if ( playerNum == -1 ) {
-		return;
-	}
-
-	trap_Args( message, sizeof( message ) );
-	Com_sprintf( command, sizeof( command ), "%s %i %s", Com_LocalPlayerCvarName( localPlayerNum, "vtell" ), playerNum, message );
-	trap_SendClientCommand( command );
-}
-
-static void CG_VoiceTellAttacker_f( int localPlayerNum ) {
-	int		playerNum;
-	char	command[MAX_SAY_TEXT + 16];
-	char	message[MAX_SAY_TEXT];
-
-	playerNum = CG_LastAttacker( localPlayerNum );
-	if ( playerNum == -1 ) {
-		return;
-	}
-
-	trap_Args( message, sizeof( message ) );
-	Com_sprintf( command, sizeof( command ), "%s %i %s", Com_LocalPlayerCvarName( localPlayerNum, "vtell" ), playerNum, message );
-	trap_SendClientCommand( command );
-}
-
-static void CG_NextTeamMember_f( int localPlayerNum ) {
-  CG_SelectNextPlayer( localPlayerNum );
-}
-
-static void CG_PrevTeamMember_f( int localPlayerNum ) {
-  CG_SelectPrevPlayer( localPlayerNum );
-}
-
-// ASS U ME's enumeration order as far as task specific orders, OFFENSE is zero, CAMP is last
-//
-static void CG_NextOrder_f( int localPlayerNum ) {
-	localPlayer_t	*player;
-	playerInfo_t	*pi;
-	int				playerNum;
-	int				team;
-
-	player = &cg.localPlayers[ localPlayerNum ];
-
-	if ( player->playerNum == -1 ) {
-		return;
-	}
-
-	playerNum = cg.snap->pss[ localPlayerNum ].playerNum;
-	team = cg.snap->pss[ localPlayerNum ].persistant[PERS_TEAM];
-
-	pi = cgs.playerinfo + playerNum;
-
-	if (pi) {
-		if (!pi->teamLeader && sortedTeamPlayers[team][cg_currentSelectedPlayer[localPlayerNum].integer] != playerNum) {
-			return;
-		}
-	}
-	if (player->currentOrder < TEAMTASK_CAMP) {
-		player->currentOrder++;
-
-		if (player->currentOrder == TEAMTASK_RETRIEVE) {
-			if (!CG_OtherTeamHasFlag()) {
-				player->currentOrder++;
-			}
-		}
-
-		if (player->currentOrder == TEAMTASK_ESCORT) {
-			if (!CG_YourTeamHasFlag()) {
-				player->currentOrder++;
-			}
-		}
-
-	} else {
-		player->currentOrder = TEAMTASK_OFFENSE;
-	}
-	player->orderPending = qtrue;
-	player->orderTime = cg.time + 3000;
-}
-
-
-static void CG_ConfirmOrder_f( int localPlayerNum ) {
-	localPlayer_t *player;
-
-	player = &cg.localPlayers[ localPlayerNum ];
-
-	if ( player->playerNum == -1 ) {
-		return;
-	}
-
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %d %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vtell"), player->acceptLeader, VOICECHAT_YES));
-	trap_Cmd_ExecuteText(EXEC_NOW, "+button5; wait; -button5");
-	if (cg.time < player->acceptOrderTime) {
-		trap_SendClientCommand(va("teamTask %d\n", player->acceptTask));
-		player->acceptOrderTime = 0;
-	}
-}
-
-static void CG_DenyOrder_f( int localPlayerNum ) {
-	localPlayer_t *player;
-
-	player = &cg.localPlayers[ localPlayerNum ];
-
-	if ( player->playerNum == -1 ) {
-		return;
-	}
-
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %d %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vtell"), player->acceptLeader, VOICECHAT_NO));
-	trap_Cmd_ExecuteText(EXEC_NOW, va("%s; wait; %s", Com_LocalPlayerCvarName(localPlayerNum, "+button6"), Com_LocalPlayerCvarName(localPlayerNum, "-button6")));
-	if (cg.time < player->acceptOrderTime) {
-		player->acceptOrderTime = 0;
-	}
-}
-
-static void CG_TaskOffense_f( int localPlayerNum ) {
-	if (cgs.gametype == GT_CTF || cgs.gametype == GT_1FCTF) {
-		trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONGETFLAG));
-	} else {
-		trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONOFFENSE));
-	}
-	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), TEAMTASK_OFFENSE));
-}
-
-static void CG_TaskDefense_f( int localPlayerNum ) {
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONDEFENSE));
-	trap_SendClientCommand(va("teamTask %d\n", TEAMTASK_DEFENSE));
-}
-
-static void CG_TaskPatrol_f( int localPlayerNum ) {
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONPATROL));
-	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), TEAMTASK_PATROL));
-}
-
-static void CG_TaskCamp_f( int localPlayerNum ) {
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONCAMPING));
-	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), TEAMTASK_CAMP));
-}
-
-static void CG_TaskFollow_f( int localPlayerNum ) {
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONFOLLOW));
-	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), TEAMTASK_FOLLOW));
-}
-
-static void CG_TaskRetrieve_f( int localPlayerNum ) {
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONRETURNFLAG));
-	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), TEAMTASK_RETRIEVE));
-}
-
-static void CG_TaskEscort_f( int localPlayerNum ) {
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_ONFOLLOWCARRIER));
-	trap_SendClientCommand(va("%s %d\n", Com_LocalPlayerCvarName(localPlayerNum, "teamTask"), TEAMTASK_ESCORT));
-}
-
-static void CG_TaskOwnFlag_f( int localPlayerNum ) {
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay_team"), VOICECHAT_IHAVEFLAG));
-}
-
-static void CG_TauntKillInsult_f( int localPlayerNum ) {
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay"), VOICECHAT_KILLINSULT));
-}
-
-static void CG_TauntPraise_f( int localPlayerNum ) {
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay"), VOICECHAT_PRAISE));
-}
-
-static void CG_TauntTaunt_f( int localPlayerNum ) {
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vtaunt")));
-}
-
-static void CG_TauntDeathInsult_f( int localPlayerNum ) {
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay"), VOICECHAT_DEATHINSULT));
-}
-
-static void CG_TauntGauntlet_f( int localPlayerNum ) {
-	trap_Cmd_ExecuteText(EXEC_NOW, va("cmd %s %s\n", Com_LocalPlayerCvarName(localPlayerNum, "vsay"), VOICECHAT_KILLGAUNTLET));
-}
-
-static void CG_TaskSuicide_f( int localPlayerNum ) {
-	int		playerNum;
-	char	command[128];
-
-	playerNum = CG_CrosshairPlayer(0);
-	if ( playerNum == -1 ) {
-		return;
-	}
-
-	Com_sprintf( command, 128, "%s %i suicide", Com_LocalPlayerCvarName( localPlayerNum, "tell" ), playerNum );
-	trap_SendClientCommand( command );
-}
-
-
-
-/*
-==================
-CG_TeamMenu_f
-==================
-*/
-/*
-static void CG_TeamMenu_f( void ) {
-  if (Key_GetCatcher() & KEYCATCH_CGAME) {
-    CG_EventHandling(CGAME_EVENT_NONE);
-    Key_SetCatcher(0);
-  } else {
-    CG_EventHandling(CGAME_EVENT_TEAMMENU);
-    //Key_SetCatcher(KEYCATCH_CGAME);
-  }
-}
-*/
-
-/*
-==================
-CG_EditHud_f
-==================
-*/
-/*
-static void CG_EditHud_f( void ) {
-  //cls.keyCatchers ^= KEYCATCH_CGAME;
-  //VM_Call (cgvm, CG_EVENT_HANDLING, (cls.keyCatchers & KEYCATCH_CGAME) ? CGAME_EVENT_EDITHUD : CGAME_EVENT_NONE);
-}
-*/
-
-#endif
 
 /*
 ==================
@@ -1344,76 +996,6 @@ static void CG_TellComplete( int localPlayerNum, char *args, int argNum ) {
 	}
 }
 
-#ifdef MISSIONPACK
-/*
-=================
-CG_Field_CompleteVoiceChat
-=================
-*/
-static void CG_Field_CompleteVoiceChat( void ) {
-	trap_Field_CompleteList(
-		VOICECHAT_BASEATTACK "\0"
-		VOICECHAT_CAMP "\0"
-		VOICECHAT_DEATHINSULT "\0"
-		VOICECHAT_DEFEND "\0"
-		VOICECHAT_DEFENDFLAG "\0"
-		VOICECHAT_ENEMYHASFLAG "\0"
-		VOICECHAT_FOLLOWFLAGCARRIER "\0"
-		VOICECHAT_FOLLOWME "\0"
-		VOICECHAT_GETFLAG "\0"
-		VOICECHAT_IHAVEFLAG "\0"
-		VOICECHAT_INPOSITION "\0"
-		VOICECHAT_KILLGAUNTLET "\0"
-		VOICECHAT_KILLINSULT "\0"
-		VOICECHAT_NO "\0"
-		VOICECHAT_OFFENSE "\0"
-		VOICECHAT_ONCAMPING "\0"
-		VOICECHAT_ONDEFENSE "\0"
-		VOICECHAT_ONFOLLOW "\0"
-		VOICECHAT_ONFOLLOWCARRIER "\0"
-		VOICECHAT_ONGETFLAG "\0"
-		VOICECHAT_ONOFFENSE "\0"
-		VOICECHAT_ONPATROL "\0"
-		VOICECHAT_ONRETURNFLAG "\0"
-		VOICECHAT_PATROL "\0"
-		VOICECHAT_PRAISE "\0"
-		VOICECHAT_RETURNFLAG "\0"
-		VOICECHAT_STARTLEADER "\0"
-		VOICECHAT_STOPLEADER "\0"
-		VOICECHAT_TAUNT "\0"
-		VOICECHAT_TRASH "\0"
-		VOICECHAT_WANTONDEFENSE "\0"
-		VOICECHAT_WANTONOFFENSE "\0"
-		VOICECHAT_WHOISLEADER "\0"
-		VOICECHAT_YES "\0"
-	);
-}
-
-/*
-=================
-CG_VoiceSayComplete
-=================
-*/
-static void CG_VoiceSayComplete( int localPlayerNum, char *args, int argNum ) {
-	if ( argNum == 2 ) {
-		CG_Field_CompleteVoiceChat();
-	}
-}
-
-/*
-=================
-CG_VoiceTellComplete
-=================
-*/
-static void CG_VoiceTellComplete( int localPlayerNum, char *args, int argNum ) {
-	if ( argNum == 2 ) {
-		CG_Field_CompletePlayerName( -1, qfalse, qfalse );
-	}
-	if ( argNum == 3 ) {
-		CG_Field_CompleteVoiceChat();
-	}
-}
-#endif
 
 /*
 =================
@@ -1579,9 +1161,6 @@ static consoleCommand_t	cg_commands[] = {
 #ifdef MISSIONPACK
 	{ "spWin", CG_spWin_f, CMD_INGAME },
 	{ "spLose", CG_spLose_f, CMD_INGAME },
-#ifdef MISSIONPACK_HUD
-	{ "loadhud", CG_LoadHud_f, CMD_INGAME },
-#endif
 #endif
 	{ "startOrbit", CG_StartOrbit_f, CMD_INGAME },
 	//{ "camera", CG_Camera_f, CMD_INGAME },
@@ -1686,33 +1265,6 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "team_headModel", CG_SetTeamHeadmodel_f, 0, CG_TeamHeadmodelComplete },
 	{ "tell_target", CG_TellTarget_f, CMD_INGAME },
 	{ "tell_attacker", CG_TellAttacker_f, CMD_INGAME },
-#ifdef MISSIONPACK
-	{ "vtell_target", CG_VoiceTellTarget_f, CMD_INGAME, CG_VoiceSayComplete },
-	{ "vtell_attacker", CG_VoiceTellAttacker_f, CMD_INGAME, CG_VoiceSayComplete },
-	{ "nextTeamMember", CG_NextTeamMember_f, CMD_INGAME },
-	{ "prevTeamMember", CG_PrevTeamMember_f, CMD_INGAME },
-	{ "nextOrder", CG_NextOrder_f, CMD_INGAME },
-	{ "confirmOrder", CG_ConfirmOrder_f, CMD_INGAME },
-	{ "denyOrder", CG_DenyOrder_f, CMD_INGAME },
-	{ "taskOffense", CG_TaskOffense_f, CMD_INGAME },
-	{ "taskDefense", CG_TaskDefense_f, CMD_INGAME },
-	{ "taskPatrol", CG_TaskPatrol_f, CMD_INGAME },
-	{ "taskCamp", CG_TaskCamp_f, CMD_INGAME },
-	{ "taskFollow", CG_TaskFollow_f, CMD_INGAME },
-	{ "taskRetrieve", CG_TaskRetrieve_f, CMD_INGAME },
-	{ "taskEscort", CG_TaskEscort_f, CMD_INGAME },
-	{ "taskSuicide", CG_TaskSuicide_f, CMD_INGAME },
-	{ "taskOwnFlag", CG_TaskOwnFlag_f, CMD_INGAME },
-	{ "tauntKillInsult", CG_TauntKillInsult_f, CMD_INGAME },
-	{ "tauntPraise", CG_TauntPraise_f, CMD_INGAME },
-	{ "tauntTaunt", CG_TauntTaunt_f, CMD_INGAME },
-	{ "tauntDeathInsult", CG_TauntDeathInsult_f, CMD_INGAME },
-	{ "tauntGauntlet", CG_TauntGauntlet_f, CMD_INGAME },
-#endif
-#ifdef MISSIONPACK_HUD
-	{ "scoresDown", CG_ScrollScoresDown_f, CMD_INGAME },
-	{ "scoresUp", CG_ScrollScoresUp_f, CMD_INGAME },
-#endif
 	{ "model", CG_SetModel_f, 0, CG_ModelComplete },
 	{ "viewPos", CG_Viewpos_f, CMD_INGAME },
 	{ "weaponNext", CG_NextWeapon_f, CMD_INGAME },
@@ -1726,15 +1278,6 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "say", CG_ForwardToServer_f, CMD_INGAME },
 	{ "say_team", CG_ForwardToServer_f, CMD_INGAME },
 	{ "tell", CG_ForwardToServer_f, CMD_INGAME, CG_TellComplete },
-#ifdef MISSIONPACK
-	{ "vsay", CG_ForwardToServer_f, CMD_INGAME, CG_VoiceSayComplete },
-	{ "vsay_team", CG_ForwardToServer_f, CMD_INGAME, CG_VoiceSayComplete },
-	{ "vtell", CG_ForwardToServer_f, CMD_INGAME, CG_VoiceTellComplete },
-	{ "vosay", CG_ForwardToServer_f, CMD_INGAME, CG_VoiceSayComplete },
-	{ "vosay_team", CG_ForwardToServer_f, CMD_INGAME, CG_VoiceSayComplete },
-	{ "votell", CG_ForwardToServer_f, CMD_INGAME, CG_VoiceTellComplete },
-	{ "vtaunt", CG_ForwardToServer_f, CMD_INGAME },
-#endif
 	{ "give", CG_ForwardToServer_f, CMD_INGAME, CG_GiveComplete },
 	{ "god", CG_ForwardToServer_f, CMD_INGAME },
 	{ "noTarget", CG_ForwardToServer_f, CMD_INGAME },

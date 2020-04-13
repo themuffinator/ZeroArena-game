@@ -510,7 +510,7 @@ void BotRefuseOrder(bot_state_t *bs) {
 	// if the bot was ordered to do something
 	if ( bs->order_time && bs->order_time > FloatTime() - 10 ) {
 		EA_Action(bs->playernum, ACTION_NEGATIVE);
-		BotVoiceChat(bs, bs->decisionmaker, VOICECHAT_NO);
+		//BotVoiceChat(bs, bs->decisionmaker, VOICECHAT_NO);
 		bs->order_time = 0;
 	}
 }
@@ -551,7 +551,7 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 				bs->altroutegoal.areanum = 0;
 			}
 			BotSetUserInfo(bs, "teamTask", va("%d", TEAMTASK_OFFENSE));
-			BotVoiceChat(bs, -1, VOICECHAT_IHAVEFLAG);
+			//BotVoiceChat(bs, -1, VOICECHAT_IHAVEFLAG);
 		}
 		else if (bs->rushbaseaway_time > FloatTime()) {
 			if (BotTeam(bs) == TEAM_RED) flagstatus = bs->redflagstatus;
@@ -601,7 +601,7 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 					//no arrive message
 					bs->arrive_time = 1;
 					//
-					BotVoiceChat(bs, bs->teammate, VOICECHAT_ONFOLLOW);
+					//BotVoiceChat(bs, bs->teammate, VOICECHAT_ONFOLLOW);
 					//get the team goal time
 					bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
 					bs->ltgtype = LTG_TEAMACCOMPANY;
@@ -678,7 +678,7 @@ void BotCTFSeekGoals(bot_state_t *bs) {
 					//no arrive message
 					bs->arrive_time = 1;
 					//
-					BotVoiceChat(bs, bs->teammate, VOICECHAT_ONFOLLOW);
+					//BotVoiceChat(bs, bs->teammate, VOICECHAT_ONFOLLOW);
 					//get the team goal time
 					bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
 					bs->ltgtype = LTG_TEAMACCOMPANY;
@@ -840,7 +840,7 @@ void Bot1FCTFSeekGoals(bot_state_t *bs) {
 			BotGetAlternateRouteGoal(bs, BotOppositeTeam(bs));
 			//
 			BotSetTeamStatus(bs);
-			BotVoiceChat(bs, -1, VOICECHAT_IHAVEFLAG);
+			//BotVoiceChat(bs, -1, VOICECHAT_IHAVEFLAG);
 		}
 		return;
 	}
@@ -873,7 +873,7 @@ void Bot1FCTFSeekGoals(bot_state_t *bs) {
 					//no arrive message
 					bs->arrive_time = 1;
 					//
-					BotVoiceChat(bs, bs->teammate, VOICECHAT_ONFOLLOW);
+					//BotVoiceChat(bs, bs->teammate, VOICECHAT_ONFOLLOW);
 					//get the team goal time
 					bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
 					bs->ltgtype = LTG_TEAMACCOMPANY;
@@ -1260,7 +1260,7 @@ void BotHarvesterSeekGoals(bot_state_t *bs) {
 			//no arrive message
 			bs->arrive_time = 1;
 			//
-			BotVoiceChat(bs, bs->teammate, VOICECHAT_ONFOLLOW);
+			//BotVoiceChat(bs, bs->teammate, VOICECHAT_ONFOLLOW);
 			//get the team goal time
 			bs->teamgoal_time = FloatTime() + TEAM_ACCOMPANY_TIME;
 			bs->ltgtype = LTG_TEAMACCOMPANY;
@@ -1701,7 +1701,7 @@ void BotCheckItemPickup(bot_state_t *bs, int *oldinventory) {
 				// if we have a bot team leader
 				if (BotTeamLeader(bs)) {
 					// tell the leader we want to be on offence
-					BotVoiceChat(bs, leader, VOICECHAT_WANTONOFFENSE);
+					//BotVoiceChat(bs, leader, VOICECHAT_WANTONOFFENSE);
 					//BotAI_BotInitialChat(bs, "wantoffence", NULL);
 					//BotEnterChat(bs->cs, leader, CHAT_TELL);
 				}
@@ -1713,7 +1713,7 @@ void BotCheckItemPickup(bot_state_t *bs, int *oldinventory) {
 						if ((gametype != GT_CTF || (bs->redflagstatus == 0 && bs->blueflagstatus == 0)) &&
 							(gametype != GT_1FCTF || bs->neutralflagstatus == 0) ) {
 							// tell the leader we want to be on offence
-							BotVoiceChat(bs, leader, VOICECHAT_WANTONOFFENSE);
+							//BotVoiceChat(bs, leader, VOICECHAT_WANTONOFFENSE);
 							//BotAI_BotInitialChat(bs, "wantoffence", NULL);
 							//BotEnterChat(bs->cs, leader, CHAT_TELL);
 						}
@@ -1728,7 +1728,7 @@ void BotCheckItemPickup(bot_state_t *bs, int *oldinventory) {
 				// if we have a bot team leader
 				if (BotTeamLeader(bs)) {
 					// tell the leader we want to be on defense
-					BotVoiceChat(bs, -1, VOICECHAT_WANTONDEFENSE);
+					//BotVoiceChat(bs, -1, VOICECHAT_WANTONDEFENSE);
 					//BotAI_BotInitialChat(bs, "wantdefence", NULL);
 					//BotEnterChat(bs->cs, leader, CHAT_TELL);
 				}
@@ -1738,7 +1738,7 @@ void BotCheckItemPickup(bot_state_t *bs, int *oldinventory) {
 						if ((gametype != GT_CTF || (bs->redflagstatus == 0 && bs->blueflagstatus == 0)) &&
 							(gametype != GT_1FCTF || bs->neutralflagstatus == 0) ) {
 							// tell the leader we want to be on defense
-							BotVoiceChat(bs, -1, VOICECHAT_WANTONDEFENSE);
+							//BotVoiceChat(bs, -1, VOICECHAT_WANTONDEFENSE);
 							//BotAI_BotInitialChat(bs, "wantdefence", NULL);
 							//BotEnterChat(bs->cs, leader, CHAT_TELL);
 						}

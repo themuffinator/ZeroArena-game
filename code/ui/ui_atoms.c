@@ -243,13 +243,6 @@ static void UI_Test_f( void ) {
 }
 
 static void UI_Load_f( void ) {
-#ifdef MISSIONPACK_HUD
-	if ( cg.connected ) {
-		// if hud scripts are loaded, UI_Load() will break it. So reload hud and ui using loadhud command.
-		trap_Cmd_ExecuteText( EXEC_NOW, "loadhud\n" );
-		return;
-	}
-#endif
 	UI_Load();
 }
 

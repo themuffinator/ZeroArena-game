@@ -725,32 +725,6 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		DEBUGNAME("EV_TAUNT");
 		trap_S_StartSound (NULL, es->number, CHAN_VOICE, CG_CustomSound( es->number, "*taunt.wav" ) );
 		break;
-#ifdef MISSIONPACK
-	case EV_TAUNT_YES:
-		DEBUGNAME("EV_TAUNT_YES");
-		CG_VoiceChatLocal(~0, SAY_TEAM, qfalse, es->number, COLOR_CYAN, VOICECHAT_YES);
-		break;
-	case EV_TAUNT_NO:
-		DEBUGNAME("EV_TAUNT_NO");
-		CG_VoiceChatLocal(~0, SAY_TEAM, qfalse, es->number, COLOR_CYAN, VOICECHAT_NO);
-		break;
-	case EV_TAUNT_FOLLOWME:
-		DEBUGNAME("EV_TAUNT_FOLLOWME");
-		CG_VoiceChatLocal(~0, SAY_TEAM, qfalse, es->number, COLOR_CYAN, VOICECHAT_FOLLOWME);
-		break;
-	case EV_TAUNT_GETFLAG:
-		DEBUGNAME("EV_TAUNT_GETFLAG");
-		CG_VoiceChatLocal(~0, SAY_TEAM, qfalse, es->number, COLOR_CYAN, VOICECHAT_ONGETFLAG);
-		break;
-	case EV_TAUNT_GUARDBASE:
-		DEBUGNAME("EV_TAUNT_GUARDBASE");
-		CG_VoiceChatLocal(~0, SAY_TEAM, qfalse, es->number, COLOR_CYAN, VOICECHAT_ONDEFENSE);
-		break;
-	case EV_TAUNT_PATROL:
-		DEBUGNAME("EV_TAUNT_PATROL");
-		CG_VoiceChatLocal(~0, SAY_TEAM, qfalse, es->number, COLOR_CYAN, VOICECHAT_ONPATROL);
-		break;
-#endif
 	case EV_WATER_TOUCH:
 		DEBUGNAME("EV_WATER_TOUCH");
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.watrInSound );

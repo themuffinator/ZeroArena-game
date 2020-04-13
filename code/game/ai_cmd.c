@@ -1037,7 +1037,7 @@ void BotMatch_TaskPreference(bot_state_t *bs, bot_match_t *match) {
 	EasyPlayerName(teammate, teammatename, sizeof(teammatename));
 	BotAI_BotInitialChat(bs, "keepinmind", teammatename, NULL);
 	BotEnterChat(bs->cs, teammate, CHAT_TELL);
-	BotVoiceChatOnly(bs, teammate, VOICECHAT_YES);
+	//BotVoiceChatOnly(bs, teammate, VOICECHAT_YES);
 	EA_Action(bs->playernum, ACTION_AFFIRMATIVE);
 }
 
@@ -1271,7 +1271,7 @@ void BotMatch_Suicide(bot_state_t *bs, bot_match_t *match) {
 	BotMatchVariable(match, NETNAME, netname, sizeof(netname));
 	playernum = PlayerFromName(netname);
 	//
-	BotVoiceChat(bs, playernum, VOICECHAT_TAUNT);
+	////BotVoiceChat(bs, playernum, VOICECHAT_TAUNT);
 	EA_Action(bs->playernum, ACTION_AFFIRMATIVE);
 }
 

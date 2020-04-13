@@ -31,8 +31,6 @@ Suite 120, Rockville, Maryland 20850 USA.
 // cg_scoreboard -- draw the scoreboard on top of the game screen
 #include "cg_local.h"
 
-#ifndef MISSIONPACK_HUD
-
 #define	SCOREBOARD_X		(0)
 
 #define SB_HEADER			86
@@ -461,8 +459,6 @@ qboolean CG_DrawOldScoreboard( void ) {
 
 	return qtrue;
 }
-
-#endif // !MISSIONPACK_HUD
 
 //================================================================================
 

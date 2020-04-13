@@ -937,4 +937,3 @@ void CG_KeysStringForBinding(const char *binding, char *string, int stringSize )
 		Q_strcat( string, stringSize, name2 );
 	}
 }
-

@@ -599,22 +599,9 @@ typedef struct {
 	int			attackerTime;
 
 #ifdef MISSIONPACK
-	// voice chat head
-	int			voiceTime;
-	int			currentVoicePlayerNum;
-
 	// proxy mine warning
 	int			proxTime;
 #endif
-
-	// orders
-	int			currentOrder;
-	qboolean	orderPending;
-	int			orderTime;
-	int			acceptOrderTime;
-	int			acceptTask;
-	int			acceptLeader;
-	char		acceptVoice[MAX_NAME_LENGTH];
 
 	// reward medals
 	int			rewardStack;
@@ -820,13 +807,6 @@ typedef struct {
 	int			soundBufferOut;
 	int			soundTime;
 	qhandle_t	soundBuffer[MAX_SOUNDBUFFER];
-
-#ifdef MISSIONPACK
-	// for voice chat buffer
-	int			voiceChatTime;
-	int			voiceChatBufferIn;
-	int			voiceChatBufferOut;
-#endif
 
 	// warmup countdown
 	int			warmup;
@@ -1378,10 +1358,8 @@ extern	vmCvar_t		cg_drawLagometer;
 extern	vmCvar_t		cg_drawAttacker;
 extern	vmCvar_t		cg_synchronousClients;
 extern	vmCvar_t		cg_singlePlayer;
-#ifndef MISSIONPACK_HUD
 extern	vmCvar_t		cg_teamChatTime;
 extern	vmCvar_t		cg_teamChatHeight;
-#endif
 extern	vmCvar_t		cg_stats;
 extern	vmCvar_t 		cg_forceModel;
 extern	vmCvar_t 		cg_buildScript;
@@ -1391,10 +1369,6 @@ extern	vmCvar_t		cg_predictItems;
 extern	vmCvar_t		cg_deferPlayers;
 extern	vmCvar_t		cg_drawFriend;
 extern	vmCvar_t		cg_teamChatsOnly;
-#ifdef MISSIONPACK
-extern	vmCvar_t		cg_noVoiceChats;
-extern	vmCvar_t		cg_noVoiceText;
-#endif
 extern  vmCvar_t		cg_scorePlum;
 extern	vmCvar_t		cg_smoothClients;
 extern	vmCvar_t		pmove_overbounce;
@@ -1405,10 +1379,6 @@ extern	vmCvar_t		cg_timescaleFadeEnd;
 extern	vmCvar_t		cg_timescaleFadeSpeed;
 extern	vmCvar_t		cg_timescale;
 extern	vmCvar_t		cg_cameraMode;
-#ifdef MISSIONPACK_HUD
-extern  vmCvar_t		cg_smallFont;
-extern  vmCvar_t		cg_bigFont;
-#endif
 #ifdef MISSIONPACK
 extern	vmCvar_t		cg_noTaunt;
 #endif
@@ -1431,9 +1401,7 @@ extern	vmCvar_t		cg_coronas;
 extern	vmCvar_t		cg_fovAspectAdjust;
 extern	vmCvar_t		cg_fadeExplosions;
 extern	vmCvar_t		cg_skybox;
-#ifndef MISSIONPACK_HUD
 extern	vmCvar_t		cg_drawScores;
-#endif
 extern	vmCvar_t		cg_drawPickupItems;
 extern	vmCvar_t		cg_oldBubbles;
 extern	vmCvar_t		cg_smoothBodySink;
@@ -1630,7 +1598,6 @@ void CG_DrawSides(float x, float y, float w, float h, float size);
 void CG_DrawTopBottom(float x, float y, float w, float h, float size);
 void CG_ClearViewport( void );
 
-
 //
 // cg_draw.c, cg_newDraw.c
 //
@@ -1658,24 +1625,14 @@ void CG_DrawScreen2D( stereoFrame_t stereoView );
 void CG_DrawFlagModel( float x, float y, float w, float h, int team, qboolean force2D );
 void CG_DrawTeamBackground( int x, int y, int w, int h, float alpha, int team );
 void CG_OwnerDraw(float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, float special, float scale, vec4_t color, qhandle_t shader, int textStyle);
-void CG_SelectPrevPlayer( int localPlayerNum );
-void CG_SelectNextPlayer( int localPlayerNum );
 float CG_GetValue(int ownerDraw);
 qboolean CG_OwnerDrawVisible(int flags);
-void CG_RunMenuScript(char **args);
-void CG_SetPrintString(q3print_t type, const char *p);
-void CG_InitTeamChat( void );
-void CG_GetTeamColor(vec4_t *color);
 const char *CG_GetGameStatusText( void );
 const char *CG_GetKillerText( void );
 void CG_Draw3DModel(float x, float y, float w, float h, qhandle_t model, cgSkin_t *skin, vec3_t origin, vec3_t angles);
-void CG_CheckOrderPending( int localPlayerNum );
 const char *CG_GameTypeString( void );
-qboolean CG_YourTeamHasFlag( void );
-qboolean CG_OtherTeamHasFlag( void );
 qhandle_t CG_StatusHandle(int task);
 qboolean CG_AnyScoreboardShowing( void );
-
 
 
 //
@@ -1919,11 +1876,6 @@ void CG_ExecuteNewServerCommands( int latestSequence );
 void CG_ParseServerinfo( void );
 void CG_SetConfigValues( void );
 void CG_ShaderStateChanged(void);
-#ifdef MISSIONPACK
-void CG_LoadVoiceChats( void );
-void CG_VoiceChatLocal( int localPlayerBits, int mode, qboolean voiceOnly, int playerNum, int color, const char *cmd );
-void CG_PlayBufferedVoiceChats( void );
-#endif
 int CG_LocalPlayerBitsForTeam( team_t );
 void CG_ReplaceCharacter( char *str, char old, char new );
 

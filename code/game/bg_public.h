@@ -171,7 +171,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 typedef enum {
 	GT_FFA,				// free for all
 	GT_TOURNAMENT,		// one on one tournament
-	GT_SINGLE_PLAYER,	// single player ffa
+	GT_SINGLE_PLAYER,	// single player
 
 	//-- team games go after this --
 

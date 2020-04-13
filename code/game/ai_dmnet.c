@@ -353,7 +353,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 		if (bs->teammessage_time && bs->teammessage_time < FloatTime()) {
 			BotAI_BotInitialChat(bs, "help_start", EasyPlayerName(bs->teammate, netname, sizeof(netname)), NULL);
 			BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
-			BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
+			//BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
 			EA_Action(bs->playernum, ACTION_AFFIRMATIVE);
 			bs->teammessage_time = 0;
 		}
@@ -400,7 +400,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 		if (bs->teammessage_time && bs->teammessage_time < FloatTime()) {
 			BotAI_BotInitialChat(bs, "accompany_start", EasyPlayerName(bs->teammate, netname, sizeof(netname)), NULL);
 			BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
-			BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
+			//BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
 			EA_Action(bs->playernum, ACTION_AFFIRMATIVE);
 			bs->teammessage_time = 0;
 		}
@@ -522,7 +522,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			BotGoalName(bs->teamgoal.number, buf, sizeof(buf));
 			BotAI_BotInitialChat(bs, "defend_start", buf, NULL);
 			BotEnterChat(bs->cs, 0, CHAT_TEAM);
-			BotVoiceChatOnly(bs, -1, VOICECHAT_ONDEFENSE);
+			//BotVoiceChatOnly(bs, -1, VOICECHAT_ONDEFENSE);
 			bs->teammessage_time = 0;
 		}
 		//set the bot goal
@@ -578,7 +578,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			BotGoalName(bs->teamgoal.number, buf, sizeof(buf));
 			BotAI_BotInitialChat(bs, "getitem_start", buf, NULL);
 			BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
-			BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
+			//BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
 			EA_Action(bs->playernum, ACTION_AFFIRMATIVE);
 			bs->teammessage_time = 0;
 		}
@@ -610,7 +610,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			if (bs->ltgtype == LTG_CAMPORDER) {
 				BotAI_BotInitialChat(bs, "camp_start", EasyPlayerName(bs->teammate, netname, sizeof(netname)), NULL);
 				BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
-				BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
+				//BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
 				EA_Action(bs->playernum, ACTION_AFFIRMATIVE);
 			}
 			bs->teammessage_time = 0;
@@ -642,7 +642,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 				if (bs->ltgtype == LTG_CAMPORDER) {
 					BotAI_BotInitialChat(bs, "camp_arrive", EasyPlayerName(bs->teammate, netname, sizeof(netname)), NULL);
 					BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
-					BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_INPOSITION);
+					//BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_INPOSITION);
 				}
 				bs->arrive_time = FloatTime();
 			}
@@ -700,7 +700,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			}
 			BotAI_BotInitialChat(bs, "patrol_start", buf, NULL);
 			BotEnterChat(bs->cs, bs->decisionmaker, CHAT_TELL);
-			BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
+			//BotVoiceChatOnly(bs, bs->decisionmaker, VOICECHAT_YES);
 			EA_Action(bs->playernum, ACTION_AFFIRMATIVE);
 			bs->teammessage_time = 0;
 		}
@@ -751,7 +751,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			if (bs->teammessage_time && bs->teammessage_time < FloatTime()) {
 				BotAI_BotInitialChat(bs, "captureflag_start", NULL);
 				BotEnterChat(bs->cs, 0, CHAT_TEAM);
-				BotVoiceChatOnly(bs, -1, VOICECHAT_ONGETFLAG);
+				//BotVoiceChatOnly(bs, -1, VOICECHAT_ONGETFLAG);
 				bs->teammessage_time = 0;
 			}
 			//
@@ -809,7 +809,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			if (bs->teammessage_time && bs->teammessage_time < FloatTime()) {
 				BotAI_BotInitialChat(bs, "returnflag_start", NULL);
 				BotEnterChat(bs->cs, 0, CHAT_TEAM);
-				BotVoiceChatOnly(bs, -1, VOICECHAT_ONRETURNFLAG);
+				//BotVoiceChatOnly(bs, -1, VOICECHAT_ONRETURNFLAG);
 				bs->teammessage_time = 0;
 			}
 			//
@@ -835,7 +835,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			if (bs->teammessage_time && bs->teammessage_time < FloatTime()) {
 				BotAI_BotInitialChat(bs, "captureflag_start", NULL);
 				BotEnterChat(bs->cs, 0, CHAT_TEAM);
-				BotVoiceChatOnly(bs, -1, VOICECHAT_ONGETFLAG);
+				//BotVoiceChatOnly(bs, -1, VOICECHAT_ONGETFLAG);
 				bs->teammessage_time = 0;
 			}
 			memcpy(goal, &ctf_neutralflag, sizeof(bot_goal_t));
@@ -878,7 +878,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			if (bs->teammessage_time && bs->teammessage_time < FloatTime()) {
 				BotAI_BotInitialChat(bs, "attackenemybase_start", NULL);
 				BotEnterChat(bs->cs, 0, CHAT_TEAM);
-				BotVoiceChatOnly(bs, -1, VOICECHAT_ONOFFENSE);
+				//BotVoiceChatOnly(bs, -1, VOICECHAT_ONOFFENSE);
 				bs->teammessage_time = 0;
 			}
 			switch(BotTeam(bs)) {
@@ -902,7 +902,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			if (bs->teammessage_time && bs->teammessage_time < FloatTime()) {
 				BotAI_BotInitialChat(bs, "returnflag_start", NULL);
 				BotEnterChat(bs->cs, 0, CHAT_TEAM);
-				BotVoiceChatOnly(bs, -1, VOICECHAT_ONRETURNFLAG);
+				//BotVoiceChatOnly(bs, -1, VOICECHAT_ONRETURNFLAG);
 				bs->teammessage_time = 0;
 			}
 			//
@@ -921,7 +921,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			if (bs->teammessage_time && bs->teammessage_time < FloatTime()) {
 				BotAI_BotInitialChat(bs, "attackenemybase_start", NULL);
 				BotEnterChat(bs->cs, 0, CHAT_TEAM);
-				BotVoiceChatOnly(bs, -1, VOICECHAT_ONOFFENSE);
+				//BotVoiceChatOnly(bs, -1, VOICECHAT_ONOFFENSE);
 				bs->teammessage_time = 0;
 			}
 			switch(BotTeam(bs)) {
@@ -984,7 +984,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			if (bs->teammessage_time && bs->teammessage_time < FloatTime()) {
 				BotAI_BotInitialChat(bs, "attackenemybase_start", NULL);
 				BotEnterChat(bs->cs, 0, CHAT_TEAM);
-				BotVoiceChatOnly(bs, -1, VOICECHAT_ONOFFENSE);
+				//BotVoiceChatOnly(bs, -1, VOICECHAT_ONOFFENSE);
 				bs->teammessage_time = 0;
 			}
 			switch(BotTeam(bs)) {
@@ -1009,7 +1009,7 @@ int BotGetLongTermGoal(bot_state_t *bs, int tfl, int retreat, bot_goal_t *goal) 
 			if (bs->teammessage_time && bs->teammessage_time < FloatTime()) {
 				BotAI_BotInitialChat(bs, "harvest_start", NULL);
 				BotEnterChat(bs->cs, 0, CHAT_TEAM);
-				BotVoiceChatOnly(bs, -1, VOICECHAT_ONOFFENSE);
+				//BotVoiceChatOnly(bs, -1, VOICECHAT_ONOFFENSE);
 				bs->teammessage_time = 0;
 			}
 			memcpy(goal, &neutralobelisk, sizeof(bot_goal_t));
