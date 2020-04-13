@@ -3942,6 +3942,7 @@ void AAS_SetWeaponJumpAreaFlags(void)
 		if (
 			!strcmp(classname, "item_armor_body") ||
 			!strcmp(classname, "item_armor_combat") ||
+			!strcmp(classname, "item_armor_jacket") ||
 			!strcmp(classname, "item_health_mega") ||
 			!strcmp(classname, "weapon_grenadelauncher") ||
 			!strcmp(classname, "weapon_rocketlauncher") ||
