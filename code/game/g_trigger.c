@@ -470,3 +470,56 @@ void SP_func_timer( gentity_t *self ) {
 }
 
 
+//q2
+
+/*QUAKED trigger_once (.5 .5 .5) ? x x TRIGGERED
+Triggers once, then removes itself.
+You must set the key "target" to the name of another object in the level that has a matching "targetname".
+
+If TRIGGERED, this trigger must be triggered before it is live.
+
+sounds
+ 1)	secret
+ 2)	beep beep
+ 3)	large switch
+ 4)
+
+"message"	string to be displayed when triggered
+*/
+
+void SP_trigger_once(gentity_t* ent)
+{
+	// make old maps work because I messed up on flag assignments here
+	// triggered was on bit 1 when it should have been on bit 4
+	if (ent->spawnflags & 1)
+	{
+		vec3_t	v;
+
+		//VectorMA(ent->s.mins, 0.5, ent->s.size, v);
+		ent->spawnflags &= ~1;
+		ent->spawnflags |= 4;
+		G_Printf("fixed TRIGGERED flag on %s at %s\n", ent->classname, vtos(v));
+	}
+
+	ent->wait = -1;
+
+	ent->touch = Touch_Multi;
+	ent->use = Use_Multi;
+
+	InitTrigger(ent);
+	trap_LinkEntity(ent);
+}
+
+/*QUAKED trigger_relay (.5 .5 .5) (-8 -8 -8) (8 8 8)
+This fixed size trigger cannot be touched, it can only be fired by other events.
+*/
+void trigger_relay_use(gentity_t* self, gentity_t* other, gentity_t* activator)
+{
+	G_UseTargets(self, activator);
+}
+
+void SP_trigger_relay(gentity_t* self)
+{
+	self->use = trigger_relay_use;
+}
+//-q2

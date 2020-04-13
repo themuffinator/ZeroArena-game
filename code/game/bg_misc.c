@@ -1094,6 +1094,12 @@ qboolean BG_CheckSpawnEntity( const bgEntitySpawnInfo_t *info ) {
 	}
 #endif
 
+	info->spawnInt("spawnflags", "0", &i);
+	if (i) {
+		if (gametype != GT_SINGLE_PLAYER && (i & SPAWNFLAG_NOT_DEATHMATCH) )
+			return qfalse;
+	}
+
 	if( info->spawnString( "!gametype", NULL, &value ) ) {
 		if( gametype >= 0 && gametype < GT_MAX_GAME_TYPE ) {
 			gametypeName = gametypeNames[gametype];

@@ -115,6 +115,14 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 #define MAX_DLIGHT_CONFIGSTRINGS 128
 
+//muff: q2 compatibility
+#define	SPAWNFLAG_NOT_EASY			0x00000100
+#define	SPAWNFLAG_NOT_MEDIUM		0x00000200
+#define	SPAWNFLAG_NOT_HARD			0x00000400
+#define	SPAWNFLAG_NOT_DEATHMATCH	0x00000800
+//#define	SPAWNFLAG_NOT_COOP			0x00001000
+//-muff
+
 //
 // config strings are a general means of communicating variable length strings
 // from the server to all connected clients.

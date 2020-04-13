@@ -67,7 +67,13 @@ typedef enum {
 	MOVER_POS1,
 	MOVER_POS2,
 	MOVER_1TO2,
-	MOVER_2TO1
+	MOVER_2TO1,
+//muff: rotating doors
+	ROTATOR_POS1,
+	ROTATOR_POS2,
+	ROTATOR_1TO2,
+	ROTATOR_2TO1
+//-muff
 } moverState_t;
 
 #define SP_PODIUM_MODEL		"models/mapobjects/podium/podium4.md3"
@@ -184,6 +190,10 @@ struct gentity_s {
 	float		random;
 
 	gitem_t		*item;			// for bonus items
+
+//muff: rotating doors
+	float		distance;		// VALKYRIE: for rotating door
+//-muff
 
 	// dlights
 	vec3_t		dl_color;
@@ -464,6 +474,10 @@ typedef struct {
 #ifdef MISSIONPACK
 	int			portalSequence;
 #endif
+//q2
+	int			found_secrets;
+	int			total_secrets;
+//-q2
 } level_locals_t;
 
 

@@ -494,3 +494,40 @@ void SP_target_location( gentity_t *self ){
 	G_SetOrigin( self, self->s.origin );
 }
 
+//q2
+
+//==========================================================
+
+/*QUAKED target_secret (1 0 1) (-8 -8 -8) (8 8 8)
+Counts a secret found.
+These are single use targets.
+*/
+void use_target_secret(gentity_t* ent, gentity_t* other, gentity_t* activator)
+{
+	G_AddEvent(activator, EV_GENERAL_SOUND, ent->noise_index);
+
+	level.found_secrets++;
+
+	G_UseTargets(ent, activator);
+	G_FreeEntity(ent);
+}
+
+void SP_target_secret(gentity_t* ent)
+{
+	char* s;
+
+	if (!G_SpawnString("noise", "NOSOUND", &s)) {
+		ent->noise_index = G_SoundIndex("misc/secret.wav");
+	}
+	else {
+		char	buffer[MAX_QPATH];
+
+		Q_strncpyz(buffer, s, sizeof(buffer));
+		COM_DefaultExtension(buffer, sizeof(buffer), ".wav");
+		ent->noise_index = G_SoundIndex(buffer);
+	}
+
+	ent->use = use_target_secret;
+	level.total_secrets++;
+}
+//-q2

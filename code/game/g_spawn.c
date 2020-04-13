@@ -123,6 +123,9 @@ field_t fields[] = {
 	{"color",        FOFS( dl_color ),     F_VECTOR},      // color of the light
 	{"stylestring",  FOFS( dl_stylestring ), F_STRING},   // user defined stylestring "fffndlsfaaaaaa" for example
 	{"shader",       FOFS( dl_shader ), F_STRING},    // shader to use for a target_effect or dlight
+//muff: rotating doors
+	{"distance", FOFS(distance), F_FLOAT},
+//-muff
 //muff
 	{"author", FOFS(message), F_STRING},
 	{"author2", FOFS(message), F_STRING},
@@ -148,12 +151,17 @@ void SP_func_button (gentity_t *ent);
 void SP_func_door (gentity_t *ent);
 void SP_func_train (gentity_t *ent);
 void SP_func_timer (gentity_t *self);
+//muff: rotating doors
+void SP_func_door_rotating(gentity_t* ent);
+//-muff
 
 void SP_trigger_always (gentity_t *ent);
 void SP_trigger_multiple (gentity_t *ent);
 void SP_trigger_push (gentity_t *ent);
 void SP_trigger_teleport (gentity_t *ent);
 void SP_trigger_hurt (gentity_t *ent);
+void SP_trigger_once(gentity_t* ent);
+void SP_trigger_relay(gentity_t* ent);
 
 void SP_target_remove_powerups( gentity_t *ent );
 void SP_target_give (gentity_t *ent);
@@ -168,6 +176,7 @@ void SP_target_kill (gentity_t *ent);
 void SP_target_position (gentity_t *ent);
 void SP_target_location (gentity_t *ent);
 void SP_target_push (gentity_t *ent);
+void SP_target_secret(gentity_t* ent);
 
 void SP_light (gentity_t *self);
 void SP_lightJunior (gentity_t *self);
@@ -176,6 +185,7 @@ void SP_info_notnull (gentity_t *self);
 void SP_info_camp (gentity_t *self);
 void SP_path_corner (gentity_t *self);
 
+void SP_misc_teleporter (gentity_t *self);
 void SP_misc_teleporter_dest (gentity_t *self);
 void SP_misc_model(gentity_t *ent);
 void SP_misc_gamemodel (gentity_t *ent);
@@ -226,6 +236,9 @@ spawn_t	spawns[] = {
 	{"func_train", SP_func_train},
 	{"func_group", SP_info_null},
 	{"func_timer", SP_func_timer},			// rename trigger_timer?
+//muff: rotating doors
+	{ "func_door_rotating", SP_func_door_rotating },
+//-muff
 
 	// Triggers are brush objects that cause an effect when contacted
 	// by a living player, usually involving firing targets.
@@ -237,6 +250,8 @@ spawn_t	spawns[] = {
 	{"trigger_push", SP_trigger_push},
 	{"trigger_teleport", SP_trigger_teleport},
 	{"trigger_hurt", SP_trigger_hurt},
+	//{"trigger_once", SP_trigger_once},
+	{"trigger_relay", SP_trigger_relay},
 
 	// targets perform no action by themselves, but must be triggered
 	// by another entity
@@ -253,12 +268,14 @@ spawn_t	spawns[] = {
 	{"target_position", SP_target_position},
 	{"target_location", SP_target_location},
 	{"target_push", SP_target_push},
+	{"target_secret", SP_target_secret},
 
 	{"light", SP_light},
 	{"lightJunior", SP_lightJunior},
 
 	{"path_corner", SP_path_corner},
 
+	{"misc_teleporter", SP_misc_teleporter},
 	{"misc_teleporter_dest", SP_misc_teleporter_dest},
 	{"misc_model", SP_misc_model},
 	{"misc_gamemodel", SP_misc_gamemodel},
@@ -460,6 +477,13 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 		G_FreeEntity( ent );
 		return;
 	}
+//muff q2
+	if (g_gameType.integer != GT_SINGLE_PLAYER && !Q_stricmpn(ent->classname, "monster_", 8)) {
+		ADJUST_AREAPORTAL();
+		G_FreeEntity(ent);
+		return;
+	}
+//-muff
 
 	// move editor origin to pos
 	VectorCopy( ent->s.origin, ent->s.pos.trBase );

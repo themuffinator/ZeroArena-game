@@ -154,6 +154,76 @@ void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles, const qboo
 }
 
 
+//=================================================================================
+
+/*QUAKED misc_teleporter (1 0 0) (-32 -32 -24) (32 32 -16)
+Stepping onto this disc will teleport players to the targeted misc_teleporter_dest object.
+*/
+void teleporter_touch(gentity_t* self, gentity_t* other, trace_t* trace)
+{
+	gentity_t* dest;
+
+	if (!other->player) {
+		G_Printf("Not a player\n");
+		return;
+	}
+	if (other->player->ps.pm_type == PM_DEAD) {
+		G_Printf("A dead player\n");
+		return;
+	}
+
+	dest = G_Find(NULL, FOFS(targetname), self->target);
+	if (!dest)
+	{
+		G_Printf("Couldn't find teleporter destination\n");
+		return;
+	}
+
+	// clear the velocity and hold them in place briefly
+	VectorClear(other->player->ps.velocity);
+	other->player->ps.pm_time = 160 >> 3;		// hold time
+	other->player->ps.pm_flags |= PMF_TIME_KNOCKBACK;	// PMF_TIME_TELEPORT;
+
+	G_Printf("Teleport player\n");
+	TeleportPlayer(other, dest->s.origin, dest->s.angles, qtrue, qfalse);
+}
+
+void SP_misc_teleporter(gentity_t* ent)
+{
+	gentity_t* trig;
+
+	if (!ent->target)
+	{
+		G_Printf("misc_teleporter without a target.\n");
+		G_FreeEntity(ent);
+		return;
+	}
+
+	ent->s.loopSound = G_SoundIndex("sound/world/amb10.wav");
+
+	//TODO: create collision model from dmspot model instead of creating a collision box
+	ent->s.modelindex = G_ModelIndex("models/objects/dmspot/dmspot.md3");
+	VectorSet(ent->s.mins, -32, -32, -24);
+	VectorSet(ent->s.maxs, 32, 32, -16);
+	ent->s.collisionType = CT_SUBMODEL;
+	trap_LinkEntity(ent);
+	
+	trig = G_Spawn();
+	trig->classname = "trigger_teleport";
+	trig->touch = teleporter_touch;
+	ent->s.collisionType = CT_SUBMODEL;
+	trig->s.contents = CONTENTS_TRIGGER;
+	trig->r.svFlags = SVF_NOCLIENT;
+	trig->target = ent->target;
+	trig->parent = ent;
+	trig->r.ownerNum = ent->s.number;
+	VectorCopy(ent->s.origin, trig->s.origin);
+	VectorSet(trig->s.mins, -8, -8, 8);
+	VectorSet(trig->s.maxs, 8, 8, 24);
+	trap_LinkEntity(trig);
+}
+
+
 /*QUAKED misc_teleporter_dest (1 0 0) (-32 -32 -24) (32 32 -16)
 Point teleporters at these.
 Now that we don't have teleport destination pads, this is just
