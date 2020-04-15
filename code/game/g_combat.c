@@ -63,9 +63,10 @@ void AddScore( gentity_t *ent, vec3_t origin, int score ) {
 		return;
 	}
 	// no scoring during pre-match warmup
-	if ( level.warmupTime ) {
-		return;
-	}
+	if ( level.warmupTime ) return;
+
+	//muff: ignore if no score
+	if ( !score ) return;
 	// show score plum
 	ScorePlum(ent, origin, score);
 	//
