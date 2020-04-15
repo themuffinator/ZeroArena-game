@@ -61,7 +61,7 @@ typedef struct {
 	char		*defaultString;
 	int			cvarFlags;
 } cvarTable_t;
-
+/*
 vmCvar_t	ui_ffa_fraglimit;
 vmCvar_t	ui_ffa_timelimit;
 vmCvar_t	ui_ffa_instagib;
@@ -80,7 +80,6 @@ vmCvar_t	ui_ctf_timelimit;
 vmCvar_t	ui_ctf_friendly;
 vmCvar_t	ui_ctf_instagib;
 
-#ifdef MISSIONPACK
 vmCvar_t	ui_1flag_capturelimit;
 vmCvar_t	ui_1flag_timelimit;
 vmCvar_t	ui_1flag_friendly;
@@ -95,7 +94,40 @@ vmCvar_t	ui_harvester_capturelimit;
 vmCvar_t	ui_harvester_timelimit;
 vmCvar_t	ui_harvester_friendly;
 vmCvar_t	ui_harvester_instagib;
-#endif
+*/
+
+vmCvar_t	ui_gt_frags_free_scoreLimit;
+vmCvar_t	ui_gt_frags_free_timeLimit;
+vmCvar_t	ui_gt_frags_free_instaGib;
+vmCvar_t	ui_gt_frags_teams_scoreLimit;
+vmCvar_t	ui_gt_frags_teams_timeLimit;
+vmCvar_t	ui_gt_frags_teams_friendlyFire;
+vmCvar_t	ui_gt_frags_teams_instaGib;
+vmCvar_t	ui_gt_1v1_scoreLimit;
+vmCvar_t	ui_gt_1v1_timeLimit;
+vmCvar_t	ui_gt_1v1_instaGib;
+vmCvar_t	ui_gt_captures_teams_scoreLimit;
+vmCvar_t	ui_gt_captures_teams_timeLimit;
+vmCvar_t	ui_gt_captures_teams_friendlyFire;
+vmCvar_t	ui_gt_captures_teams_instaGib;
+vmCvar_t	ui_gt_elim_free_lives;
+vmCvar_t	ui_gt_elim_free_timeLimit;
+vmCvar_t	ui_gt_elim_free_instaGib;
+vmCvar_t	ui_gt_elim_teams_lives;
+vmCvar_t	ui_gt_elim_teams_timeLimit;
+vmCvar_t	ui_gt_elim_teams_friendlyFire;
+vmCvar_t	ui_gt_elim_teams_instaGib;
+vmCvar_t	ui_gt_points_free_scoreLimit;
+vmCvar_t	ui_gt_points_free_timeLimit;
+vmCvar_t	ui_gt_points_free_instaGib;
+vmCvar_t	ui_gt_points_teams_scoreLimit;
+vmCvar_t	ui_gt_points_teams_timeLimit;
+vmCvar_t	ui_gt_points_teams_friendlyFire;
+vmCvar_t	ui_gt_points_teams_instaGib;
+vmCvar_t	ui_gt_rounds_free_maxRounds;
+vmCvar_t	ui_gt_rounds_free_maxRoundTime;
+vmCvar_t	ui_gt_rounds_teams_maxRounds;
+vmCvar_t	ui_gt_rounds_teams_maxRoundTime;
 
 vmCvar_t	ui_publicServer;
 
@@ -150,6 +182,7 @@ vmCvar_t	ui_menuFontProp;
 vmCvar_t	ui_menuFontBanner;
 
 static cvarTable_t		cvarTable[] = {
+	/*
 	{ &ui_ffa_fraglimit, "ui_ffa_fraglimit", "20", CVAR_ARCHIVE },
 	{ &ui_ffa_timelimit, "ui_ffa_timelimit", "0", CVAR_ARCHIVE },
 	{ &ui_ffa_instagib, "ui_ffa_instagib", "0", CVAR_ARCHIVE },
@@ -168,7 +201,6 @@ static cvarTable_t		cvarTable[] = {
 	{ &ui_ctf_friendly, "ui_ctf_friendly",  "0", CVAR_ARCHIVE },
 	{ &ui_ctf_instagib, "ui_ctf_instagib", "0", CVAR_ARCHIVE },
 
-#ifdef MISSIONPACK
 	{ &ui_1flag_capturelimit, "ui_1flag_capturelimit", "5", CVAR_ARCHIVE },
 	{ &ui_1flag_timelimit, "ui_1flag_timelimit", "30", CVAR_ARCHIVE },
 	{ &ui_1flag_friendly, "ui_1flag_friendly",  "0", CVAR_ARCHIVE },
@@ -183,7 +215,40 @@ static cvarTable_t		cvarTable[] = {
 	{ &ui_harvester_timelimit, "ui_harvester_timelimit", "30", CVAR_ARCHIVE },
 	{ &ui_harvester_friendly, "ui_harvester_friendly",  "0", CVAR_ARCHIVE },
 	{ &ui_harvester_instagib, "ui_harvester_instagib", "0", CVAR_ARCHIVE },
-#endif
+	*/
+
+	{ &ui_gt_frags_free_scoreLimit, "ui_gt_frags_free_scoreLimit", "30", CVAR_ARCHIVE },
+	{ &ui_gt_frags_free_timeLimit, "ui_gt_frags_free_timeLimit", "20", CVAR_ARCHIVE },
+	{ &ui_gt_frags_free_instaGib, "ui_gt_frags_free_instaGib", "0", CVAR_ARCHIVE },
+	{ &ui_gt_frags_teams_scoreLimit, "ui_gt_frags_teams_scoreLimit", "200", CVAR_ARCHIVE },
+	{ &ui_gt_frags_teams_timeLimit, "ui_gt_frags_teams_timeLimit", "20", CVAR_ARCHIVE },
+	{ &ui_gt_frags_teams_friendlyFire, "ui_gt_frags_teams_friendlyFire", "1", CVAR_ARCHIVE },
+	{ &ui_gt_frags_teams_instaGib, "ui_gt_frags_teams_instaGib", "0", CVAR_ARCHIVE },
+	{ &ui_gt_1v1_scoreLimit, "ui_gt_1v1_scoreLimit", "30", CVAR_ARCHIVE },
+	{ &ui_gt_1v1_timeLimit, "ui_gt_1v1_timeLimit", "10", CVAR_ARCHIVE },
+	{ &ui_gt_1v1_instaGib, "ui_gt_1v1_instaGib", "0", CVAR_ARCHIVE },
+	{ &ui_gt_captures_teams_scoreLimit, "ui_gt_captures_teams_scoreLimit", "8", CVAR_ARCHIVE },
+	{ &ui_gt_captures_teams_timeLimit, "ui_gt_captures_teams_timeLimit", "20", CVAR_ARCHIVE },
+	{ &ui_gt_captures_teams_friendlyFire, "ui_gt_captures_teams_friendlyFire", "1", CVAR_ARCHIVE },
+	{ &ui_gt_captures_teams_instaGib, "ui_gt_captures_teams_instaGib", "0", CVAR_ARCHIVE },
+	{ &ui_gt_elim_free_lives, "ui_gt_elim_free_lives", "3", CVAR_ARCHIVE },
+	{ &ui_gt_elim_free_timeLimit, "ui_gt_elim_free_timeLimit", "20", CVAR_ARCHIVE },
+	{ &ui_gt_elim_free_instaGib, "ui_gt_elim_free_instaGib", "0", CVAR_ARCHIVE },
+	{ &ui_gt_elim_teams_lives, "ui_gt_elim_teams_lives", "3", CVAR_ARCHIVE },
+	{ &ui_gt_elim_teams_timeLimit, "ui_gt_elim_teams_timeLimit", "20", CVAR_ARCHIVE },
+	{ &ui_gt_elim_teams_friendlyFire, "ui_gt_elim_teams_friendlyFire", "1", CVAR_ARCHIVE },
+	{ &ui_gt_elim_teams_instaGib, "ui_gt_elim_teams_instaGib", "0", CVAR_ARCHIVE },
+	{ &ui_gt_points_free_scoreLimit, "ui_gt_points_free_scoreLimit", "30", CVAR_ARCHIVE },
+	{ &ui_gt_points_free_timeLimit, "ui_gt_points_free_timeLimit", "20", CVAR_ARCHIVE },
+	{ &ui_gt_points_free_instaGib, "ui_gt_points_free_instaGib", "0", CVAR_ARCHIVE },
+	{ &ui_gt_points_teams_scoreLimit, "ui_gt_points_teams_scoreLimit", "30", CVAR_ARCHIVE },
+	{ &ui_gt_points_teams_timeLimit, "ui_gt_points_teams_timeLimit", "20", CVAR_ARCHIVE },
+	{ &ui_gt_points_teams_friendlyFire, "ui_gt_points_teams_friendlyFire", "1", CVAR_ARCHIVE },
+	{ &ui_gt_points_teams_instaGib, "ui_gt_points_teams_instaGib", "0", CVAR_ARCHIVE },
+	{ &ui_gt_rounds_free_maxRounds, "ui_gt_rounds_free_maxRounds", "5", CVAR_ARCHIVE },
+	{ &ui_gt_rounds_free_maxRoundTime, "ui_gt_round_free_maxRoundTime", "4", CVAR_ARCHIVE },
+	{ &ui_gt_rounds_teams_maxRounds, "ui_gt_rounds_teams_maxRounds", "8", CVAR_ARCHIVE },
+	{ &ui_gt_rounds_teams_maxRoundTime, "ui_gt_round_teams_maxRoundTime", "3", CVAR_ARCHIVE },
 
 	{ &ui_publicServer, "ui_publicServer", "1", CVAR_ARCHIVE },
 
@@ -267,4 +332,34 @@ void UI_UpdateCvars( void ) {
 	for ( i = 0, cv = cvarTable ; i < cvarTableSize ; i++, cv++ ) {
 		trap_Cvar_Update( cv->vmCvar );
 	}
+}
+
+
+/*
+=================
+UI_RetrieveGametypeNum
+=================
+*/
+int UI_RetrieveGametypeNum( void ) {
+	int num = (int)trap_Cvar_VariableValue( "g_gameType" );
+#if 0
+	if ( num < 0 ) num = 0;
+	else if ( num >= GT_MAX_GAME_TYPE ) num = GT_MAX_GAME_TYPE - 1;
+#endif
+	return num;
+}
+
+
+/*
+=================
+UI_RetrieveGametypeNumFromInfo
+=================
+*/
+int UI_RetrieveGametypeNumFromInfo( char info[MAX_INFO_STRING] ) {
+	int num = atoi( Info_ValueForKey( info, "g_gameType" ) );
+#if 0
+	if ( num < 0 ) num = 0;
+	else if ( num >= GT_MAX_GAME_TYPE ) num = GT_MAX_GAME_TYPE - 1;
+#endif
+	return num;
 }

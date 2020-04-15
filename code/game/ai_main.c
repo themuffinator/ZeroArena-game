@@ -813,11 +813,11 @@ void Svcmd_BotTeamplayReport_f(void) {
 	int i;
 
 	if (!bot_report.integer) {
-		BotAI_Print(PRT_MESSAGE, "Must set bot_report 1 before using botreport command.\n");
+		BotAI_Print(PRT_MESSAGE, "Must set bot_report 1 before using botReport command.\n");
 		return;
 	}
 
-	if (gametype >= GT_TEAM) {
+	if (TeamPlayIsOn()) {
 		BotAI_Print(PRT_MESSAGE, S_COLOR_RED"RED\n");
 		for (i = 0; i < level.maxplayers; i++) {
 			//
@@ -864,24 +864,22 @@ void BotSetInfoConfigString(bot_state_t *bs) {
 	else leader = "";
 
 	strcpy(carrying, "");
-	if (gametype == GT_CTF) {
+	if (gt[gametype].gtFlags & GTF_CTF) {
 		if (BotCTFCarryingFlag(bs)) {
 			strcpy(carrying, "F");
 		}
 	}
-#ifdef MISSIONPACK
 	else if (gametype == GT_1FCTF) {
 		if (Bot1FCTFCarryingFlag(bs)) {
 			strcpy(carrying, "F");
 		}
 	}
 	else if (gametype == GT_HARVESTER) {
-		if (BotHarvesterCarryingCubes(bs)) {
-			if (BotTeam(bs) == TEAM_RED) Com_sprintf(carrying, sizeof(carrying), "%2d", bs->inventory[INVENTORY_REDCUBE]);
-			else Com_sprintf(carrying, sizeof(carrying), "%2d", bs->inventory[INVENTORY_BLUECUBE]);
+		if (BotHarvesterCarryingSkulls(bs)) {
+			if (BotTeam(bs) == TEAM_RED) Com_sprintf(carrying, sizeof(carrying), "%2d", bs->inventory[INVENTORY_REDSKULL]);
+			else Com_sprintf(carrying, sizeof(carrying), "%2d", bs->inventory[INVENTORY_BLUESKULL]);
 		}
 	}
-#endif
 
 	switch(bs->ltgtype) {
 		case LTG_TEAMHELP:
@@ -1098,9 +1096,9 @@ void BotInterbreeding(void) {
 
 	trap_Cvar_Update(&bot_interbreedchar);
 	if (!strlen(bot_interbreedchar.string)) return;
-	//make sure we are in tournament mode
-	if (gametype != GT_TOURNAMENT) {
-		trap_Cvar_SetValue("g_gameType", GT_TOURNAMENT);
+	//make sure we are in duel mode
+	if (!(GTx(gametype, GTF_DUEL))) {
+		trap_Cvar_SetValue("g_gameType", GT_DUEL);
 		ExitLevel();
 		return;
 	}
@@ -1114,7 +1112,7 @@ void BotInterbreeding(void) {
 	trap_Cvar_SetValue("bot_reloadcharacters", 1);
 	//add a number of bots using the desired bot character
 	for (i = 0; i < bot_interbreedbots.integer; i++) {
-		trap_Cmd_ExecuteText( EXEC_INSERT, va("addbot %s 4 free %i %s%d\n",
+		trap_Cmd_ExecuteText( EXEC_INSERT, va("addBot %s 4 free %i %s%d\n",
 						bot_interbreedchar.string, i * 50, bot_interbreedchar.string, i) );
 	}
 	//

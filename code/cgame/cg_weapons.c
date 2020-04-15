@@ -1870,19 +1870,7 @@ void CG_MissileHitWall( int weapon, int playerNum, vec3_t origin, vec3_t dir, im
 
 	switch ( weapon ) {
 	default:
-#ifdef MISSIONPACK
-	case WP_NAILGUN:
-		if( soundType == IMPACTSOUND_FLESH ) {
-			sfx = cgs.media.sfx_nghitflesh;
-		} else if( soundType == IMPACTSOUND_METAL ) {
-			sfx = cgs.media.sfx_nghitmetal;
-		} else {
-			sfx = cgs.media.sfx_nghit;
-		}
-		mark = cgs.media.holeMarkShader;
-		radius = 12;
-		break;
-#endif
+
 	case WP_LIGHTNING:
 		// no explosion at LG impact, it is added with the beam
 		r = rand() & 3;
@@ -1896,17 +1884,7 @@ void CG_MissileHitWall( int weapon, int playerNum, vec3_t origin, vec3_t dir, im
 		mark = cgs.media.holeMarkShader;
 		radius = 12;
 		break;
-#ifdef MISSIONPACK
-	case WP_PROX_LAUNCHER:
-		mod = cgs.media.dishFlashModel;
-		shader = cgs.media.grenadeExplosionShader;
-		sfx = cgs.media.sfx_proxexp;
-		mark = cgs.media.burnMarkShader;
-		radius = 64;
-		light = 300;
-		isSprite = qtrue;
-		break;
-#endif
+
 	case WP_GRENADE_LAUNCHER:
 		mod = cgs.media.dishFlashModel;
 		shader = cgs.media.grenadeExplosionShader;
@@ -1968,6 +1946,30 @@ void CG_MissileHitWall( int weapon, int playerNum, vec3_t origin, vec3_t dir, im
 		break;
 
 #ifdef MISSIONPACK
+	case WP_NAILGUN:
+		if (soundType == IMPACTSOUND_FLESH) {
+			sfx = cgs.media.sfx_nghitflesh;
+		}
+		else if (soundType == IMPACTSOUND_METAL) {
+			sfx = cgs.media.sfx_nghitmetal;
+		}
+		else {
+			sfx = cgs.media.sfx_nghit;
+		}
+		mark = cgs.media.holeMarkShader;
+		radius = 12;
+		break;
+
+	case WP_PROX_LAUNCHER:
+		mod = cgs.media.dishFlashModel;
+		shader = cgs.media.grenadeExplosionShader;
+		sfx = cgs.media.sfx_proxexp;
+		mark = cgs.media.burnMarkShader;
+		radius = 64;
+		light = 300;
+		isSprite = qtrue;
+		break;
+
 	case WP_CHAINGUN:
 		mod = cgs.media.bulletFlashModel;
 		if( soundType == IMPACTSOUND_FLESH ) {

@@ -136,7 +136,7 @@ static void CG_DrawPlayerScore( int y, score_t *score, float *color, float fade,
 			}
 		} else if ( pi->handicap < 100 ) {
 			Com_sprintf( string, sizeof( string ), "%i", pi->handicap );
-			if ( cgs.gametype == GT_TOURNAMENT ) {
+			if (GTF(GTF_DUEL)) {
 				CG_DrawString( iconx, y - SMALLCHAR_HEIGHT/2, string, UI_SMALLFONT|UI_NOSCALE, color );
 			}
 			else {
@@ -145,7 +145,7 @@ static void CG_DrawPlayerScore( int y, score_t *score, float *color, float fade,
 		}
 
 		// draw the wins / losses
-		if ( cgs.gametype == GT_TOURNAMENT ) {
+		if (GTF(GTF_DUEL)) {
 			Com_sprintf( string, sizeof( string ), "%i/%i", pi->wins, pi->losses );
 			if( pi->handicap < 100 && !pi->botSkill ) {
 				CG_DrawString( iconx, y + SMALLCHAR_HEIGHT/2, string, UI_SMALLFONT|UI_NOSCALE, color );
@@ -167,35 +167,6 @@ static void CG_DrawPlayerScore( int y, score_t *score, float *color, float fade,
 		CG_DrawHead( headx, y, 16, 16, score->playerNum, headAngles );
 	}
 
-#ifdef MISSIONPACK
-	// draw the team task
-	switch ( pi->teamTask ) {
-		case TEAMTASK_OFFENSE:
-			CG_DrawPic( headx + 48, y, 16, 16, cgs.media.assaultShader );
-			break;
-		case TEAMTASK_DEFENSE:
-			CG_DrawPic( headx + 48, y, 16, 16, cgs.media.defendShader );
-			break;
-		case TEAMTASK_PATROL:
-			CG_DrawPic( headx + 48, y, 16, 16, cgs.media.patrolShader );
-			break;
-		case TEAMTASK_FOLLOW:
-			CG_DrawPic( headx + 48, y, 16, 16, cgs.media.followShader );
-			break;
-		case TEAMTASK_CAMP:
-			CG_DrawPic( headx + 48, y, 16, 16, cgs.media.campShader );
-			break;
-		case TEAMTASK_RETRIEVE:
-			CG_DrawPic( headx + 48, y, 16, 16, cgs.media.retrieveShader );
-			break;
-		case TEAMTASK_ESCORT:
-			CG_DrawPic( headx + 48, y, 16, 16, cgs.media.escortShader );
-			break;
-		default:
-			break;
-	}
-#endif
-
 	if (cg.cur_ps) {
 		if (score->playerNum == cg.cur_ps->playerNum) {
 			ps = cg.cur_ps;
@@ -213,7 +184,7 @@ static void CG_DrawPlayerScore( int y, score_t *score, float *color, float fade,
 
 		localPlayer = qtrue;
 
-		if ( ps->persistant[PERS_TEAM] == TEAM_SPECTATOR || cgs.gametype >= GT_TEAM ) {
+		if ( ps->persistant[PERS_TEAM] == TEAM_SPECTATOR || GTF(GTF_TEAMS) ) {
 			rank = -1;
 		} else {
 			rank = ps->persistant[PERS_RANK] & ~RANK_TIED_FLAG;
@@ -322,7 +293,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 		return qfalse;
 	}
 
-	if ( cgs.gametype == GT_SINGLE_PLAYER && cg.cur_lc && cg.cur_lc->predictedPlayerState.pm_type == PM_INTERMISSION ) {
+	if ( cgs.gameType == GT_SINGLE_PLAYER && cg.cur_lc && cg.cur_lc->predictedPlayerState.pm_type == PM_INTERMISSION ) {
 		return qfalse;
 	}
 
@@ -356,7 +327,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 	}
 
 	// current rank
-	if ( cgs.gametype < GT_TEAM) {
+	if ( !GTF(GTF_TEAMS)) {
 		if (cg.cur_ps && cg.cur_ps->persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
 			s = va("%s place with %i",
 				CG_PlaceString( cg.cur_ps->persistant[PERS_RANK] + 1 ),
@@ -402,7 +373,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 
 	localPlayer = qfalse;
 
-	if ( cgs.gametype >= GT_TEAM ) {
+	if (GTF(GTF_TEAMS)) {
 		//
 		// teamplay scoreboard
 		//
@@ -519,7 +490,7 @@ void CG_DrawTourneyScoreboard( void ) {
 	// print the two scores
 
 	y = 160;
-	if ( cgs.gametype >= GT_TEAM ) {
+	if (gt[cgs.gameType].gtFlags & GTF_TEAMS) {
 		//
 		// teamplay scoreboard
 		//
@@ -532,7 +503,7 @@ void CG_DrawTourneyScoreboard( void ) {
 		CG_DrawString( 8, y, "Blue Team", UI_LEFT|UI_DROPSHADOW|UI_GIANTFONT|UI_NOSCALE, NULL );
 		s = va("%i", cg.teamScores[1] );
 		CG_DrawString( 632, y, s, UI_RIGHT|UI_DROPSHADOW|UI_GIANTFONT|UI_NOSCALE, NULL );
-	} else if ( cgs.gametype == GT_TOURNAMENT ) {
+	} else if (GTF(GTF_DUEL)) {
 		//
 		// tournament scoreboard
 		//

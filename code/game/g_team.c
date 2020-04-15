@@ -53,21 +53,15 @@ void Team_SetFlagStatus( int team, flagStatus_t status );
 void Team_InitGame( void ) {
 	memset(&teamgame, 0, sizeof teamgame);
 
-	switch( g_gameType.integer ) {
-	case GT_CTF:
+	if (GTF(GTF_CTF)) {
 		teamgame.redStatus = -1; // Invalid to force update
-		Team_SetFlagStatus( TEAM_RED, FLAG_ATBASE );
-		 teamgame.blueStatus = -1; // Invalid to force update
-		Team_SetFlagStatus( TEAM_BLUE, FLAG_ATBASE );
-		break;
-#ifdef MISSIONPACK
-	case GT_1FCTF:
+		Team_SetFlagStatus(TEAM_RED, FLAG_ATBASE);
+		teamgame.blueStatus = -1; // Invalid to force update
+		Team_SetFlagStatus(TEAM_BLUE, FLAG_ATBASE);
+	}
+	else if (g_gameType.integer == GT_1FCTF) {
 		teamgame.flagStatus = -1; // Invalid to force update
-		Team_SetFlagStatus( TEAM_FREE, FLAG_ATBASE );
-		break;
-#endif
-	default:
-		break;
+		Team_SetFlagStatus(TEAM_FREE, FLAG_ATBASE);
 	}
 }
 
@@ -122,7 +116,7 @@ static __attribute__ ((format (printf, 2, 3))) void QDECL PrintMsg( gentity_t *e
 ==============
 AddTeamScore
 
- for gametype GT_TEAM this is called in AddScore in g_combat.c (checks fragLimit to win)
+ for gametype GT_TEAM this is called in AddScore in g_combat.c (checks Frag Limit to win)
  for gametype > GT_TEAM this is called when gametype-specific scoring happens (checks captureLimit to win)
         (e.g. capture flag, kill obelisk, return skulls)
 ==============
@@ -150,7 +144,7 @@ void AddTeamScore(vec3_t origin, int team, int score) {
 				level.teamScores[ team ] + score > level.teamScores[ otherTeam ] ) {
 		// this team took the lead sound
 		eventParm = ( team == TEAM_RED ) ? GTS_REDTEAM_TOOK_LEAD : GTS_BLUETEAM_TOOK_LEAD;
-	} else if ( score > 0 && g_gameType.integer != GT_TEAM ) {
+	} else if ( score > 0 && !GTF(GTF_TDM)) {
 		// team scored sound
 		eventParm = ( team == TEAM_RED ) ? GTS_REDTEAM_SCORED : GTS_BLUETEAM_SCORED;
 	}
@@ -174,7 +168,7 @@ qboolean OnSameTeam( gentity_t *ent1, gentity_t *ent2 ) {
 		return qfalse;
 	}
 
-	if ( g_gameType.integer < GT_TEAM ) {
+	if ( !GTF(GTF_TEAMS) ) {
 		return qfalse;
 	}
 
@@ -218,7 +212,7 @@ void Team_SetFlagStatus( int team, flagStatus_t status ) {
 	if( modified ) {
 		char st[4];
 
-		if( g_gameType.integer == GT_CTF ) {
+		if(GTF(GTF_CTF)) {
 			st[0] = ctfFlagStatusRemap[teamgame.redStatus];
 			st[1] = ctfFlagStatusRemap[teamgame.blueStatus];
 			st[2] = 0;
@@ -304,12 +298,10 @@ void Team_FragBonuses(gentity_t *targ, gentity_t *inflictor, gentity_t *attacker
 		enemy_flag_pw = PW_REDFLAG;
 	}
 
-#ifdef MISSIONPACK
 	if (g_gameType.integer == GT_1FCTF) {
 		flag_pw = PW_NEUTRALFLAG;
 		enemy_flag_pw = PW_NEUTRALFLAG;
-	} 
-#endif
+	}
 
 	// did the attacker frag the flag carrier?
 	if (targ->player->ps.powerups[enemy_flag_pw]) {
@@ -329,7 +321,6 @@ void Team_FragBonuses(gentity_t *targ, gentity_t *inflictor, gentity_t *attacker
 	}
 
 	// did the attacker frag a skull carrier?
-#ifdef MISSIONPACK
 	if (g_gameType.integer == GT_HARVESTER && targ->player->ps.tokens) {
 		int tokens = targ->player->ps.tokens;
 
@@ -347,7 +338,6 @@ void Team_FragBonuses(gentity_t *targ, gentity_t *inflictor, gentity_t *attacker
 		}
 		return;
 	}
-#endif
 
 	if (targ->player->pers.teamState.lasthurtcarrier &&
 		level.time - targ->player->pers.teamState.lasthurtcarrier < CTF_CARRIER_DANGER_PROTECT_TIMEOUT &&
@@ -370,9 +360,7 @@ void Team_FragBonuses(gentity_t *targ, gentity_t *inflictor, gentity_t *attacker
 	// flag and flag carrier area defense bonuses
 
 	// we have to find the flag and carrier entities
-
-#ifdef MISSIONPACK	
-	if( g_gameType.integer == GT_OBELISK ) {
+	if ( g_gameType.integer == GT_OVERLOAD ) {
 		// find the team obelisk
 		switch (attacker->player->sess.sessionTeam) {
 		case TEAM_RED:
@@ -388,29 +376,29 @@ void Team_FragBonuses(gentity_t *targ, gentity_t *inflictor, gentity_t *attacker
 	} else if (g_gameType.integer == GT_HARVESTER ) {
 		// find the center obelisk
 		c = "team_neutralobelisk";
-	} else {
-#endif
-	// find the flag
-	switch (attacker->player->sess.sessionTeam) {
-	case TEAM_RED:
-		c = "team_CTF_redflag";
-		break;
-	case TEAM_BLUE:
-		c = "team_CTF_blueflag";
-		break;		
-	default:
-		return;
-	}
-	// find attacker's team's flag carrier
-	for (i = 0; i < g_maxClients.integer; i++) {
-		carrier = g_entities + i;
-		if (carrier->inuse && carrier->player->ps.powerups[flag_pw])
+	} else if (GTF(GTF_CTF)) {
+
+		// find the flag
+		switch (attacker->player->sess.sessionTeam) {
+		case TEAM_RED:
+			c = "team_CTF_redflag";
 			break;
-		carrier = NULL;
+		case TEAM_BLUE:
+			c = "team_CTF_blueflag";
+			break;		
+		default:
+			return;
+		}
+		// find attacker's team's flag carrier
+		for (i = 0; i < g_maxClients.integer; i++) {
+			carrier = g_entities + i;
+			if (carrier->inuse && carrier->player->ps.powerups[flag_pw])
+				break;
+			carrier = NULL;
+		}
 	}
-#ifdef MISSIONPACK
-	}
-#endif
+	else return;
+
 	flag = NULL;
 	while ((flag = G_Find (flag, FOFS(classname), c)) != NULL) {
 		if (!(flag->flags & FL_DROPPED_ITEM))
@@ -486,11 +474,9 @@ void Team_CheckHurtCarrier(gentity_t *targ, gentity_t *attacker)
 	else
 		flag_pw = PW_REDFLAG;
 
-#ifdef MISSIONPACK
 	if (g_gameType.integer == GT_1FCTF) {
 		flag_pw = PW_NEUTRALFLAG;
 	}
-#endif
 
 	// flags
 	if (targ->player->ps.powerups[flag_pw] &&
@@ -538,15 +524,12 @@ gentity_t *Team_ResetFlag( int team ) {
 }
 
 void Team_ResetFlags( void ) {
-	if( g_gameType.integer == GT_CTF ) {
+	if(GTF(GTF_CTF)) {
 		Team_ResetFlag( TEAM_RED );
 		Team_ResetFlag( TEAM_BLUE );
-	}
-#ifdef MISSIONPACK
-	else if( g_gameType.integer == GT_1FCTF ) {
+	} else if( g_gameType.integer == GT_1FCTF ) {
 		Team_ResetFlag( TEAM_FREE );
 	}
-#endif
 }
 
 void Team_ReturnFlagSound( gentity_t *ent, int team ) {
@@ -683,47 +666,37 @@ int Team_TouchOurFlag( gentity_t *ent, gentity_t *other, int team ) {
 	gplayer_t	*cl = other->player;
 	int			enemy_flag;
 
-#ifdef MISSIONPACK
 	if( g_gameType.integer == GT_1FCTF ) {
 		enemy_flag = PW_NEUTRALFLAG;
-	}
-	else {
-#endif
-	if (cl->sess.sessionTeam == TEAM_RED) {
-		enemy_flag = PW_BLUEFLAG;
 	} else {
-		enemy_flag = PW_REDFLAG;
-	}
+		if (cl->sess.sessionTeam == TEAM_RED) {
+			enemy_flag = PW_BLUEFLAG;
+		} else {
+			enemy_flag = PW_REDFLAG;
+		}
 
-	if ( ent->flags & FL_DROPPED_ITEM ) {
-		// hey, it's not home.  return it by teleporting it back
-		PrintMsg( NULL, "%s" S_COLOR_WHITE " returned the %s flag!\n", 
-			cl->pers.netname, TeamName(team));
-		AddScore(other, ent->r.currentOrigin, CTF_RECOVERY_BONUS);
+		if ( ent->flags & FL_DROPPED_ITEM ) {
+			// hey, it's not home.  return it by teleporting it back
+			PrintMsg( NULL, "%s" S_COLOR_WHITE " returned the %s flag!\n", 
+				cl->pers.netname, TeamName(team));
+			AddScore(other, ent->r.currentOrigin, CTF_RECOVERY_BONUS);
 
-		other->player->pers.teamState.lastreturnedflag = level.time;
-		//ResetFlag will remove this entity!  We must return zero
-		Team_ReturnFlagSound(Team_ResetFlag(team), team);
-		return 0;
+			other->player->pers.teamState.lastreturnedflag = level.time;
+			//ResetFlag will remove this entity!  We must return zero
+			Team_ReturnFlagSound(Team_ResetFlag(team), team);
+			return 0;
+		}
 	}
-#ifdef MISSIONPACK
-	}
-#endif
 
 	// the flag is at home base.  if the player has the enemy
-	// flag, he's just won!
+	// flag, he's just scored!
 	if (!cl->ps.powerups[enemy_flag])
 		return 0; // We don't have the flag
-#ifdef MISSIONPACK
 	if( g_gameType.integer == GT_1FCTF ) {
 		trap_SendServerCommand( -1, va("cp \"%s" S_COLOR_WHITE "\ncaptured the flag!\n\"", cl->pers.netname ));
+	} else {
+		trap_SendServerCommand( -1, va("cp \"%s" S_COLOR_WHITE "\ncaptured the %s flag!\n\"", cl->pers.netname, TeamName(OtherTeam(team))));
 	}
-	else {
-#endif
-	trap_SendServerCommand( -1, va("cp \"%s" S_COLOR_WHITE "\ncaptured the %s flag!\n\"", cl->pers.netname, TeamName(OtherTeam(team))));
-#ifdef MISSIONPACK
-	}
-#endif
 
 	cl->ps.powerups[enemy_flag] = 0;
 
@@ -758,9 +731,7 @@ int Team_TouchOurFlag( gentity_t *ent, gentity_t *other, int team ) {
 			player->player->pers.teamState.lasthurtcarrier = -5;
 		} else if (player->player->sess.sessionTeam ==
 			cl->sess.sessionTeam) {
-#ifdef MISSIONPACK
 			AddScore(player, ent->r.currentOrigin, CTF_TEAM_BONUS);
-#endif
 			// award extra points for capture assists
 			if (player->player->pers.teamState.lastreturnedflag + 
 				CTF_RETURN_FLAG_ASSIST_TIMEOUT > level.time) {
@@ -795,7 +766,6 @@ int Team_TouchOurFlag( gentity_t *ent, gentity_t *other, int team ) {
 int Team_TouchEnemyFlag( gentity_t *ent, gentity_t *other, int team ) {
 	gplayer_t *cl = other->player;
 
-#ifdef MISSIONPACK
 	if( g_gameType.integer == GT_1FCTF ) {
 		PrintMsg (NULL, "%s" S_COLOR_WHITE " got the flag!\n", other->player->pers.netname );
 
@@ -809,7 +779,6 @@ int Team_TouchEnemyFlag( gentity_t *ent, gentity_t *other, int team ) {
 		}
 	}
 	else{
-#endif
 		PrintMsg (NULL, "%s" S_COLOR_WHITE " got the %s flag!\n",
 			other->player->pers.netname, TeamName(team));
 
@@ -819,11 +788,9 @@ int Team_TouchEnemyFlag( gentity_t *ent, gentity_t *other, int team ) {
 			cl->ps.powerups[PW_BLUEFLAG] = INT_MAX; // flags never expire
 
 		Team_SetFlagStatus( team, FLAG_TAKEN );
-#ifdef MISSIONPACK
 	}
 
 	AddScore(other, ent->r.currentOrigin, CTF_FLAG_BONUS);
-#endif
 	Team_TakeFlagSound( ent, team );
 
 	return -1; // Do not respawn this automatically, but do delete it if it was FL_DROPPED
@@ -833,22 +800,21 @@ int Pickup_Team( gentity_t *ent, gentity_t *other ) {
 	int team;
 	gplayer_t *cl = other->player;
 
-#ifdef MISSIONPACK
-	if( g_gameType.integer == GT_OBELISK ) {
+	if( g_gameType.integer == GT_OVERLOAD ) {
 		// there are no team items that can be picked up in obelisk
 		G_FreeEntity( ent );
 		return 0;
 	}
 
 	if( g_gameType.integer == GT_HARVESTER ) {
-		// the only team items that can be picked up in harvester are the cubes
+		// the only team items that can be picked up in harvester are the skulls
 		if( ent->s.team != cl->sess.sessionTeam ) {
 			cl->ps.tokens += 1;
 		}
 		G_FreeEntity( ent );
 		return 0;
 	}
-#endif
+
 	// figure out what team this flag is
 	if( strcmp(ent->classname, "team_CTF_redflag") == 0 ) {
 		team = TEAM_RED;
@@ -856,16 +822,14 @@ int Pickup_Team( gentity_t *ent, gentity_t *other ) {
 	else if( strcmp(ent->classname, "team_CTF_blueflag") == 0 ) {
 		team = TEAM_BLUE;
 	}
-#ifdef MISSIONPACK
 	else if( strcmp(ent->classname, "team_CTF_neutralflag") == 0  ) {
 		team = TEAM_FREE;
 	}
-#endif
 	else {
 		PrintMsg ( other, "Don't know what team the flag is on.\n");
 		return 0;
 	}
-#ifdef MISSIONPACK
+
 	if( g_gameType.integer == GT_1FCTF ) {
 		if( team == TEAM_FREE ) {
 			return Team_TouchEnemyFlag( ent, other, cl->sess.sessionTeam );
@@ -874,10 +838,7 @@ int Pickup_Team( gentity_t *ent, gentity_t *other ) {
 			return Team_TouchOurFlag( ent, other, cl->sess.sessionTeam );
 		}
 		return 0;
-	}
-#endif
-	// GT_CTF
-	if( team == cl->sess.sessionTeam) {
+	} else if( team == cl->sess.sessionTeam) {
 		return Team_TouchOurFlag( ent, other, team );
 	}
 	return Team_TouchEnemyFlag( ent, other, team );
@@ -1011,11 +972,11 @@ gentity_t *SelectRandomTeamSpawnPoint( int teamstate, team_t team ) {
 
 /*
 ===========
-SelectCTFSpawnPoint
+SelectTeamBaseSpawnPoint
 
 ============
 */
-gentity_t *SelectCTFSpawnPoint ( team_t team, int teamstate, vec3_t origin, vec3_t angles, qboolean isbot ) {
+gentity_t *SelectTeamBaseSpawnPoint ( team_t team, int teamstate, vec3_t origin, vec3_t angles, qboolean isbot ) {
 	gentity_t	*spot;
 
 	spot = SelectRandomTeamSpawnPoint ( teamstate, team );
@@ -1187,8 +1148,6 @@ Targets will be fired when someone spawns in on them.
 void SP_team_CTF_bluespawn(gentity_t *ent) {
 }
 
-
-#ifdef MISSIONPACK
 /*
 ================
 Obelisks
@@ -1326,7 +1285,7 @@ gentity_t *SpawnObelisk( vec3_t origin, vec3_t mins, vec3_t maxs, int team ) {
 	ent->s.eType = ET_GENERAL;
 	ent->flags = FL_NO_KNOCKBACK;
 
-	if( g_gameType.integer == GT_OBELISK ) {
+	if( g_gameType.integer == GT_OVERLOAD ) {
 		ent->s.contents = CONTENTS_SOLID;
 		ent->takedamage = qtrue;
 		ent->health = g_obeliskHealth.integer;
@@ -1334,8 +1293,7 @@ gentity_t *SpawnObelisk( vec3_t origin, vec3_t mins, vec3_t maxs, int team ) {
 		ent->pain = ObeliskPain;
 		ent->think = ObeliskRegen;
 		ent->nextthink = level.time + g_obeliskRegenPeriod.integer * 1000;
-	}
-	if( g_gameType.integer == GT_HARVESTER ) {
+	} else if( g_gameType.integer == GT_HARVESTER ) {
 		ent->s.contents = CONTENTS_TRIGGER;
 		ent->touch = ObeliskTouch;
 	}
@@ -1390,19 +1348,18 @@ void ObeliskInit( gentity_t *ent ) {
 void SP_team_redobelisk( gentity_t *ent ) {
 	gentity_t *obelisk;
 
-	if ( g_gameType.integer <= GT_TEAM ) {
+	if (!GTF(GTF_BASEOB)) {
 		G_FreeEntity(ent);
 		return;
 	}
 	ObeliskInit( ent );
-	if ( g_gameType.integer == GT_OBELISK ) {
+	if ( g_gameType.integer == GT_OVERLOAD ) {
 		obelisk = SpawnObelisk( ent->s.origin, ent->s.mins, ent->s.maxs, TEAM_RED );
 		obelisk->activator = ent;
 		// initial obelisk health value
 		ent->s.modelindex2 = 0xff;
 		ent->s.frame = 0;
-	}
-	if ( g_gameType.integer == GT_HARVESTER ) {
+	} else if ( g_gameType.integer == GT_HARVESTER ) {
 		obelisk = SpawnObelisk( ent->s.origin, ent->s.mins, ent->s.maxs, TEAM_RED );
 		obelisk->activator = ent;
 	}
@@ -1415,19 +1372,18 @@ void SP_team_redobelisk( gentity_t *ent ) {
 void SP_team_blueobelisk( gentity_t *ent ) {
 	gentity_t *obelisk;
 
-	if ( g_gameType.integer <= GT_TEAM ) {
+	if (!GTF(GTF_BASEOB)) {
 		G_FreeEntity(ent);
 		return;
 	}
 	ObeliskInit( ent );
-	if ( g_gameType.integer == GT_OBELISK ) {
+	if ( g_gameType.integer == GT_OVERLOAD ) {
 		obelisk = SpawnObelisk( ent->s.origin, ent->s.mins, ent->s.maxs, TEAM_BLUE );
 		obelisk->activator = ent;
 		// initial obelisk health value
 		ent->s.modelindex2 = 0xff;
 		ent->s.frame = 0;
-	}
-	if ( g_gameType.integer == GT_HARVESTER ) {
+	} else if ( g_gameType.integer == GT_HARVESTER ) {
 		obelisk = SpawnObelisk( ent->s.origin, ent->s.mins, ent->s.maxs, TEAM_BLUE );
 		obelisk->activator = ent;
 	}
@@ -1438,7 +1394,7 @@ void SP_team_blueobelisk( gentity_t *ent ) {
 /*QUAKED team_neutralobelisk (0 0 1) (-16 -16 0) (16 16 88)
 */
 void SP_team_neutralobelisk( gentity_t *ent ) {
-	if ( g_gameType.integer != GT_1FCTF && g_gameType.integer != GT_HARVESTER ) {
+	if (!GTF(GTF_NEUTOB)) {
 		G_FreeEntity(ent);
 		return;
 	}
@@ -1498,4 +1454,3 @@ qboolean CheckObeliskAttack( gentity_t *obelisk, gentity_t *attacker ) {
 
 	return qfalse;
 }
-#endif

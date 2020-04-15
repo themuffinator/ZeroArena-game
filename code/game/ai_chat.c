@@ -442,7 +442,7 @@ int BotChat_EnterGame(bot_state_t *bs) {
 	//don't chat in teamplay
 	if (TeamPlayIsOn()) return qfalse;
 	// don't chat in tournament mode
-	if (gametype == GT_TOURNAMENT) return qfalse;
+	if (GTx(gametype, GTF_DUEL)) return qfalse;
 	rnd = Characteristic_BFloat(bs->character, CHARACTERISTIC_CHAT_ENTEREXITGAME, 0, 1);
 	if (!bot_fastchat.integer) {
 		if (random() > rnd) return qfalse;
@@ -475,7 +475,7 @@ int BotChat_ExitGame(bot_state_t *bs) {
 	//don't chat in teamplay
 	if (TeamPlayIsOn()) return qfalse;
 	// don't chat in tournament mode
-	if (gametype == GT_TOURNAMENT) return qfalse;
+	if (GTx(gametype, GTF_DUEL)) return qfalse;
 	rnd = Characteristic_BFloat(bs->character, CHARACTERISTIC_CHAT_ENTEREXITGAME, 0, 1);
 	if (!bot_fastchat.integer) {
 		if (random() > rnd) return qfalse;
@@ -508,13 +508,10 @@ int BotChat_StartLevel(bot_state_t *bs) {
 	if (bs->lastchat_time > FloatTime() - TIME_BETWEENCHATTING) return qfalse;
 	//don't chat in teamplay
 	if (TeamPlayIsOn()) {
-#ifdef MISSIONPACK
-	    EA_Command(bs->playernum, "vtaunt");
-#endif
 	    return qfalse;
 	}
 	// don't chat in tournament mode
-	if (gametype == GT_TOURNAMENT) return qfalse;
+	if (GTx(gametype, GTF_DUEL)) return qfalse;
 	rnd = Characteristic_BFloat(bs->character, CHARACTERISTIC_CHAT_STARTENDLEVEL, 0, 1);
 	if (!bot_fastchat.integer) {
 		if (random() > rnd) return qfalse;
@@ -543,15 +540,10 @@ int BotChat_EndLevel(bot_state_t *bs) {
 	// teamplay
 	if (TeamPlayIsOn()) 
 	{
-#ifdef MISSIONPACK
-		if (BotIsFirstInRankings(bs)) {
-			EA_Command(bs->playernum, "vtaunt");
-		}
-#endif
 		return qtrue;
 	}
 	// don't chat in tournament mode
-	if (gametype == GT_TOURNAMENT) return qfalse;
+	if (GTx(gametype, GTF_DUEL)) return qfalse;
 	rnd = Characteristic_BFloat(bs->character, CHARACTERISTIC_CHAT_STARTENDLEVEL, 0, 1);
 	if (!bot_fastchat.integer) {
 		if (random() > rnd) return qfalse;
@@ -603,7 +595,7 @@ int BotChat_Death(bot_state_t *bs) {
 	if (bs->lastchat_time > FloatTime() - TIME_BETWEENCHATTING) return qfalse;
 	rnd = Characteristic_BFloat(bs->character, CHARACTERISTIC_CHAT_DEATH, 0, 1);
 	// don't chat in tournament mode
-	if (gametype == GT_TOURNAMENT) return qfalse;
+	if (GTx(gametype, GTF_DUEL)) return qfalse;
 	//if fast chatting is off
 	if (!bot_fastchat.integer) {
 		if (random() > rnd) return qfalse;
@@ -624,9 +616,6 @@ int BotChat_Death(bot_state_t *bs) {
 	{
 		//teamplay
 		if (TeamPlayIsOn()) {
-#ifdef MISSIONPACK
-			EA_Command(bs->playernum, "vtaunt");
-#endif
 			return qtrue;
 		}
 		//
@@ -706,7 +695,7 @@ int BotChat_Kill(bot_state_t *bs) {
 	if (bs->lastchat_time > FloatTime() - TIME_BETWEENCHATTING) return qfalse;
 	rnd = Characteristic_BFloat(bs->character, CHARACTERISTIC_CHAT_KILL, 0, 1);
 	// don't chat in tournament mode
-	if (gametype == GT_TOURNAMENT) return qfalse;
+	if (GTx(gametype, GTF_DUEL)) return qfalse;
 	//if fast chat is off
 	if (!bot_fastchat.integer) {
 		if (random() > rnd) return qfalse;
@@ -728,9 +717,6 @@ int BotChat_Kill(bot_state_t *bs) {
 	{
 		//don't chat in teamplay
 		if (TeamPlayIsOn()) {
-#ifdef MISSIONPACK
-			EA_Command(bs->playernum, "vtaunt");
-#endif
 			return qfalse;			// don't wait
 		}
 		//
@@ -776,7 +762,7 @@ int BotChat_EnemySuicide(bot_state_t *bs) {
 	//don't chat in teamplay
 	if (TeamPlayIsOn()) return qfalse;
 	// don't chat in tournament mode
-	if (gametype == GT_TOURNAMENT) return qfalse;
+	if (GTx(gametype, GTF_DUEL)) return qfalse;
 	//if fast chat is off
 	if (!bot_fastchat.integer) {
 		if (random() > rnd) return qfalse;
@@ -816,7 +802,7 @@ int BotChat_HitTalking(bot_state_t *bs) {
 	//don't chat in teamplay
 	if (TeamPlayIsOn()) return qfalse;
 	// don't chat in tournament mode
-	if (gametype == GT_TOURNAMENT) return qfalse;
+	if (GTx(gametype, GTF_DUEL)) return qfalse;
 	//if fast chat is off
 	if (!bot_fastchat.integer) {
 		if (random() > rnd * 0.5) return qfalse;
@@ -856,7 +842,7 @@ int BotChat_HitNoDeath(bot_state_t *bs) {
 	//don't chat in teamplay
 	if (TeamPlayIsOn()) return qfalse;
 	// don't chat in tournament mode
-	if (gametype == GT_TOURNAMENT) return qfalse;
+	if (GTx(gametype, GTF_DUEL)) return qfalse;
 	//if fast chat is off
 	if (!bot_fastchat.integer) {
 		if (random() > rnd * 0.5) return qfalse;
@@ -894,7 +880,7 @@ int BotChat_HitNoKill(bot_state_t *bs) {
 	//don't chat in teamplay
 	if (TeamPlayIsOn()) return qfalse;
 	// don't chat in tournament mode
-	if (gametype == GT_TOURNAMENT) return qfalse;
+	if (GTx(gametype, GTF_DUEL)) return qfalse;
 	//if fast chat is off
 	if (!bot_fastchat.integer) {
 		if (random() > rnd * 0.5) return qfalse;
@@ -928,7 +914,7 @@ int BotChat_Random(bot_state_t *bs) {
 	if (BotIsObserver(bs)) return qfalse;
 	if (bs->lastchat_time > FloatTime() - TIME_BETWEENCHATTING) return qfalse;
 	// don't chat in tournament mode
-	if (gametype == GT_TOURNAMENT) return qfalse;
+	if (GTx(gametype, GTF_DUEL)) return qfalse;
 	//don't chat when doing something important :)
 	if (bs->ltgtype == LTG_TEAMHELP ||
 		bs->ltgtype == LTG_TEAMACCOMPANY ||
@@ -953,9 +939,6 @@ int BotChat_Random(bot_state_t *bs) {
 		EasyPlayerName(bs->lastkilledplayer, name, sizeof(name));
 	}
 	if (TeamPlayIsOn()) {
-#ifdef MISSIONPACK
-		EA_Command(bs->playernum, "vtaunt");
-#endif
 		return qfalse;			// don't wait
 	}
 	//

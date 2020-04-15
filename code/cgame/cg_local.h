@@ -814,10 +814,8 @@ typedef struct {
 
 	//==========================
 
-#ifdef MISSIONPACK
 	// skull trails
-	skulltrail_t	skulltrails[MAX_CLIENTS];
-#endif
+	skulltrail_t	skullTrails[MAX_CLIENTS];
 
 	// temp working variables for player view
 	float		bobfracsin;
@@ -855,12 +853,12 @@ typedef struct {
 	qhandle_t	nodrawShader;
 	qhandle_t	whiteDynamicShader;
 
-#ifdef MISSIONPACK
-	qhandle_t	redCubeModel;
-	qhandle_t	blueCubeModel;
-	qhandle_t	redCubeIcon;
-	qhandle_t	blueCubeIcon;
-#endif
+//#ifdef MISSIONPACK
+	qhandle_t	redSkullModel;
+	qhandle_t	blueSkullModel;
+	qhandle_t	redSkullIcon;
+	qhandle_t	blueSkullIcon;
+//#endif
 	qhandle_t	redFlagModel;
 	qhandle_t	blueFlagModel;
 	qhandle_t	neutralFlagModel;
@@ -879,7 +877,7 @@ typedef struct {
 	qhandle_t	blueFlagBaseModel;
 	qhandle_t	neutralFlagBaseModel;
 
-#ifdef MISSIONPACK
+//#ifdef MISSIONPACK
 	qhandle_t	overloadBaseModel;
 	qhandle_t	overloadTargetModel;
 	qhandle_t	overloadLightsModel;
@@ -889,7 +887,7 @@ typedef struct {
 	cgSkin_t	harvesterRedSkin;
 	cgSkin_t	harvesterBlueSkin;
 	qhandle_t	harvesterNeutralModel;
-#endif
+//#endif
 
 	qhandle_t	armorModel;
 	qhandle_t	armorIcon;
@@ -1001,10 +999,10 @@ typedef struct {
 	qhandle_t	invulnerabilityImpactModel;
 	qhandle_t	invulnerabilityJuicedModel;
 	qhandle_t	medkitUsageModel;
-	qhandle_t	dustPuffShader;
 	qhandle_t	heartShader;
 	qhandle_t	invulnerabilityPowerupModel;
 #endif
+	qhandle_t	dustPuffShader;
 
 	// scoreboard headers
 	qhandle_t	scoreboardName;
@@ -1037,6 +1035,10 @@ typedef struct {
 	//sfxHandle_t	sfx_railg;
 	sfxHandle_t	sfx_rockexp;
 	sfxHandle_t	sfx_plasmaexp;
+	sfxHandle_t obeliskHitSound1;	//TODO asset
+	sfxHandle_t obeliskHitSound2;	//TODO asset
+	sfxHandle_t obeliskHitSound3;	//TODO asset
+	sfxHandle_t	obeliskRespawnSound;	//TODO asset
 #ifdef MISSIONPACK
 	sfxHandle_t	sfx_proxexp;
 	sfxHandle_t	sfx_nghit;
@@ -1054,10 +1056,6 @@ typedef struct {
 	sfxHandle_t invulnerabilityImpactSound2;
 	sfxHandle_t invulnerabilityImpactSound3;
 	sfxHandle_t invulnerabilityJuicedSound;
-	sfxHandle_t obeliskHitSound1;
-	sfxHandle_t obeliskHitSound2;
-	sfxHandle_t obeliskHitSound3;
-	sfxHandle_t	obeliskRespawnSound;
 	sfxHandle_t	winnerSound;
 	sfxHandle_t	loserSound;
 #endif
@@ -1132,17 +1130,15 @@ typedef struct {
 
 	sfxHandle_t redFlagReturnedSound;
 	sfxHandle_t blueFlagReturnedSound;
-#ifdef MISSIONPACK
 	sfxHandle_t neutralFlagReturnedSound;
-#endif
 	sfxHandle_t	enemyTookYourFlagSound;
 	sfxHandle_t yourTeamTookEnemyFlagSound;
 	sfxHandle_t	youHaveFlagSound;
-#ifdef MISSIONPACK
-	sfxHandle_t	enemyTookTheFlagSound;
-	sfxHandle_t yourTeamTookTheFlagSound;
-	sfxHandle_t yourBaseIsUnderAttackSound;
-#endif
+
+	sfxHandle_t	enemyTookTheFlagSound;	//TODO asset
+	sfxHandle_t yourTeamTookTheFlagSound;	//TODO asset
+	sfxHandle_t yourBaseIsUnderAttackSound;	//TODO asset
+
 	sfxHandle_t holyShitSound;
 
 	// tournament sounds
@@ -1152,17 +1148,9 @@ typedef struct {
 	sfxHandle_t	countFightSound;
 	sfxHandle_t	countPrepareSound;
 
+	qhandle_t flagShaders[3];
 #ifdef MISSIONPACK
 	// new stuff
-	qhandle_t patrolShader;
-	qhandle_t assaultShader;
-	qhandle_t campShader;
-	qhandle_t followShader;
-	qhandle_t defendShader;
-	qhandle_t teamLeaderShader;
-	qhandle_t retrieveShader;
-	qhandle_t escortShader;
-	qhandle_t flagShaders[3];
 	sfxHandle_t	countPrepareTeamSound;
 
 	sfxHandle_t ammoregenSound;
@@ -1222,10 +1210,9 @@ typedef struct {
 
 	// parsed from serverinfo
 	char			gametypeName[MAX_NAME_LENGTH];
-	gametype_t		gametype;
+	gametype_t		gameType;
 	int				dmFlags;
-	int				fragLimit;
-	int				captureLimit;
+	int				scoreLimit;
 	int				timeLimit;
 	int				maxplayers;
 	char			mapname[MAX_QPATH];
@@ -1379,9 +1366,7 @@ extern	vmCvar_t		cg_timescaleFadeEnd;
 extern	vmCvar_t		cg_timescaleFadeSpeed;
 extern	vmCvar_t		cg_timescale;
 extern	vmCvar_t		cg_cameraMode;
-#ifdef MISSIONPACK
-extern	vmCvar_t		cg_noTaunt;
-#endif
+
 extern	vmCvar_t		cg_noProjectileTrail;
 extern	vmCvar_t		cg_oldRail;
 extern	vmCvar_t		cg_oldRocket;
@@ -1416,15 +1401,15 @@ extern	vmCvar_t		cg_hudFontBorder;
 extern	vmCvar_t		cg_numberFont;
 extern	vmCvar_t		cg_numberFontBorder;
 extern	vmCvar_t		ui_stretch;
+extern	vmCvar_t		cg_enableDust;
+extern	vmCvar_t		cg_enableBreath;
 #ifdef MISSIONPACK
 extern	vmCvar_t		cg_redTeamName;
 extern	vmCvar_t		cg_blueTeamName;
-extern	vmCvar_t		cg_enableDust;
-extern	vmCvar_t		cg_enableBreath;
 extern  vmCvar_t		cg_recordSPDemo;
 extern  vmCvar_t		cg_recordSPDemoName;
-extern	vmCvar_t		cg_obeliskRespawnDelay;
 #endif
+extern	vmCvar_t		cg_obeliskRespawnDelay;
 
 extern	vmCvar_t		cg_defaultModelGender;
 extern	vmCvar_t		cg_defaultMaleModel;
@@ -1597,9 +1582,11 @@ void CG_DrawRect( float x, float y, float width, float height, float size, const
 void CG_DrawSides(float x, float y, float w, float h, float size);
 void CG_DrawTopBottom(float x, float y, float w, float h, float size);
 void CG_ClearViewport( void );
+qboolean GTF(const int gtFlags);
+qboolean GTL(const int gtGoal);
 
 //
-// cg_draw.c, cg_newDraw.c
+// cg_draw.c
 //
 typedef enum {
   SYSTEM_PRINT,

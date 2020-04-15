@@ -108,10 +108,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define	BODY_SINK_DELAY		60000	//5000
 #define	BODY_SINK_TIME		1500
 
-#ifdef MISSIONPACK
 #define OBELISK_TARGET_HEIGHT	56
-#endif
-
 
 #define MAX_DLIGHT_CONFIGSTRINGS 128
 
@@ -147,7 +144,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 #define	CS_GAME_PROTOCOL		20
 #define	CS_LEVEL_START_TIME		21		// so the timer only shows the current level
-#define	CS_INTERMISSION			22		// when 1, fragLimit/timeLimit has been hit and intermission will start in a second or two
+#define	CS_INTERMISSION			22		// when 1, scoreLimit/timeLimit has been hit and intermission will start in a second or two
 #define CS_FLAGSTATUS			23		// string indicating flag status in CTF
 #define CS_SHADERSTATE			24
 #define	CS_PLAYERS_READY		25		// players wishing to exit the intermission
@@ -169,24 +166,60 @@ Suite 120, Rockville, Maryland 20850 USA.
 #endif
 
 typedef enum {
-	GT_FFA,				// free for all
-	GT_TOURNAMENT,		// one on one tournament
 	GT_SINGLE_PLAYER,	// single player
+	GT_FFA,				// free for all
+	GT_DUEL,		// one on one tournament
 
 	//-- team games go after this --
 
 	GT_TEAM,			// team deathmatch
 	GT_CTF,				// capture the flag
-#ifdef MISSIONPACK
+
 	GT_1FCTF,
-	GT_OBELISK,
+	GT_OVERLOAD,
 	GT_HARVESTER,
-#endif
+
 	GT_MAX_GAME_TYPE
 } gametype_t;
 
-extern const char *bg_netGametypeNames[GT_MAX_GAME_TYPE];
-extern const char *bg_displayGametypeNames[GT_MAX_GAME_TYPE];
+#define DEFAULT_GAMETYPE	GT_FFA
+
+typedef enum {
+	GTL_NONE,
+	GTL_FRAGS,			// win match/round with most frags
+	GTL_CAPTURES,		// win match/round with most captures, enables most flag handling/spawning
+	GTL_ELIM,			// win match/round by elimination
+	GTL_OBJ,			// win by achieving an objective
+	GTL_POINTS,			// win match/round via arbitrary point system
+	GTL_TIME
+} gtLimit_t;
+
+#define GTF_CTF			0x00000001	// game based on bringing enemy flag to own base, note: not oneflag
+#define GTF_FREEZE		0x00000002	// players 'freeze' upon death, teammates can 'thaw' them
+#define GTF_TEAMBASES	0x00000004	// teams spawn at bases
+#define GTF_ARENAS		0x00000008	// players spawn with full weapon and high ammo count, item spawns disabled
+#define GTF_ROUNDS		0x00000010	// round based, score by achieving goal limit by round timelimit
+#define GTF_TOURNEY		0x00000020	// stage based, loser is eliminated
+#define GTF_DUEL		0x00000040	// 1v1 mode
+#define GTF_TEAMS		0x00000080	// team based game
+#define GTF_CAMPAIGN	0x00000100	// campaign mode - monsters, objectives, multi-map
+#define GTF_TDM			0x00000200	// tdm style rules
+#define GTF_DOM			0x00000400	// depends on domination points for scoring
+#define GTF_BASEOB		0x00000800	// uses base obelisks
+#define GTF_NEUTOB		0x00001000	// uses neutral obelisks
+
+typedef struct bggametypes_s {
+	gametype_t	index;			// number for reference
+	char*		longName;		// long name for loading screen, menu etc.
+	char*		shortName;		// acronym
+	char*		gtSpawnRef;		// for entity gametype spawn keys
+	char*		gtArenaRef;		// for arena files
+
+	int			gtFlags;		// enable specific gametype characteristics
+	int			elimLives;		// enables elimination, sets number of lives to give players
+	gtLimit_t	gtGoal;			// primary method for winning the game
+} bggametypes_t;
+extern bggametypes_t gt[GT_MAX_GAME_TYPE];
 
 typedef enum { GENDER_MALE, GENDER_FEMALE, GENDER_NEUTER } gender_t;
 

@@ -168,22 +168,15 @@ void TeamMain_MenuInit( int localPlayerNum ) {
 	s_teammain.spectate.color            = colorRed;
 
 	trap_GetConfigString(CS_SERVERINFO, info, MAX_INFO_STRING);   
-	gametype = atoi( Info_ValueForKey( info,"g_gameType" ) );
+	gametype = UI_RetrieveGametypeNumFromInfo( info );
 			      
 	// set initial states
-	switch( gametype ) {
-	case GT_SINGLE_PLAYER:
-	case GT_FFA:
-	case GT_TOURNAMENT:
-		s_teammain.joinred.generic.flags  |= QMF_GRAYED;
-		s_teammain.joinblue.generic.flags |= QMF_GRAYED;
-		break;
-
-	default:
-	case GT_TEAM:
-	case GT_CTF:
+	if (gt[gametype].gtFlags & GTF_TEAMS) {
 		s_teammain.joingame.generic.flags |= QMF_GRAYED;
-		break;
+	}
+	else {
+		s_teammain.joinred.generic.flags |= QMF_GRAYED;
+		s_teammain.joinblue.generic.flags |= QMF_GRAYED;
 	}
 
 	Menu_AddItem( &s_teammain.menu, (void*) &s_teammain.frame );

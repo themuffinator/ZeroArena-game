@@ -372,7 +372,7 @@ static qboolean	CG_FindPlayerModelFile( char *filename, int length, playerInfo_t
 	char *team;
 	int i;
 
-	if ( cgs.gametype >= GT_TEAM ) {
+	if (GTF(GTF_TEAMS)) {
 		switch ( pi->team ) {
 			case TEAM_BLUE: {
 				team = "blue";
@@ -400,7 +400,7 @@ static qboolean	CG_FindPlayerModelFile( char *filename, int length, playerInfo_t
 		if ( CG_FileExists( filename ) ) {
 			return qtrue;
 		}
-		if ( cgs.gametype >= GT_TEAM ) {
+		if ( GTF(GTF_TEAMS) ) {
 			if ( i == 0 && teamName && *teamName ) {
 				//								"models/players/james/stroggs/lower_red.skin"
 				Com_sprintf( filename, length, "models/players/%s/%s%s_%s.%s", modelName, teamName, base, team, ext );
@@ -440,7 +440,7 @@ static qboolean	CG_FindPlayerHeadFile( char *filename, int length, playerInfo_t 
 	char *team, *headsFolder;
 	int i;
 
-	if ( cgs.gametype >= GT_TEAM ) {
+	if ( GTF(GTF_TEAMS) ) {
 		switch ( pi->team ) {
 			case TEAM_BLUE: {
 				team = "blue";
@@ -481,7 +481,7 @@ static qboolean	CG_FindPlayerHeadFile( char *filename, int length, playerInfo_t 
 				return qtrue;
 			}
 
-			if ( cgs.gametype >= GT_TEAM ) {
+			if ( GTF(GTF_TEAMS) ) {
 				if ( i == 0 &&  teamName && *teamName ) {
 					Com_sprintf( filename, length, "models/players/%s%s/%s%s_%s.%s", headsFolder, headModelName, teamName, base, team, ext );
 				}
@@ -875,7 +875,7 @@ static void CG_LoadPlayerInfo( int playerNum, playerInfo_t *pi ) {
 
 	teamname[0] = 0;
 #ifdef MISSIONPACK
-	if( cgs.gametype >= GT_TEAM) {
+	if( GTF(GTF_TEAMS)) {
 		if( pi->team == TEAM_BLUE ) {
 			Q_strncpyz(teamname, cg_blueTeamName.string, sizeof(teamname) );
 		} else {
@@ -892,7 +892,7 @@ static void CG_LoadPlayerInfo( int playerNum, playerInfo_t *pi ) {
 			CG_Error( "CG_RegisterPlayerModelname( %s, %s, %s, %s %s ) failed", pi->modelName, pi->skinName, pi->headModelName, pi->headSkinName, teamname );
 		}
 
-		if ( cgs.gametype >= GT_TEAM ) {
+		if ( GTF(GTF_TEAMS) ) {
 			defaultModel = cg_defaultTeamModelGender.string[0] == 'f' ? cg_defaultFemaleTeamModel.string : cg_defaultMaleTeamModel.string;
 			defaultHeadModel = cg_defaultModelGender.string[0] == 'f' ? cg_defaultFemaleTeamHeadModel.string : cg_defaultMaleTeamHeadModel.string;
 
@@ -908,7 +908,7 @@ static void CG_LoadPlayerInfo( int playerNum, playerInfo_t *pi ) {
 		}
 
 		if ( !CG_RegisterPlayerModelname( pi, defaultModel, skinName, defaultHeadModel, headSkinName, teamname ) ) {
-			CG_Error( "Default%s player model (model %s/%s, head %s/%s) failed to register", (cgs.gametype >= GT_TEAM) ? " team" : "", defaultModel, skinName, defaultHeadModel, headSkinName );
+			CG_Error( "Default%s player model (model %s/%s, head %s/%s) failed to register", (GTF(GTF_TEAMS)) ? " team" : "", defaultModel, skinName, defaultHeadModel, headSkinName );
 		}
 		modelloaded = qfalse;
 	}
@@ -924,7 +924,7 @@ static void CG_LoadPlayerInfo( int playerNum, playerInfo_t *pi ) {
 
 	// sounds
 	dir = pi->modelName;
-	if (cgs.gametype >= GT_TEAM) {
+	if (GTF(GTF_TEAMS)) {
 		fallback = (pi->gender == GENDER_FEMALE) ? cg_defaultFemaleTeamModel.string : cg_defaultMaleTeamModel.string;
 	} else {
 		fallback = (pi->gender == GENDER_FEMALE) ? cg_defaultFemaleModel.string : cg_defaultMaleModel.string;
@@ -1004,7 +1004,7 @@ static qboolean CG_ScanForExistingPlayerInfo( playerInfo_t *pi ) {
 			&& !Q_stricmp( pi->blueTeam, match->blueTeam ) 
 			&& !Q_stricmp( pi->redTeam, match->redTeam )
 #endif
-			&& (cgs.gametype < GT_TEAM || pi->team == match->team) ) {
+			&& (!GTF(GTF_TEAMS) || pi->team == match->team) ) {
 			// this playerinfo is identical, so use its handles
 
 			pi->deferred = qfalse;
@@ -1042,7 +1042,7 @@ static void CG_SetDeferredPlayerInfo( int playerNum, playerInfo_t *pi ) {
 			 Q_stricmp( pi->modelName, match->modelName ) ||
 //			 Q_stricmp( pi->headModelName, match->headModelName ) ||
 //			 Q_stricmp( pi->headSkinName, match->headSkinName ) ||
-			 (cgs.gametype >= GT_TEAM && pi->team != match->team) ) {
+			 (GTF(GTF_TEAMS) && pi->team != match->team) ) {
 			continue;
 		}
 		// just load the real info cause it uses the same models and skins
@@ -1051,14 +1051,14 @@ static void CG_SetDeferredPlayerInfo( int playerNum, playerInfo_t *pi ) {
 	}
 
 	// if we are in teamplay, only grab a model if the skin is correct
-	if ( cgs.gametype >= GT_TEAM ) {
+	if ( GTF(GTF_TEAMS) ) {
 		for ( i = 0 ; i < cgs.maxplayers ; i++ ) {
 			match = &cgs.playerinfo[ i ];
 			if ( !match->infoValid || match->deferred ) {
 				continue;
 			}
 			if ( Q_stricmp( pi->skinName, match->skinName ) ||
-				(cgs.gametype >= GT_TEAM && pi->team != match->team) ) {
+				(GTF(GTF_TEAMS) && pi->team != match->team) ) {
 				continue;
 			}
 			pi->deferred = qtrue;
@@ -1179,7 +1179,7 @@ void CG_NewPlayerInfo( int playerNum ) {
 		char modelStr[MAX_QPATH];
 		char *skin;
 
-		if( cgs.gametype >= GT_TEAM ) {
+		if( GTF(GTF_TEAMS) ) {
 			trap_Cvar_VariableStringBuffer( "team_model", modelStr, sizeof( modelStr ) );
 		} else {
 			trap_Cvar_VariableStringBuffer( "model", modelStr, sizeof( modelStr ) );
@@ -1193,7 +1193,7 @@ void CG_NewPlayerInfo( int playerNum ) {
 		Q_strncpyz( newInfo.skinName, skin, sizeof( newInfo.skinName ) );
 		Q_strncpyz( newInfo.modelName, modelStr, sizeof( newInfo.modelName ) );
 
-		if ( cgs.gametype >= GT_TEAM ) {
+		if ( GTF(GTF_TEAMS) ) {
 			// keep skin name
 			slash = strchr( v, '/' );
 			if ( slash ) {
@@ -1222,7 +1222,7 @@ void CG_NewPlayerInfo( int playerNum ) {
 		char modelStr[MAX_QPATH];
 		char *skin;
 
-		if( cgs.gametype >= GT_TEAM ) {
+		if( GTF(GTF_TEAMS) ) {
 			trap_Cvar_VariableStringBuffer( "team_headModel", modelStr, sizeof( modelStr ) );
 		} else {
 			trap_Cvar_VariableStringBuffer( "headModel", modelStr, sizeof( modelStr ) );
@@ -1236,7 +1236,7 @@ void CG_NewPlayerInfo( int playerNum ) {
 		Q_strncpyz( newInfo.headSkinName, skin, sizeof( newInfo.headSkinName ) );
 		Q_strncpyz( newInfo.headModelName, modelStr, sizeof( newInfo.headModelName ) );
 
-		if ( cgs.gametype >= GT_TEAM ) {
+		if ( GTF(GTF_TEAMS) ) {
 			// keep skin name
 			slash = strchr( v, '/' );
 			if ( slash ) {
@@ -1771,7 +1771,6 @@ static void CG_BreathPuff( int playerNum, qboolean firstPerson, vec3_t origin, v
 	if ( contents & ( CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA ) ) {
 		numPuffs = CG_SpawnBubbles( puffs, origin, 2, (int)( 3 + random() * 5 ) );
 	} else {
-#ifdef MISSIONPACK
 		if ( cg_enableBreath.integer ) {
 			vec3_t up;
 
@@ -1780,7 +1779,6 @@ static void CG_BreathPuff( int playerNum, qboolean firstPerson, vec3_t origin, v
 			puffs[0] = CG_SmokePuff( origin, up, 16, 1, 1, 1, 0.66f, 1500, cg.time, cg.time + 400, LEF_PUFF_DONT_SCALE, cgs.media.shotgunSmokePuffShader );
 			numPuffs = 1;
 		}
-#endif
 	}
 
 	// if first person entity, only draw for specific player in first person
@@ -1846,7 +1844,7 @@ static void CG_AddBreathPuffs( centity_t *cent, refEntity_t *head ) {
 	pi->breathPuffTime = cg.time + 2000;
 }
 
-#ifdef MISSIONPACK
+
 /*
 ===============
 CG_DustTrail
@@ -1895,7 +1893,6 @@ static void CG_DustTrail( centity_t *cent ) {
 				  cgs.media.dustPuffShader );
 }
 
-#endif
 
 /*
 ===============
@@ -2047,13 +2044,12 @@ static void CG_PlayerFlag( centity_t *cent, const cgSkin_t *skin, refEntity_t *t
 }
 
 
-#ifdef MISSIONPACK
 /*
 ===============
-CG_PlayerTokens
+CG_PlayerHarvesterSkulls
 ===============
 */
-static void CG_PlayerTokens( centity_t *cent, int renderfx ) {
+static void CG_PlayerHarvesterSkulls( centity_t *cent, int renderfx ) {
 	int			tokens, i, j;
 	float		angle;
 	refEntity_t	ent;
@@ -2062,7 +2058,7 @@ static void CG_PlayerTokens( centity_t *cent, int renderfx ) {
 	if ( cent->currentState.number >= MAX_CLIENTS ) {
 		return;
 	}
-	trail = &cg.skulltrails[cent->currentState.number];
+	trail = &cg.skullTrails[cent->currentState.number];
 	tokens = cent->currentState.tokens;
 	if ( !tokens ) {
 		trail->numpositions = 0;
@@ -2094,9 +2090,9 @@ static void CG_PlayerTokens( centity_t *cent, int renderfx ) {
 
 	memset( &ent, 0, sizeof( ent ) );
 	if( cgs.playerinfo[ cent->currentState.playerNum ].team == TEAM_BLUE ) {
-		ent.hModel = cgs.media.redCubeModel;
+		ent.hModel = cgs.media.redSkullModel;
 	} else {
-		ent.hModel = cgs.media.blueCubeModel;
+		ent.hModel = cgs.media.blueSkullModel;
 	}
 	ent.renderfx = renderfx;
 
@@ -2115,7 +2111,6 @@ static void CG_PlayerTokens( centity_t *cent, int renderfx ) {
 		VectorCopy(trail->positions[i], origin);
 	}
 }
-#endif
 
 
 /*
@@ -2286,7 +2281,7 @@ static void CG_PlayerSprites( centity_t *cent, const refEntity_t *parent ) {
 	team = cgs.playerinfo[ cent->currentState.playerNum ].team;
 	if ( !(cent->currentState.eFlags & EF_DEAD) && 
 		cg.cur_ps->persistant[PERS_TEAM] == team &&
-		cgs.gametype >= GT_TEAM) {
+		GTF(GTF_TEAMS)) {
 		if (cg_drawFriend.integer) {
 			CG_PlayerFloatSprite( origin, friendFlags, cgs.media.friendShader );
 		}
@@ -2692,11 +2687,9 @@ void CG_Player( centity_t *cent ) {
 		renderfx |= RF_SHADOW_PLANE;
 	}
 	renderfx |= RF_LIGHTING_ORIGIN;			// use the same origin for all
-#ifdef MISSIONPACK
-	if( cgs.gametype == GT_HARVESTER ) {
-		CG_PlayerTokens( cent, renderfx );
+	if( cgs.gameType == GT_HARVESTER ) {
+		CG_PlayerHarvesterSkulls( cent, renderfx );
 	}
-#endif
 	//
 	// add the legs
 	//
@@ -2973,9 +2966,7 @@ void CG_Player( centity_t *cent ) {
 
 	CG_AddBreathPuffs( cent, &head );
 
-#ifdef MISSIONPACK
 	CG_DustTrail(cent);
-#endif
 
 	//
 	// add the gun / barrel / flash

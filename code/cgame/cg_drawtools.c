@@ -937,3 +937,12 @@ void CG_KeysStringForBinding(const char *binding, char *string, int stringSize )
 		Q_strcat( string, stringSize, name2 );
 	}
 }
+
+qboolean GTF(const int gtFlags) {
+	return (qboolean)(gt[cgs.gameType].gtFlags & (gtFlags));
+}
+
+qboolean GTL(const int gtGoal) {
+	return (qboolean)(gt[cgs.gameType].gtGoal);
+}
+

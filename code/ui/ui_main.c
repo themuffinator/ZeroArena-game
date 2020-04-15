@@ -781,7 +781,7 @@ static void UI_DrawClanName(rectDef_t *rect, float scale, vec4_t color, int text
 static void UI_SetCapFragLimits(qboolean uiVars) {
 	int cap = 5;
 	int frag = 10;
-	if (uiInfo.gameTypes[ui_gameType.integer].gtEnum == GT_OBELISK) {
+	if (uiInfo.gameTypes[ui_gameType.integer].gtEnum == GT_OVERLOAD) {
 		cap = 4;
 	} else if (uiInfo.gameTypes[ui_gameType.integer].gtEnum == GT_HARVESTER) {
 		cap = 15;
@@ -2448,17 +2448,17 @@ static void UI_StartSinglePlayer(void) {
 
 	if (j == MAPS_PER_TIER-1) {
 		k = UI_TeamIndexFromName(CG_Cvar_VariableString("ui_opponentName"));
-		Com_sprintf( buff, sizeof(buff), "wait ; addbot %s %i %s 250 %s\n", UI_AIFromName(teamList[k].teamMembers[0]), skill, "", teamList[k].teamMembers[0]);
+		Com_sprintf( buff, sizeof(buff), "wait ; addBot %s %i %s 250 %s\n", UI_AIFromName(teamList[k].teamMembers[0]), skill, "", teamList[k].teamMembers[0]);
 	} else {
 		k = UI_TeamIndexFromName(CG_Cvar_VariableString("ui_opponentName"));
 		for (i = 0; i < PLAYERS_PER_TEAM; i++) {
-			Com_sprintf( buff, sizeof(buff), "wait ; addbot %s %i %s 250 %s\n", UI_AIFromName(teamList[k].teamMembers[i]), skill, "Blue", teamList[k].teamMembers[i]);
+			Com_sprintf( buff, sizeof(buff), "wait ; addBot %s %i %s 250 %s\n", UI_AIFromName(teamList[k].teamMembers[i]), skill, "Blue", teamList[k].teamMembers[i]);
 			trap_Cmd_ExecuteText( EXEC_APPEND, buff );
 		}
 
 		k = UI_TeamIndexFromName(CG_Cvar_VariableString("ui_teamName"));
 		for (i = 1; i < PLAYERS_PER_TEAM; i++) {
-			Com_sprintf( buff, sizeof(buff), "wait ; addbot %s %i %s 250 %s\n", UI_AIFromName(teamList[k].teamMembers[i]), skill, "Red", teamList[k].teamMembers[i]);
+			Com_sprintf( buff, sizeof(buff), "wait ; addBot %s %i %s 250 %s\n", UI_AIFromName(teamList[k].teamMembers[i]), skill, "Red", teamList[k].teamMembers[i]);
 			trap_Cmd_ExecuteText( EXEC_APPEND, buff );
 		}
 		trap_Cmd_ExecuteText( EXEC_APPEND, "wait 5; team Red\n" );
@@ -2662,21 +2662,21 @@ static void UI_StartSkirmish(qboolean next) {
 
 	delay = 500;
 
-	if (g == GT_TOURNAMENT) {
+	if (g == GT_DUEL) {
 		trap_Cvar_SetValue("sv_maxClients", 2);
-		Com_sprintf( buff, sizeof(buff), "wait ; addbot %s %f "", %i \n", uiInfo.mapList[ui_currentMap.integer].opponentName, skill, delay);
+		Com_sprintf( buff, sizeof(buff), "wait ; addBot %s %f "", %i \n", uiInfo.mapList[ui_currentMap.integer].opponentName, skill, delay);
 		trap_Cmd_ExecuteText( EXEC_APPEND, buff );
 	} else {
 		temp = uiInfo.mapList[ui_currentMap.integer].teamMembers * 2;
 		trap_Cvar_SetValue("sv_maxClients", temp);
 		for (i =0; i < uiInfo.mapList[ui_currentMap.integer].teamMembers; i++) {
-			Com_sprintf( buff, sizeof(buff), "addbot %s %f %s %i %s\n", UI_AIFromName(uiInfo.teamList[k].teamMembers[i]), skill, (g == GT_FFA) ? "" : "Blue", delay, uiInfo.teamList[k].teamMembers[i]);
+			Com_sprintf( buff, sizeof(buff), "addBot %s %f %s %i %s\n", UI_AIFromName(uiInfo.teamList[k].teamMembers[i]), skill, (g == GT_FFA) ? "" : "Blue", delay, uiInfo.teamList[k].teamMembers[i]);
 			trap_Cmd_ExecuteText( EXEC_APPEND, buff );
 			delay += 500;
 		}
 		k = UI_TeamIndexFromName(CG_Cvar_VariableString("ui_teamName"));
 		for (i =0; i < uiInfo.mapList[ui_currentMap.integer].teamMembers-1; i++) {
-			Com_sprintf( buff, sizeof(buff), "addbot %s %f %s %i %s\n", UI_AIFromName(uiInfo.teamList[k].teamMembers[i]), skill, (g == GT_FFA) ? "" : "Red", delay, uiInfo.teamList[k].teamMembers[i]);
+			Com_sprintf( buff, sizeof(buff), "addBot %s %f %s %i %s\n", UI_AIFromName(uiInfo.teamList[k].teamMembers[i]), skill, (g == GT_FFA) ? "" : "Red", delay, uiInfo.teamList[k].teamMembers[i]);
 			trap_Cmd_ExecuteText( EXEC_APPEND, buff );
 			delay += 500;
 		}
@@ -2878,9 +2878,9 @@ static void UI_RunMenuScript(char **args) {
 					}
 
 					if (ui_actualNetGameType.integer >= GT_TEAM) {
-						Com_sprintf( buff, sizeof(buff), "addbot %s %f %s\n", name, skill, "Blue");
+						Com_sprintf( buff, sizeof(buff), "addBot %s %f %s\n", name, skill, "Blue");
 					} else {
-						Com_sprintf( buff, sizeof(buff), "addbot %s %f\n", name, skill);
+						Com_sprintf( buff, sizeof(buff), "addBot %s %f\n", name, skill);
 					}
 					trap_Cmd_ExecuteText( EXEC_APPEND, buff );
 				}
@@ -2895,9 +2895,9 @@ static void UI_RunMenuScript(char **args) {
 					}
 
 					if (ui_actualNetGameType.integer >= GT_TEAM) {
-						Com_sprintf( buff, sizeof(buff), "addbot %s %f %s\n", name, skill, "Red");
+						Com_sprintf( buff, sizeof(buff), "addBot %s %f %s\n", name, skill, "Red");
 					} else {
-						Com_sprintf( buff, sizeof(buff), "addbot %s %f\n", name, skill);
+						Com_sprintf( buff, sizeof(buff), "addBot %s %f\n", name, skill);
 					}
 					trap_Cmd_ExecuteText( EXEC_APPEND, buff );
 				}
@@ -3065,7 +3065,7 @@ static void UI_RunMenuScript(char **args) {
 				name = UI_GetBotNameByNumber(uiInfo.botIndex-1);
 			}
 
-			trap_Cmd_ExecuteText( EXEC_APPEND, va("addbot %s %i %s\n", name, uiInfo.skillIndex+1, (uiInfo.redBlue == 0) ? "red" : "blue") );
+			trap_Cmd_ExecuteText( EXEC_APPEND, va("addBot %s %i %s\n", name, uiInfo.skillIndex+1, (uiInfo.redBlue == 0) ? "red" : "blue") );
 		} else if (Q_stricmp(name, "addFavorite") == 0) {
 			if (ui_netSource.integer != UIAS_FAVORITES) {
 				char name[MAX_NAME_LENGTH];
@@ -3461,7 +3461,7 @@ static void UI_BuildServerDisplayList(int force) {
 
 			if (uiInfo.joinGameTypes[ui_joinGameType.integer].gtEnum >= 0
 				&& uiInfo.joinGameTypes[ui_joinGameType.integer].gtEnum < GT_MAX_GAME_TYPE ) {
-				if (Q_stricmp(Info_ValueForKey(info, "gametype"), bg_netGametypeNames[uiInfo.joinGameTypes[ui_joinGameType.integer].gtEnum]) != 0) {
+				if (Q_stricmp(Info_ValueForKey(info, "gametype"), gt[uiInfo.joinGameTypes[ui_joinGameType.integer].gtEnum].shortName) != 0) {
 					if (ping > 0) {
 						trap_LAN_MarkServerVisible(lanSource, i, qfalse);
 					}

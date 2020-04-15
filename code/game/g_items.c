@@ -92,11 +92,11 @@ int Pickup_Powerup( gentity_t *ent, gentity_t *other ) {
 			continue;
 		}
 
-    // if same team in team game, no sound
-    // cannot use OnSameTeam as it expects to g_entities, not players
-  	if ( g_gameType.integer >= GT_TEAM && other->player->sess.sessionTeam == player->sess.sessionTeam  ) {
-      continue;
-    }
+		// if same team in team game, no sound
+		// cannot use OnSameTeam as it expects to g_entities, not players
+  		if (GTF(GTF_TEAMS) && other->player->sess.sessionTeam == player->sess.sessionTeam  ) {
+		  continue;
+		}
 
 		// if too far away, no sound
 		VectorSubtract( ent->s.pos.trBase, player->ps.origin, delta );
@@ -221,7 +221,7 @@ int Pickup_Weapon (gentity_t *ent, gentity_t *other) {
 		}
 
 		// dropped items and teamplay weapons always have full ammo
-		if ( ! (ent->flags & FL_DROPPED_ITEM) && g_gameType.integer != GT_TEAM ) {
+		if ( ! (ent->flags & FL_DROPPED_ITEM) && !GTF(GTF_TDM)) {
 			// respawning rules
 			// drop the quantity if the already have over the minimum
 			if ( other->player->ps.ammo[ ent->item->giTag ] < quantity ) {
@@ -241,11 +241,7 @@ int Pickup_Weapon (gentity_t *ent, gentity_t *other) {
 		other->player->ps.ammo[ent->item->giTag] = -1; // unlimited ammo
 
 	// team deathmatch has slow weapon respawns
-	if ( g_gameType.integer == GT_TEAM ) {
-		return g_weaponTeamRespawn.integer;
-	}
-
-	return g_weaponRespawn.integer;
+	return GTF(GTF_TDM) ? g_weaponTeamRespawn.integer : g_weaponRespawn.integer;
 }
 
 
@@ -563,11 +559,7 @@ gentity_t *LaunchItem( gitem_t *item, vec3_t origin, vec3_t velocity ) {
 	VectorCopy( velocity, dropped->s.pos.trDelta );
 
 	dropped->s.eFlags |= EF_BOUNCE_HALF;
-#ifdef MISSIONPACK
-	if ((g_gameType.integer == GT_CTF || g_gameType.integer == GT_1FCTF)			&& item->giType == IT_TEAM) { // Special case for CTF flags
-#else
-	if (g_gameType.integer == GT_CTF && item->giType == IT_TEAM) { // Special case for CTF flags
-#endif
+	if (GTL(GTL_CAPTURES) && item->giType == IT_TEAM) { // Special case for CTF flags
 		dropped->think = Team_DroppedFlagThink;
 		dropped->nextthink = level.time + 30000;
 		Team_CheckDroppedItem( dropped );
@@ -698,7 +690,7 @@ void G_CheckTeamItems( void ) {
 	// Set up team stuff
 	Team_InitGame();
 
-	if( g_gameType.integer == GT_CTF ) {
+	if(GTF(GTF_CTF)) {
 		gitem_t	*item;
 
 		// check for the two flags
@@ -710,9 +702,7 @@ void G_CheckTeamItems( void ) {
 		if ( !item || !itemRegistered[ BG_ItemNumForItem( item ) ] ) {
 			G_Printf( S_COLOR_YELLOW "WARNING: No team_CTF_blueflag in map\n" );
 		}
-	}
-#ifdef MISSIONPACK
-	if( g_gameType.integer == GT_1FCTF ) {
+	} else if( g_gameType.integer == GT_1FCTF ) {
 		gitem_t	*item;
 
 		// check for all three flags
@@ -728,9 +718,7 @@ void G_CheckTeamItems( void ) {
 		if ( !item || !itemRegistered[ BG_ItemNumForItem( item ) ] ) {
 			G_Printf( S_COLOR_YELLOW "WARNING: No team_CTF_neutralflag in map\n" );
 		}
-	}
-
-	if( g_gameType.integer == GT_OBELISK ) {
+	} else if( g_gameType.integer == GT_OVERLOAD ) {
 		gentity_t	*ent;
 
 		// check for the two obelisks
@@ -745,9 +733,7 @@ void G_CheckTeamItems( void ) {
 		if( !ent ) {
 			G_Printf( S_COLOR_YELLOW "WARNING: No team_blueobelisk in map\n" );
 		}
-	}
-
-	if( g_gameType.integer == GT_HARVESTER ) {
+	} else if( g_gameType.integer == GT_HARVESTER ) {
 		gentity_t	*ent;
 
 		// check for all three obelisks
@@ -769,7 +755,7 @@ void G_CheckTeamItems( void ) {
 			G_Printf( S_COLOR_YELLOW "WARNING: No team_neutralobelisk in map\n" );
 		}
 	}
-#endif
+
 }
 
 /*
@@ -787,12 +773,10 @@ void ClearRegisteredItems( void ) {
 		RegisterItem( BG_FindItemForWeapon( WP_MACHINEGUN ) );
 	}
 	RegisterItem( BG_FindItemForWeapon( WP_GAUNTLET ) );
-#ifdef MISSIONPACK
-	if( g_gameType.integer == GT_HARVESTER ) {
-		RegisterItem( BG_FindItem( "Red Cube" ) );
-		RegisterItem( BG_FindItem( "Blue Cube" ) );
+	if ( g_gameType.integer == GT_HARVESTER ) {
+		RegisterItem( BG_FindItem( "Red Skull" ) );
+		RegisterItem( BG_FindItem( "Blue Skull" ) );
 	}
-#endif
 }
 
 /*

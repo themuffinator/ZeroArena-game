@@ -125,7 +125,7 @@ void CG_LoadingPlayer( int playerNum ) {
 		loadingPlayerIcons[loadingPlayerIconCount] = trap_R_RegisterShaderNoMip( iconName );
 
 		if ( !loadingPlayerIcons[loadingPlayerIconCount] ) {
-			if ( cgs.gametype >= GT_TEAM ) {
+			if ( GTF(GTF_TEAMS) ) {
 				defaultModel = cg_defaultTeamModelGender.string[0] == 'f' ? cg_defaultFemaleTeamModel.string : cg_defaultMaleTeamModel.string;
 			} else {
 				defaultModel = cg_defaultModelGender.string[0] == 'f' ? cg_defaultFemaleModel.string : cg_defaultMaleModel.string;
@@ -142,7 +142,7 @@ void CG_LoadingPlayer( int playerNum ) {
 	Q_strncpyz( personality, Info_ValueForKey( info, "n" ), sizeof(personality) );
 	Q_CleanStr( personality );
 
-	if( cgs.gametype == GT_SINGLE_PLAYER ) {
+	if( cgs.gameType == GT_SINGLE_PLAYER ) {
 		trap_S_RegisterSound( va( "sound/player/announce/%s.wav", personality ), qtrue );
 	}
 
@@ -249,29 +249,6 @@ void CG_DrawInformation( void ) {
 	UI_DrawProportionalString( 320, y, cgs.gametypeName,
 		UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite );
 	y += PROP_HEIGHT;
-		
-	value = atoi( Info_ValueForKey( info, "timeLimit" ) );
-	if ( value ) {
-		UI_DrawProportionalString( 320, y, va( "timeLimit %i", value ),
-			UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite );
-		y += PROP_HEIGHT;
-	}
 
-	if (cgs.gametype < GT_CTF ) {
-		value = atoi( Info_ValueForKey( info, "fragLimit" ) );
-		if ( value ) {
-			UI_DrawProportionalString( 320, y, va( "fragLimit %i", value ),
-				UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite );
-			y += PROP_HEIGHT;
-		}
-	}
-
-	if (cgs.gametype >= GT_CTF) {
-		value = atoi( Info_ValueForKey( info, "captureLimit" ) );
-		if ( value ) {
-			UI_DrawProportionalString( 320, y, va( "captureLimit %i", value ),
-				UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite );
-		}
-	}
 }
 

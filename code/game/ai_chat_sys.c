@@ -2961,25 +2961,7 @@ void BotEnterChat(int chatstate, int playerto, int sendto)
 		strcpy(cs->chatmessage, "");
 	} //end if
 } //end of the function BotEnterChat
-//===========================================================================
-//
-// Parameter:			-
-// Returns:				-
-// Changes Globals:		-
-//===========================================================================
-void BotGetChatMessage(int chatstate, char *buf, int size)
-{
-	bot_chatstate_t *cs;
 
-	cs = BotChatStateFromHandle(chatstate);
-	if (!cs) return;
-
-	BotRemoveTildes(cs->chatmessage);
-	strncpy(buf, cs->chatmessage, size-1);
-	buf[size-1] = '\0';
-	//clear the chat message from the state
-	strcpy(cs->chatmessage, "");
-} //end of the function BotGetChatMessage
 //===========================================================================
 //
 // Parameter:			-

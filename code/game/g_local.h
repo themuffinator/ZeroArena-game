@@ -62,6 +62,12 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define CPx( x, y ) trap_SendServerCommand( x, y )              // Print to id = x
 //-wolfet
 
+//muff
+//#define GT( x ) gt[g_gameType.integer].gtFlags & (x)
+#define NotGT( x ) gt[g_gameType.integer].gtFlags & ~(x)
+#define GTx( x, y ) gt[x].gtFlags & (y)
+//-muff
+
 // movers are things like doors, plats, buttons, etc
 typedef enum {
 	MOVER_POS1,
@@ -555,6 +561,8 @@ void G_AddEvent( gentity_t *ent, int event, int eventParm );
 void G_SetOrigin( gentity_t *ent, vec3_t origin );
 void AddRemap(const char *oldShader, const char *newShader, float timeOffset);
 const char *BuildShaderStateConfig( void );
+qboolean GTF(const int gtFlags);
+qboolean GTL(const int gtGoal);
 
 //
 // g_combat.c
@@ -569,7 +577,7 @@ void TossPlayerGametypeItems( gentity_t *self );
 #ifdef MISSIONPACK
 void TossPlayerPersistantPowerups( gentity_t *self );
 #endif
-void TossPlayerCubes( gentity_t *self );
+void TossPlayerSkulls( gentity_t *self );
 
 // damage flags
 #define DAMAGE_RADIUS				0x00000001	// damage was indirect
@@ -794,9 +802,8 @@ extern	vmCvar_t	g_maxGameClients;		// allow this many active
 extern	vmCvar_t	g_restarted;
 
 extern	vmCvar_t	g_dmFlags;
-extern	vmCvar_t	g_fragLimit;
+extern	vmCvar_t	g_scoreLimit;
 extern	vmCvar_t	g_timeLimit;
-extern	vmCvar_t	g_captureLimit;
 extern	vmCvar_t	g_friendlyFire;
 extern	vmCvar_t	g_password;
 extern	vmCvar_t	g_needPassword;
@@ -836,3 +843,9 @@ extern	vmCvar_t	g_proxMineTimeout;
 extern	vmCvar_t	g_playerCapsule;
 extern	vmCvar_t	g_instaGib;
 
+extern	vmCvar_t	g_gt_frags_limit;
+extern	vmCvar_t	g_gt_captures_limit;
+extern	vmCvar_t	g_gt_elim_limit;
+extern	vmCvar_t	g_gt_point_limit;
+extern	vmCvar_t	g_gt_round_limit;
+extern	vmCvar_t	g_gt_round_maxtime;

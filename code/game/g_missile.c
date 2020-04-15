@@ -146,7 +146,7 @@ void ProximityMine_Trigger( gentity_t *trigger, gentity_t *other, trace_t *trace
 	}
 
 
-	if ( g_gameType.integer >= GT_TEAM ) {
+	if (GTF(GTF_TEAMS)) {
 		// don't trigger same team mines
 		if (trigger->parent->s.team == other->player->sess.sessionTeam) {
 			return;

@@ -826,7 +826,7 @@ static void CG_DrawUpperRight(stereoFrame_t stereoFrame)
 
 	CG_SetScreenPlacement(PLACE_RIGHT, PLACE_TOP);
 
-	if ( cgs.gametype >= GT_TEAM && cg_drawTeamOverlay.integer == 1 ) {
+	if ( GTF(GTF_TEAMS) && cg_drawTeamOverlay.integer == 1 ) {
 		y = CG_DrawTeamOverlay( y, qtrue, qtrue );
 	} 
 	if ( cg_drawSnapshot.integer ) {
@@ -863,7 +863,6 @@ static float CG_DrawScores( float y ) {
 	const char	*s;
 	int			s1, s2, score;
 	int			x, w;
-	int			v;
 	vec4_t		color;
 	float		y1;
 	gitem_t		*item;
@@ -882,7 +881,7 @@ static float CG_DrawScores( float y ) {
 	y1 = y;
 
 	// draw from the right side to left
-	if ( cgs.gametype >= GT_TEAM ) {
+	if (GTF(GTF_TEAMS)) {
 		x = 640;
 		color[0] = 0.0f;
 		color[1] = 0.0f;
@@ -897,7 +896,7 @@ static float CG_DrawScores( float y ) {
 		}
 		CG_DrawBigString( x + 4, y, s, 1.0F);
 
-		if ( cgs.gametype == GT_CTF ) {
+		if ( GTF(GTF_CTF) ) {
 			// Display flag status
 			item = BG_FindItemForPowerup( PW_BLUEFLAG );
 
@@ -908,9 +907,7 @@ static float CG_DrawScores( float y ) {
 				}
 			}
 		}
-
-#ifdef MISSIONPACK
-		if ( cgs.gametype == GT_1FCTF ) {
+		else if ( cgs.gameType == GT_1FCTF ) {
 			// Display flag status
 			item = BG_FindItemForPowerup( PW_NEUTRALFLAG );
 
@@ -934,7 +931,6 @@ static float CG_DrawScores( float y ) {
 				}
 			}
 		}
-#endif
 
 		color[0] = 1.0f;
 		color[1] = 0.0f;
@@ -949,7 +945,7 @@ static float CG_DrawScores( float y ) {
 		}
 		CG_DrawBigString( x + 4, y, s, 1.0F);
 
-		if ( cgs.gametype == GT_CTF ) {
+		if (GTF(GTF_CTF)) {
 			// Display flag status
 			item = BG_FindItemForPowerup( PW_REDFLAG );
 
@@ -960,14 +956,8 @@ static float CG_DrawScores( float y ) {
 				}
 			}
 		}
-
-		if ( cgs.gametype >= GT_CTF ) {
-			v = cgs.captureLimit;
-		} else {
-			v = cgs.fragLimit;
-		}
-		if ( v ) {
-			s = va( "%2i", v );
+		if (cgs.scoreLimit) {
+			s = va( "%2i", cgs.scoreLimit);
 			w = CG_DrawStrlen( s, UI_BIGFONT ) + 8;
 			x -= w;
 			CG_DrawBigString( x + 4, y, s, 1.0F);
@@ -1027,8 +1017,8 @@ static float CG_DrawScores( float y ) {
 			CG_DrawBigString( x + 4, y, s, 1.0F);
 		}
 
-		if ( cgs.fragLimit ) {
-			s = va( "%2i", cgs.fragLimit );
+		if ( cgs.scoreLimit ) {
+			s = va( "%2i", cgs.scoreLimit);
 			w = CG_DrawStrlen( s, UI_BIGFONT ) + 8;
 			x -= w;
 			CG_DrawBigString( x + 4, y, s, 1.0F);
@@ -1167,7 +1157,7 @@ static void CG_DrawLowerRight( void ) {
 
 	CG_SetScreenPlacement(PLACE_RIGHT, PLACE_BOTTOM);
 
-	if ( cgs.gametype >= GT_TEAM && cg_drawTeamOverlay.integer == 2 ) {
+	if (GTF(GTF_TEAMS) && cg_drawTeamOverlay.integer == 2 ) {
 		y = CG_DrawTeamOverlay( y, qtrue, qfalse );
 	} 
 
@@ -1223,7 +1213,7 @@ static void CG_DrawLowerLeft( void ) {
 
 	CG_SetScreenPlacement(PLACE_LEFT, PLACE_BOTTOM);
 
-	if ( cgs.gametype >= GT_TEAM && cg_drawTeamOverlay.integer == 3 ) {
+	if (GTF(GTF_TEAMS) && cg_drawTeamOverlay.integer == 3 ) {
 		y = CG_DrawTeamOverlay( y, qfalse, qfalse );
 	} 
 
@@ -2214,12 +2204,7 @@ static void CG_DrawSpectator(void) {
 	CG_DrawString(320, y, "Spectator", UI_CENTER|UI_DROPSHADOW|UI_BIGFONT, NULL);
 	y += lineHeight;
 
-	if ( cgs.gametype == GT_TOURNAMENT ) {
-		CG_DrawString(320, y, "Waiting to play", UI_CENTER|UI_DROPSHADOW|UI_BIGFONT, NULL);
-	}
-	else if ( cgs.gametype >= GT_TEAM ) {
-		CG_DrawString(320, y, "Press ESC and use the JOIN menu to play", UI_CENTER|UI_DROPSHADOW|UI_BIGFONT, NULL);
-	}
+	CG_DrawString(320, y, "Press ESC and use the JOIN menu to play", UI_CENTER|UI_DROPSHADOW|UI_BIGFONT, NULL);
 }
 
 /*
@@ -2328,7 +2313,7 @@ CG_DrawIntermission
 =================
 */
 static void CG_DrawIntermission( void ) {
-	if ( cgs.gametype == GT_SINGLE_PLAYER ) {
+	if ( cgs.gameType == GT_SINGLE_PLAYER ) {
 		CG_DrawCenterString();
 		return;
 	}
@@ -2523,7 +2508,7 @@ static void CG_DrawWarmup( void ) {
 		return;
 	}
 
-	if (cgs.gametype == GT_TOURNAMENT) {
+	if (GTF(GTF_DUEL)) {
 		// find the two active players
 		ci1 = NULL;
 		ci2 = NULL;
@@ -2665,7 +2650,7 @@ static void CG_Draw2D(stereoFrame_t stereoFrame, qboolean *voiceMenuOpen)
 		}
 	}
 
-	if ( cgs.gametype >= GT_TEAM ) {
+	if (GTF(GTF_TEAMS)) {
 		CG_DrawTeamInfo();
 	}
 

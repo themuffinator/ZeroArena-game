@@ -109,7 +109,7 @@ static void UI_AddBotsMenu_FightEvent( void* ptr, int event ) {
 	team = addBotsMenuInfo.team.itemnames[addBotsMenuInfo.team.curvalue];
 	skill = addBotsMenuInfo.skill.curvalue + 1;
 
-	trap_Cmd_ExecuteText( EXEC_APPEND, va("addbot %s %i %s %i\n",
+	trap_Cmd_ExecuteText( EXEC_APPEND, va("addBot %s %i %s %i\n",
 		addBotsMenuInfo.botnames[addBotsMenuInfo.selectedBotNum], skill, team, addBotsMenuInfo.delay) );
 
 	addBotsMenuInfo.delay += 1500;
@@ -270,7 +270,7 @@ static void UI_AddBotsMenu_Init( void ) {
 	char	info[MAX_INFO_STRING];
 
 	trap_GetConfigString(CS_SERVERINFO, info, MAX_INFO_STRING);   
-	gametype = atoi( Info_ValueForKey( info,"g_gameType" ) );
+	gametype = UI_RetrieveGametypeNumFromInfo( info );
 
 	memset( &addBotsMenuInfo, 0 ,sizeof(addBotsMenuInfo) );
 	addBotsMenuInfo.menu.fullscreen = qfalse;
@@ -354,7 +354,7 @@ static void UI_AddBotsMenu_Init( void ) {
 	addBotsMenuInfo.team.generic.y			= y;
 	addBotsMenuInfo.team.generic.name		= "Team: ";
 	addBotsMenuInfo.team.generic.id			= ID_TEAM;
-	if( gametype >= GT_TEAM ) {
+	if( gt[gametype].gtFlags & GTF_TEAMS ) {
 		addBotsMenuInfo.team.itemnames		= teamNames2;
 	}
 	else {

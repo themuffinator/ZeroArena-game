@@ -197,5 +197,5 @@ void BotVoiceChat_Dummy(bot_state_t *bs, int playernum, int mode) {
 }
 
 int BotVoiceChatCommand(bot_state_t *bs, int mode, char *voiceChat) {
-
+    return 0;
 }

@@ -143,25 +143,19 @@ int BotSortTeamMatesByBaseTravelTime(bot_state_t *bs, int *teammates, int maxtea
 	int traveltimes[MAX_CLIENTS];
 	bot_goal_t *goal = NULL;
 
-#ifdef MISSIONPACK
-	if (gametype == GT_CTF || gametype == GT_1FCTF)
-#else
-	if (gametype == GT_CTF)
-#endif
+	if (gt[gametype].gtGoal & GTL_CAPTURES)
 	{
 		if (BotTeam(bs) == TEAM_RED)
 			goal = &ctf_redflag;
 		else
 			goal = &ctf_blueflag;
 	}
-#ifdef MISSIONPACK
-	else if (gametype == GT_OBELISK || gametype == GT_HARVESTER) {
+	else if (gametype == GT_OVERLOAD || gametype == GT_HARVESTER) {
 		if (BotTeam(bs) == TEAM_RED)
 			goal = &redobelisk;
 		else
 			goal = &blueobelisk;
 	}
-#endif
 
 	numteammates = 0;
 	for (i = 0; i < level.maxplayers; i++) {
@@ -271,7 +265,6 @@ void BotSayTeamOrderAlways(bot_state_t *bs, int toPlayer) {
 	//if the bot is talking to itself
 	if (bs->playernum == toPlayer) {
 		//don't show the message just put it in the console message queue
-		BotGetChatMessage(bs->cs, buf, sizeof(buf));
 		PlayerName(bs->playernum, name, sizeof(name));
 		Com_sprintf(teamchat, sizeof(teamchat), EC"(%s"EC")"EC": %s", name, buf);
 		BotQueueConsoleMessage(bs->cs, CMS_CHAT, teamchat);
@@ -287,14 +280,7 @@ BotSayTeamOrders
 ==================
 */
 void BotSayTeamOrder(bot_state_t *bs, int toPlayer) {
-#ifdef MISSIONPACK
-	// voice chats only
-	char buf[MAX_MESSAGE_SIZE];
-
-	BotGetChatMessage(bs->cs, buf, sizeof(buf));
-#else
 	BotSayTeamOrderAlways(bs, toPlayer);
-#endif
 }
 
 /*
@@ -931,7 +917,6 @@ void BotTeamOrders(bot_state_t *bs) {
 	}
 }
 
-#ifdef MISSIONPACK
 
 /*
 ==================
@@ -1906,7 +1891,7 @@ void BotHarvesterOrders(bot_state_t *bs) {
 		}
 	}
 }
-#endif
+
 
 /*
 ==================
@@ -1949,7 +1934,7 @@ void BotTeamAI(bot_state_t *bs) {
 	char netname[MAX_NETNAME];
 
 	//
-	if ( gametype < GT_TEAM  )
+	if ( !TeamPlayIsOn() )
 		return;
 	// make sure we've got a valid team leader
 	if (!BotValidTeamLeader(bs)) {
@@ -2040,7 +2025,6 @@ void BotTeamAI(bot_state_t *bs) {
 			}
 			break;
 		}
-#ifdef MISSIONPACK
 		case GT_1FCTF:
 		{
 			// if the enemy team leads and time limit has expired to 70%, choose aggressive strategy
@@ -2074,7 +2058,7 @@ void BotTeamAI(bot_state_t *bs) {
 			}
 			break;
 		}
-		case GT_OBELISK:
+		case GT_OVERLOAD:
 		{
 			// if the enemy team is leading by more than 1 point, or if the enemy team leads and time limit has expired to 50%, choose aggressive strategy
 			if (bs->ownteamscore + 1 < bs->enemyteamscore || (bs->ownteamscore < bs->enemyteamscore && level.time - level.startTime > (g_timeLimit.integer * 60000) * 0.5f)) {
@@ -2097,7 +2081,7 @@ void BotTeamAI(bot_state_t *bs) {
 		case GT_HARVESTER:
 		{
 			// if the enemy team is leading by more than the half of the captureLimit points and time limit has expired to 70%, choose aggressive strategy
-			if (bs->ownteamscore + (g_captureLimit.integer * 0.5f) < bs->enemyteamscore && level.time - level.startTime > (g_timeLimit.integer * 60000) * 0.7f) {
+			if (bs->ownteamscore + (g_scoreLimit.integer * 0.5f) < bs->enemyteamscore && level.time - level.startTime > (g_timeLimit.integer * 60000) * 0.7f) {
 				bs->ctfstrategy = CTFS_AGRESSIVE;
 			}
 
@@ -2114,7 +2098,6 @@ void BotTeamAI(bot_state_t *bs) {
 			}
 			break;
 		}
-#endif
 	}
 }
 

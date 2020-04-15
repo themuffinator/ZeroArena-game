@@ -440,7 +440,7 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 	}
 
 	// check for flag pickup
-	if ( cgs.gametype > GT_TEAM ) {
+	if ( GTL(GTL_CAPTURES) ) {
 		if ((ps->powerups[PW_REDFLAG] != ops->powerups[PW_REDFLAG] && ps->powerups[PW_REDFLAG]) ||
 			(ps->powerups[PW_BLUEFLAG] != ops->powerups[PW_BLUEFLAG] && ps->powerups[PW_BLUEFLAG]) ||
 			(ps->powerups[PW_NEUTRALFLAG] != ops->powerups[PW_NEUTRALFLAG] && ps->powerups[PW_NEUTRALFLAG]) )
@@ -457,7 +457,7 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 		if ( !cg.warmup ) {
 			// never play lead changes during warmup
 			if ( ps->persistant[PERS_RANK] != ops->persistant[PERS_RANK] ) {
-				if ( cgs.gametype < GT_TEAM) {
+				if ( !GTF(GTF_TEAMS)) {
 					leadChange_t leadChange = LEAD_NONE;
 
 					if ( ps->persistant[PERS_RANK] == 0 ) {
@@ -529,23 +529,23 @@ void CG_CheckGameSounds( void ) {
 		}
 	}
 
-	// fragLimit warnings
-	if ( cgs.fragLimit > 0 && cgs.gametype < GT_CTF) {
+	// frag limit warnings
+	if ( cgs.scoreLimit > 0 && GTL(GTL_FRAGS)) {
 		highScore = cgs.scores1;
 
-		if (cgs.gametype == GT_TEAM && cgs.scores2 > highScore) {
+		if (GTF(GTF_TEAMS) && cgs.scores2 > highScore) {
 			highScore = cgs.scores2;
 		}
 
-		if ( !( cg.fraglimitWarnings & 4 ) && highScore == (cgs.fragLimit - 1) ) {
+		if ( !( cg.fraglimitWarnings & 4 ) && highScore == (cgs.scoreLimit - 1) ) {
 			cg.fraglimitWarnings |= 1 | 2 | 4;
 			CG_AddBufferedSound(cgs.media.oneFragSound);
 		}
-		else if ( cgs.fragLimit > 2 && !( cg.fraglimitWarnings & 2 ) && highScore == (cgs.fragLimit - 2) ) {
+		else if ( cgs.scoreLimit > 2 && !( cg.fraglimitWarnings & 2 ) && highScore == (cgs.scoreLimit - 2) ) {
 			cg.fraglimitWarnings |= 1 | 2;
 			CG_AddBufferedSound(cgs.media.twoFragSound);
 		}
-		else if ( cgs.fragLimit > 3 && !( cg.fraglimitWarnings & 1 ) && highScore == (cgs.fragLimit - 3) ) {
+		else if ( cgs.scoreLimit > 3 && !( cg.fraglimitWarnings & 1 ) && highScore == (cgs.scoreLimit - 3) ) {
 			cg.fraglimitWarnings |= 1;
 			CG_AddBufferedSound(cgs.media.threeFragSound);
 		}

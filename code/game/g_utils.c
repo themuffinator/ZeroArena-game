@@ -738,3 +738,11 @@ int DebugLine(vec3_t start, vec3_t end, int color) {
 
 	return trap_DebugPolygonCreate(color, 4, points);
 }
+
+qboolean GTF(const int gtFlags) {
+	return (gt[g_gameType.integer].gtFlags & (gtFlags));
+}
+
+qboolean GTL(const int gtGoal) {
+	return (qboolean)(gt[g_gameType.integer].gtGoal);
+}

@@ -360,7 +360,7 @@ static void CG_TouchItem( centity_t *cent ) {
 		return;
 	}
 
-	if ( !BG_CanItemBeGrabbed( cgs.gametype, &cent->currentState, &cg.cur_lc->predictedPlayerState ) ) {
+	if ( !BG_CanItemBeGrabbed( cgs.gameType, &cent->currentState, &cg.cur_lc->predictedPlayerState ) ) {
 		return;		// can't hold it
 	}
 
@@ -368,14 +368,12 @@ static void CG_TouchItem( centity_t *cent ) {
 
 	// Special case for flags.  
 	// We don't predict touching our own flag
-#ifdef MISSIONPACK
-	if( cgs.gametype == GT_1FCTF ) {
+
+	if( cgs.gameType == GT_1FCTF ) {
 		if( item->giType == IT_TEAM && item->giTag != PW_NEUTRALFLAG ) {
 			return;
 		}
-	}
-#endif
-	if( cgs.gametype == GT_CTF ) {
+	} else if ( GTF(GTF_CTF) ) {
 		if (cg.cur_lc->predictedPlayerState.persistant[PERS_TEAM] == TEAM_RED &&
 			item->giType == IT_TEAM && item->giTag == PW_REDFLAG)
 			return;

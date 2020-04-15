@@ -792,7 +792,7 @@ Only in CTF games
 		PW_AMMOREGEN,
 /* sounds */ ""
 	},
-
+#endif
 	/*QUAKED team_CTF_neutralflag (0 0 1) (-16 -16 -16) (16 16 16)
 Only in One Flag CTF games
 */
@@ -810,12 +810,12 @@ Only in One Flag CTF games
 	},
 
 	{
-		"item_redcube",
+		"item_redskull",
 		"sound/misc/am_pkup.wav",
         { "models/powerups/orb/r_orb.md3",
 		NULL, NULL, NULL },
 /* icon */		"icons/iconh_rorb",
-/* pickup */	"Red Cube",
+/* pickup */	"Red Skull",
 		0,
 		IT_TEAM,
 		0,
@@ -823,17 +823,18 @@ Only in One Flag CTF games
 	},
 
 	{
-		"item_bluecube",
+		"item_blueskull",
 		"sound/misc/am_pkup.wav",
         { "models/powerups/orb/b_orb.md3",
 		NULL, NULL, NULL },
 /* icon */		"icons/iconh_borb",
-/* pickup */	"Blue Cube",
+/* pickup */	"Blue Skull",
 		0,
 		IT_TEAM,
 		0,
 /* sounds */ ""
 	},
+#ifdef MISSIONPACK
 /*QUAKED weapon_nailgun (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
 */
 	{
@@ -1033,33 +1034,6 @@ vmNetField_t	bg_playerStateFields[] =
 
 int bg_numPlayerStateFields = ARRAY_LEN(bg_playerStateFields);
 
-// may not contain spaces, dpmaster will reject the server
-const char *bg_netGametypeNames[GT_MAX_GAME_TYPE] = {
-	"FFA",
-	"Tournament",
-	"SP",
-	"TeamDM",
-	"CTF",
-#ifdef MISSIONPACK
-	"1FCTF",
-	"Overload",
-	"Harvester"
-#endif
-};
-
-const char *bg_displayGametypeNames[GT_MAX_GAME_TYPE] = {
-	"Free For All",
-	"Tournament",
-	"Single Player",
-	"Team Deathmatch",
-	"Capture the Flag",
-#ifdef MISSIONPACK
-	"One Flag CTF",
-	"Overload",
-	"Harvester"
-#endif
-};
-
 /*
 ==============
 BG_CheckSpawnEntity
@@ -1068,11 +1042,6 @@ BG_CheckSpawnEntity
 qboolean BG_CheckSpawnEntity( const bgEntitySpawnInfo_t *info ) {
 	int			i, gametype;
 	char		*s, *value, *gametypeName;
-	static char *gametypeNames[GT_MAX_GAME_TYPE] = {"ffa", "tournament", "single", "team", "ctf"
-#ifdef MISSIONPACK
-		, "oneflag", "obelisk", "harvester"
-#endif
-		};
 
 	gametype = info->gametype;
 
@@ -1084,8 +1053,8 @@ qboolean BG_CheckSpawnEntity( const bgEntitySpawnInfo_t *info ) {
 		}
 	}
 
-	// check for "notteam" flag (GT_FFA, GT_TOURNAMENT, GT_SINGLE_PLAYER)
-	if ( gametype >= GT_TEAM ) {
+	// check for "notteam" flag
+	if ( gt[gametype].gtFlags & GTF_TEAMS ) {
 		info->spawnInt( "notteam", "0", &i );
 		if ( i ) {
 			return qfalse;
@@ -1117,7 +1086,7 @@ qboolean BG_CheckSpawnEntity( const bgEntitySpawnInfo_t *info ) {
 
 	if( info->spawnString( "!gametype", NULL, &value ) ) {
 		if( gametype >= 0 && gametype < GT_MAX_GAME_TYPE ) {
-			gametypeName = gametypeNames[gametype];
+			gametypeName = gt[gametype].gtSpawnRef;
 
 			s = strstr( value, gametypeName );
 			if( s ) {
@@ -1128,7 +1097,7 @@ qboolean BG_CheckSpawnEntity( const bgEntitySpawnInfo_t *info ) {
 
 	if( info->spawnString( "gametype", NULL, &value ) ) {
 		if( gametype >= 0 && gametype < GT_MAX_GAME_TYPE ) {
-			gametypeName = gametypeNames[gametype];
+			gametypeName = gt[gametype].gtSpawnRef;
 
 			s = strstr( value, gametypeName );
 			if( !s ) {
@@ -1357,8 +1326,7 @@ qboolean BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const play
 #endif
 
 	case IT_TEAM: // team items, such as flags
-#ifdef MISSIONPACK		
-		if( gametype == GT_1FCTF ) {
+		if ( gametype == GT_1FCTF ) {
 			// neutral flag can always be picked up
 			if( item->giTag == PW_NEUTRALFLAG ) {
 				return qtrue;
@@ -1372,9 +1340,7 @@ qboolean BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const play
 					return qtrue;
 				}
 			}
-		}
-#endif
-		if( gametype == GT_CTF ) {
+		} else if( gt[gametype].gtFlags & GTF_CTF ) {
 			// ent->modelindex2 is non-zero on items if they are dropped
 			// we need to know this because we can pick up our dropped flag (and return it)
 			// but we can't pick up our flag at base
@@ -1389,13 +1355,10 @@ qboolean BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const play
 					(item->giTag == PW_BLUEFLAG && ps->powerups[PW_REDFLAG]) )
 					return qtrue;
 			}
-		}
-
-#ifdef MISSIONPACK
-		if( gametype == GT_HARVESTER ) {
+		} else if( gametype == GT_HARVESTER ) {
 			return qtrue;
 		}
-#endif
+
 		return qfalse;
 
 	case IT_HOLDABLE:

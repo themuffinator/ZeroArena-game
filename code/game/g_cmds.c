@@ -33,10 +33,6 @@ Suite 120, Rockville, Maryland 20850 USA.
 // for checking if EC is used by match templates
 #include "ai_chat_sys.h"
 
-#ifdef MISSIONPACK
-#include "../../ui/menudef.h"			// for the voice chats
-#endif
-
 /*
 ==================
 DeathmatchScoreboardMessage
@@ -563,7 +559,7 @@ void SetTeam( gentity_t *ent, const char *s ) {
 	} else if ( !Q_stricmp( s, "spectator" ) || !Q_stricmp( s, "s" ) ) {
 		team = TEAM_SPECTATOR;
 		specState = SPECTATOR_FREE;
-	} else if ( g_gameType.integer >= GT_TEAM ) {
+	} else if (GTF(GTF_TEAMS)) {
 		// if running a team game, assign player to one of the teams
 		specState = SPECTATOR_NOT;
 		if ( !Q_stricmp( s, "red" ) || !Q_stricmp( s, "r" ) ) {
@@ -602,7 +598,7 @@ void SetTeam( gentity_t *ent, const char *s ) {
 	}
 
 	// override decision if limiting the players
-	if ( (g_gameType.integer == GT_TOURNAMENT)
+	if (GTF(GTF_DUEL)
 		&& level.numNonSpectatorPlayers >= 2 ) {
 		team = TEAM_SPECTATOR;
 	} else if ( g_maxGameClients.integer > 0 && 
@@ -717,7 +713,7 @@ void Cmd_Team_f( gentity_t *ent ) {
 	}
 
 	// if they are playing a tournement game, count as a loss
-	if ( (g_gameType.integer == GT_TOURNAMENT )
+	if (GTF(GTF_DUEL)
 		&& ent->player->sess.sessionTeam == TEAM_FREE ) {
 		ent->player->sess.losses++;
 	}
@@ -769,8 +765,8 @@ void Cmd_Follow_f( gentity_t *ent ) {
 		return;
 	}
 
-	// if they are playing a tournement game, count as a loss
-	if ( (g_gameType.integer == GT_TOURNAMENT )
+	// if they are playing a tournament game, count as a loss
+	if (GTF(GTF_DUEL)
 		&& ent->player->sess.sessionTeam == TEAM_FREE ) {
 		ent->player->sess.losses++;
 	}
@@ -794,7 +790,7 @@ void Cmd_FollowCycle_f( gentity_t *ent, int dir ) {
 	int		original;
 
 	// if they are playing a tournement game, count as a loss
-	if ( (g_gameType.integer == GT_TOURNAMENT )
+	if (GTF(GTF_DUEL)
 		&& ent->player->sess.sessionTeam == TEAM_FREE ) {
 		ent->player->sess.losses++;
 	}
@@ -876,7 +872,7 @@ static qboolean G_SayTo( gentity_t *ent, gentity_t *other, int mode ) {
 		return qfalse;
 	}
 	// no chatting to players in tournements
-	if ( (g_gameType.integer == GT_TOURNAMENT )
+	if (GTF(GTF_DUEL)
 		&& other->player->sess.sessionTeam == TEAM_FREE
 		&& ent && ent->player && ent->player->sess.sessionTeam != TEAM_FREE ) {
 		return qfalse;
@@ -913,7 +909,7 @@ void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText ) 
 	char		*cmd, *str, *netname;
 	int			playerNum;
 
-	if ( g_gameType.integer < GT_TEAM && mode == SAY_TEAM ) {
+	if ( !GTF(GTF_TEAMS) && mode == SAY_TEAM ) {
 		mode = SAY_ALL;
 	}
 
@@ -1196,7 +1192,7 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 		if ( !arg2[0] ) {
 			Q_strncpyz( arg2, "5", sizeof( arg2 ) );
 		}
-	} else if ( !Q_stricmp( arg1, "nextmap" ) ) {
+	} else if ( !Q_stricmp( arg1, "nextMap" ) ) {
 		arg2Flags = CALLVOTE_ARG2_NONE;
 	} else if ( !Q_stricmp( arg1, "map" ) ) {
 		// string
@@ -1205,7 +1201,7 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 		arg2RangeMax = GT_MAX_GAME_TYPE - 1;
 	} else if ( !Q_stricmp( arg1, "kick" ) ) {
 		// string
-	} else if ( !Q_stricmp( arg1, "kicknum" ) ) {
+	} else if ( !Q_stricmp( arg1, "kickNum" ) ) {
 		arg2Flags = CALLVOTE_ARG2_INTREGAL;
 		arg2RangeMax = MAX_CLIENTS;
 	} else if ( !Q_stricmp( arg1, "g_doWarmup" ) ) {
@@ -1214,10 +1210,7 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 	} else if ( !Q_stricmp( arg1, "timeLimit" ) ) {
 		arg2Flags = CALLVOTE_ARG2_INTREGAL;
 		arg2RangeMax = 240; // 4 hours
-	} else if ( !Q_stricmp( arg1, "fragLimit" ) ) {
-		arg2Flags = CALLVOTE_ARG2_INTREGAL;
-		arg2RangeMax = 999;
-	} else if ( !Q_stricmp( arg1, "captureLimit" ) ) {
+	} else if ( !Q_stricmp( arg1, "scoreLimit" ) ) {
 		arg2Flags = CALLVOTE_ARG2_INTREGAL;
 		arg2RangeMax = 999;
 	} else if ( !Q_stricmp( arg1, "g_instaGib" ) ) {
@@ -1225,7 +1218,7 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 		arg2RangeMax = 1;
 	} else {
 		trap_SendServerCommand( ent-g_entities, "print \"Invalid vote string.\n\"" );
-		trap_SendServerCommand( ent-g_entities, "print \"Vote commands are: map_restart, nextmap, map <mapname>, g_gameType <n>, kick <player>, kicknum <playernum>, g_doWarmup <boolean>, timeLimit <time>, fragLimit <frags>, captureLimit <captures>, g_instaGib <boolean>.\n\"" );
+		trap_SendServerCommand( ent-g_entities, "print \"Vote commands are: map_restart, nextMap, map <mapname>, g_gameType <n>, kick <player>, kickNum <playernum>, g_doWarmup <boolean>, timeLimit <time>, scoreLimit <frags>, g_instaGib <boolean>.\n\"" );
 		return;
 	}
 
@@ -1275,7 +1268,7 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 		}
 
 		Com_sprintf( level.voteString, sizeof( level.voteString ), "%s %d", arg1, i );
-		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s %s", arg1, bg_displayGametypeNames[i] );
+		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s %s", arg1, gt[i].longName );
 	} else if ( !Q_stricmp( arg1, "map" ) ) {
 		// special case for map changes, we want to reset the nextmap setting
 		// this allows a player to change maps, but not upset the map rotation
@@ -1592,7 +1585,7 @@ void Cmd_SetViewpos_f( gentity_t *ent ) {
 	}
 
 	if (trap_Argc() < 4 || trap_Argc() > 6) {
-		CP(va("print \"Usage: setViewPos x y z pitch yaw\n\""));
+		CP(va("print \"Usage: setViewPos <x> <y> <z> [pitch] [yaw]\n\""));
 		return;
 	}
 

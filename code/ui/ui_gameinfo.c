@@ -193,26 +193,16 @@ void UI_LoadArenasIntoMapList( void ) {
 		type = Info_ValueForKey( ui_arenaInfos[n], "type" );
 		// if no type specified, it will be treated as "ffa"
 		if( *type ) {
-			if( strstr( type, "ffa" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_FFA);
-			}
-			if( strstr( type, "tourney" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_TOURNAMENT);
-			}
-			if( strstr( type, "ctf" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_CTF);
-			}
-			if( strstr( type, "oneflag" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_1FCTF);
-			}
-			if( strstr( type, "overload" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_OBELISK);
-			}
-			if( strstr( type, "harvester" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_HARVESTER);
+			int i;
+
+			for (i = 0; i < GT_MAX_GAME_TYPE; i++) {
+				if (strstr(type, gt[i].gtArenaRef)) {
+					uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << gt[i].index);
+					break;
+				}
 			}
 		} else {
-			uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_FFA);
+			uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << DEFAULT_GAMETYPE);
 		}
 
 		uiInfo.mapCount++;

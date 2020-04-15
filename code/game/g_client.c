@@ -785,7 +785,7 @@ void PlayerUserinfoChanged( int playerNum ) {
 	player->ps.stats[STAT_MAX_HEALTH] = player->pers.maxHealth;
 
 	// set model
-	if( g_gameType.integer >= GT_TEAM ) {
+	if(GTF(GTF_TEAMS)) {
 		Q_strncpyz( model, Info_ValueForKey (userinfo, "team_model"), sizeof( model ) );
 		Q_strncpyz( headModel, Info_ValueForKey (userinfo, "team_headModel"), sizeof( headModel ) );
 	} else {
@@ -1016,7 +1016,7 @@ void PlayerBegin( int playerNum ) {
 	// locate ent at a spawn point
 	PlayerSpawn( ent );
 
-	if ( player->pers.initialSpawn && g_gameType.integer != GT_TOURNAMENT ) {
+	if ( player->pers.initialSpawn && GTF(GTF_DUEL)) {
 		// This is only sent to bots because for humans the "joining the battle" etc
 		// make it clear that the player is now finished connecting. Bots on the other
 		// hand have "entered the game" hard coded in botfiles/match.c so continue to
@@ -1079,9 +1079,9 @@ void PlayerSpawn(gentity_t *ent) {
 	if ( player->sess.sessionTeam == TEAM_SPECTATOR ) {
 		spawnPoint = SelectSpectatorSpawnPoint ( 
 						spawn_origin, spawn_angles);
-	} else if (g_gameType.integer >= GT_CTF ) {
+	} else if (GTF(GTF_TEAMBASES)) {
 		// all base oriented team games use the CTF spawn points
-		spawnPoint = SelectCTFSpawnPoint ( 
+		spawnPoint = SelectTeamBaseSpawnPoint ( 
 						player->sess.sessionTeam, 
 						player->pers.teamState.state, 
 						spawn_origin, spawn_angles,
@@ -1175,7 +1175,7 @@ void PlayerSpawn(gentity_t *ent) {
 		player->ps.ammo[WP_RAILGUN] = 999;
 	} else {
 		player->ps.stats[STAT_WEAPONS] = ( 1 << WP_MACHINEGUN );
-		if ( g_gameType.integer == GT_TEAM ) {
+		if (GTF(GTF_TDM)) {
 			player->ps.ammo[WP_MACHINEGUN] = 50;
 		} else {
 			player->ps.ammo[WP_MACHINEGUN] = 100;
@@ -1314,24 +1314,24 @@ qboolean PlayerDisconnect( int playerNum, qboolean force ) {
 		TossPlayerItems( ent );
 #ifdef MISSIONPACK
 		TossPlayerPersistantPowerups( ent );
-		if( g_gameType.integer == GT_HARVESTER ) {
-			TossPlayerCubes( ent );
-		}
 #endif
+		if ( g_gameType.integer == GT_HARVESTER ) {
+			TossPlayerSkulls( ent );
+		}
 
 	}
 
 	G_LogPrintf( "PlayerDisconnect: %i\n", playerNum );
 
 	// if we are playing in tourney mode and losing, give a win to the other player
-	if ( (g_gameType.integer == GT_TOURNAMENT )
+	if (GTF(GTF_DUEL)
 		&& !level.intermissiontime
 		&& !level.warmupTime && level.sortedPlayers[1] == playerNum ) {
 		level.players[ level.sortedPlayers[0] ].sess.wins++;
 		PlayerUserinfoChanged( level.sortedPlayers[0] );
 	}
 
-	if( g_gameType.integer == GT_TOURNAMENT &&
+	if(GTF(GTF_DUEL) &&
 		ent->player->sess.sessionTeam == TEAM_FREE &&
 		level.intermissiontime ) {
 

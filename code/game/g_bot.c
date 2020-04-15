@@ -281,16 +281,8 @@ char *G_SelectRandomBotInfo( int team ) {
 	int		numBots;
 	char	**botInfos;
 
-#ifdef MISSIONPACK
-	if ( g_gameType.integer >= GT_TEAM ) {
-		numBots = g_numTeamBots;
-		botInfos = g_teamBotInfos;
-	} else
-#endif
-	{
-		numBots = g_numBots;
-		botInfos = g_botInfos;
-	}
+	numBots = g_numBots;
+	botInfos = g_botInfos;
 
 	// don't add duplicate bots to the server if there are less bots than bot types
 	if ( team != -1 && G_CountBotPlayersByName( NULL, -1 ) < numBots ) {
@@ -342,7 +334,7 @@ void G_AddRandomBot( int team ) {
 	if (team == TEAM_RED) teamstr = "red";
 	else if (team == TEAM_BLUE) teamstr = "blue";
 	else teamstr = "free";
-	trap_Cmd_ExecuteText( EXEC_INSERT, va("addbot random %f %s %i\n", skill, teamstr, 0) );
+	trap_Cmd_ExecuteText( EXEC_INSERT, va("addBot random %f %s %i\n", skill, teamstr, 0) );
 }
 
 /*
@@ -445,7 +437,7 @@ void G_CheckMinimumPlayers( void ) {
 	minplayers = bot_minplayers.integer;
 	if (minplayers <= 0) return;
 
-	if (g_gameType.integer >= GT_TEAM) {
+	if (gt[g_gameType.integer].gtFlags & GTF_TEAMS) {
 		if (minplayers >= g_maxClients.integer / 2) {
 			minplayers = (g_maxClients.integer / 2) -1;
 		}
@@ -468,7 +460,7 @@ void G_CheckMinimumPlayers( void ) {
 			G_RemoveRandomBot( TEAM_BLUE );
 		}
 	}
-	else if (g_gameType.integer == GT_TOURNAMENT ) {
+	else if (gt[g_gameType.integer].gtFlags & GTF_DUEL) {
 		if (minplayers >= g_maxClients.integer) {
 			minplayers = g_maxClients.integer-1;
 		}
@@ -485,7 +477,7 @@ void G_CheckMinimumPlayers( void ) {
 			}
 		}
 	}
-	else if (g_gameType.integer == GT_FFA) {
+	else {
 		if (minplayers >= g_maxClients.integer) {
 			minplayers = g_maxClients.integer-1;
 		}
@@ -620,7 +612,7 @@ static int G_DefaultColorForName( const char *name ) {
 G_AddBot
 ===============
 */
-static void G_AddBot( const char *name, float skill, const char *team, int delay, char *altname) {
+static void G_AddBot( const char *name, float skill, char *team, int delay, char *altname) {
 	int				value;
 	int				connectionNum;
 	int				playerNum;
@@ -648,7 +640,7 @@ static void G_AddBot( const char *name, float skill, const char *team, int delay
 
 	// set default team
 	if( !team || !*team ) {
-		if( g_gameType.integer >= GT_TEAM ) {
+		if(GTF(GTF_TEAMS)) {
 			if( PickTeam(playerNum) == TEAM_RED) {
 				team = "red";
 			}
@@ -792,7 +784,7 @@ Svcmd_AddBot_f
 ===============
 */
 void Svcmd_AddBot_f( void ) {
-	float			skill;
+	float				skill;
 	int				delay;
 	char			name[MAX_TOKEN_CHARS];
 	char			altname[MAX_TOKEN_CHARS];
@@ -807,14 +799,15 @@ void Svcmd_AddBot_f( void ) {
 	// name
 	trap_Argv( 1, name, sizeof( name ) );
 	if ( !name[0] ) {
-		trap_Print( "Usage: Addbot <botname> [skill 1-5] [team] [msec delay] [altname]\n" );
+		trap_Print( "Usage: addBot <botname> [skill 1-5] [team] [msec delay] [altname]\n" );
 		return;
 	}
 
 	// skill
 	trap_Argv( 2, string, sizeof( string ) );
 	if ( !string[0] ) {
-		skill = 4;
+		//skill = 4;
+		skill = Com_Clamp( 1, 5, (float)trap_Cvar_VariableValue( "g_spSkill" ) );
 	}
 	else {
 		skill = Com_Clamp( 1, 5, atof( string ) );
@@ -968,7 +961,7 @@ static void G_SpawnBots( char *botList, int baseDelay ) {
 
 		// we must add the bot this way, calling G_AddBot directly at this stage
 		// does "Bad Things"
-		trap_Cmd_ExecuteText( EXEC_INSERT, va("addbot %s %f free %i\n", bot, skill, delay) );
+		trap_Cmd_ExecuteText( EXEC_INSERT, va("addBot %s %f free %i\n", bot, skill, delay) );
 
 		delay += BOT_BEGIN_DELAY_INCREMENT;
 	}
@@ -1141,7 +1134,7 @@ static qboolean Character_Parse(char **p, const char *filename) {
 ===============
 G_ParseTeamInfo
 
-Team Arena's addbot menu only allows adding characters from teaminfo.txt
+Team Arena's addBot menu only allows adding characters from teaminfo.txt
 in g_gametypes >= GT_TEAM, so use them for random bot selection too.
 ===============
 */
@@ -1153,7 +1146,7 @@ static void G_ParseTeamInfo( const char *filename ) {
 
 	g_numTeamBots = 0;
 
-	if ( g_gameType.integer < GT_TEAM ) {
+	if ( GTF(GTF_TEAMS) ) {
 		return;
 	}
 
@@ -1217,7 +1210,7 @@ G_InitBots
 ===============
 */
 void G_InitBots( qboolean restart ) {
-	int			fragLimit;
+	int			scoreLimit;
 	int			timeLimit;
 	const char	*arenainfo;
 	char		*strValue;
@@ -1241,15 +1234,15 @@ void G_InitBots( qboolean restart ) {
 			return;
 		}
 
-		fragLimit = atoi( Info_ValueForKey( arenainfo, "fragLimit" ) );
+		scoreLimit = atoi( Info_ValueForKey( arenainfo, "fragLimit" ) );
 		timeLimit = atoi( Info_ValueForKey( arenainfo, "timeLimit" ) );
 
-		if ( !fragLimit && !timeLimit ) {
-			trap_Cvar_SetValue( "fragLimit", 10 );
+		if ( !scoreLimit && !timeLimit ) {
+			trap_Cvar_SetValue( "scoreLimit", 10 );
 			trap_Cvar_SetValue( "timeLimit", 0 );
 		}
 		else {
-			trap_Cvar_SetValue( "fragLimit", fragLimit );
+			trap_Cvar_SetValue( "scoreLimit", scoreLimit);
 			trap_Cvar_SetValue( "timeLimit", timeLimit );
 		}
 

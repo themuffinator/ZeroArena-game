@@ -114,7 +114,7 @@ void G_InitSessionData( gplayer_t *player, char *userinfo ) {
 	sess = &player->sess;
 
 	// initial team determination
-	if ( g_gameType.integer >= GT_TEAM ) {
+	if (gt[g_gameType.integer].gtFlags & GTF_TEAMS) {
 		// always spawn as spectator in team games
 		sess->sessionTeam = TEAM_SPECTATOR;
 		sess->spectatorState = SPECTATOR_FREE;
@@ -127,30 +127,12 @@ void G_InitSessionData( gplayer_t *player, char *userinfo ) {
 		}
 	} else {
 		value = Info_ValueForKey( userinfo, "teampref" );
+		//TODO: should teampref be used? joining clients should be greeted by welcome screen
 		if ( value[0] == 's' ) {
 			// a willing spectator, not a waiting-in-line
 			sess->sessionTeam = TEAM_SPECTATOR;
 		} else {
-			switch ( g_gameType.integer ) {
-			default:
-			case GT_FFA:
-			case GT_SINGLE_PLAYER:
-				if ( g_maxGameClients.integer > 0 && 
-					level.numNonSpectatorPlayers >= g_maxGameClients.integer ) {
-					sess->sessionTeam = TEAM_SPECTATOR;
-				} else {
-					sess->sessionTeam = TEAM_FREE;
-				}
-				break;
-			case GT_TOURNAMENT:
-				// if the game is full, go into a waiting mode
-				if ( level.numNonSpectatorPlayers >= 2 ) {
-					sess->sessionTeam = TEAM_SPECTATOR;
-				} else {
-					sess->sessionTeam = TEAM_FREE;
-				}
-				break;
-			}
+			sess->sessionTeam = TEAM_FREE;	// SPECTATOR;
 		}
 
 		sess->spectatorState = SPECTATOR_FREE;

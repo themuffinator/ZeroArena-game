@@ -146,11 +146,10 @@ void CG_ParseServerinfo( void ) {
 
 	info = CG_ConfigString( CS_SERVERINFO );
 	Q_strncpyz( cgs.gametypeName, Info_ValueForKey( info, "sv_gametypeName" ), sizeof (cgs.gametypeName) );
-	cgs.gametype = atoi( Info_ValueForKey( info, "g_gameType" ) );
-	trap_Cvar_SetValue("g_gameType", cgs.gametype);
+	cgs.gameType = atoi( Info_ValueForKey( info, "g_gameType" ) );
+	trap_Cvar_SetValue("g_gameType", cgs.gameType);
 	cgs.dmFlags = atoi( Info_ValueForKey( info, "dmFlags" ) );
-	cgs.fragLimit = atoi( Info_ValueForKey( info, "fragLimit" ) );
-	cgs.captureLimit = atoi( Info_ValueForKey( info, "captureLimit" ) );
+	cgs.scoreLimit = atoi( Info_ValueForKey( info, "scoreLimit" ) );
 	cgs.timeLimit = atoi( Info_ValueForKey( info, "timeLimit" ) );
 	cgs.maxplayers = atoi( Info_ValueForKey( info, "sv_maxclients" ) );
 	mapname = Info_ValueForKey( info, "mapname" );
@@ -175,7 +174,7 @@ static void CG_ParseWarmup( void ) {
 
 	} else if ( warmup > 0 && cg.warmup <= 0 ) {
 #ifdef MISSIONPACK
-		if (cgs.gametype >= GT_CTF) {
+		if (GTF(GTF_TEAMS)) {
 			trap_S_StartLocalSound( cgs.media.countPrepareTeamSound, CHAN_ANNOUNCER );
 		} else
 #endif
@@ -200,17 +199,16 @@ void CG_SetConfigValues( void ) {
 	cgs.scores1 = atoi( CG_ConfigString( CS_SCORES1 ) );
 	cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
 	cgs.levelStartTime = atoi( CG_ConfigString( CS_LEVEL_START_TIME ) );
-	if( cgs.gametype == GT_CTF ) {
+	if ( GTF(GTF_CTF) ) {
 		s = CG_ConfigString( CS_FLAGSTATUS );
 		cgs.redflag = s[0] - '0';
 		cgs.blueflag = s[1] - '0';
 	}
-#ifdef MISSIONPACK
-	else if( cgs.gametype == GT_1FCTF ) {
+	else if( cgs.gameType == GT_1FCTF ) {
 		s = CG_ConfigString( CS_FLAGSTATUS );
 		cgs.flagStatus = s[0] - '0';
 	}
-#endif
+
 	cg.warmup = atoi( CG_ConfigString( CS_WARMUP ) );
 }
 
@@ -333,16 +331,15 @@ static void CG_ConfigStringModified( void ) {
 	} else if ( num >= CS_DLIGHTS && num < CS_DLIGHTS + MAX_DLIGHT_CONFIGSTRINGS ) {
 		// FIXME - dlight changes ignored!
 	} else if ( num == CS_FLAGSTATUS ) {
-		if( cgs.gametype == GT_CTF ) {
+		if( GTF(GTF_CTF) ) {
 			// format is rb where its red/blue, 0 is at base, 1 is taken, 2 is dropped
 			cgs.redflag = str[0] - '0';
 			cgs.blueflag = str[1] - '0';
 		}
-#ifdef MISSIONPACK
-		else if( cgs.gametype == GT_1FCTF ) {
+		else if( cgs.gameType == GT_1FCTF ) {
 			cgs.flagStatus = str[0] - '0';
 		}
-#endif
+
 	}
 	else if ( num == CS_SHADERSTATE ) {
 		CG_ShaderStateChanged();
@@ -517,7 +514,7 @@ static void CG_MapRestart( void ) {
 	// we really should clear more parts of cg here and stop sounds
 
 	// play the "fight" sound if this is a restart without warmup
-	if ( cg.warmup == 0 /* && cgs.gametype == GT_TOURNAMENT */) {
+	if ( cg.warmup == 0 ) {
 		trap_S_StartLocalSound( cgs.media.countFightSound, CHAN_ANNOUNCER );
 		if ( CG_NumLocalPlayers() > 1 ) {
 			CG_GlobalCenterPrint( "FIGHT!", SCREEN_HEIGHT/2, 2.0 );
@@ -731,7 +728,7 @@ static void CG_ServerCommand( void ) {
 		}
 
 		// allow disabling non-team chat but always show server chat
-		if ( cgs.gametype >= GT_TEAM && cg_teamChatsOnly.integer && chatPlayerNum != CHATPLAYER_SERVER ) {
+		if (GTF(GTF_TEAMS) && cg_teamChatsOnly.integer && chatPlayerNum != CHATPLAYER_SERVER ) {
 			return;
 		}
 

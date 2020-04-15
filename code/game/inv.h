@@ -78,20 +78,13 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define INVENTORY_REDFLAG			45
 #define INVENTORY_BLUEFLAG			46
 #define INVENTORY_NEUTRALFLAG		47
-#define INVENTORY_REDCUBE			48
-#define INVENTORY_BLUECUBE			49
+#define INVENTORY_REDSKULL			48
+#define INVENTORY_BLUESKULL			49
 //enemy stuff
 #define ENEMY_HORIZONTAL_DIST		200
 #define ENEMY_HEIGHT				201
 #define NUM_VISIBLE_ENEMIES			202
 #define NUM_VISIBLE_TEAMMATES		203
-
-// if running the mission pack
-#ifdef MISSIONPACK
-
-//#error "running mission pack"
-
-#endif
 
 //item numbers (make sure they are in sync with bg_itemlist in bg_misc.c)
 #define MODELINDEX_ARMORSHARD		1
@@ -151,8 +144,8 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define MODELINDEX_AMMOREGEN		46
 
 #define MODELINDEX_NEUTRALFLAG		47
-#define MODELINDEX_REDCUBE			48
-#define MODELINDEX_BLUECUBE			49
+#define MODELINDEX_REDSKULL			48
+#define MODELINDEX_BLUESKULL			49
 
 #define MODELINDEX_NAILGUN			50
 #define MODELINDEX_PROXLAUNCHER		51

@@ -287,7 +287,7 @@ static void UI_TeamOrdersMenu_ListEvent( void *ptr, int event ) {
 
 	if( id == ID_LIST_BOTS ) {
 		teamOrdersMenuInfo.selectedBot = selection;
-		if( teamOrdersMenuInfo.gametype > GT_TEAM ) {
+		if( gt[teamOrdersMenuInfo.gametype].gtGoal == GTL_CAPTURES ) {
 			UI_TeamOrdersMenu_SetList( ID_LIST_CTF_ORDERS );
 		}
 		else {
@@ -330,7 +330,7 @@ static void UI_TeamOrdersMenu_BuildBotList( void ) {
 
 	trap_GetConfigString( CS_SERVERINFO, info, sizeof(info) );
 	numPlayers = atoi( Info_ValueForKey( info, "sv_maxclients" ) );
-	teamOrdersMenuInfo.gametype = atoi( Info_ValueForKey( info, "g_gameType" ) );
+	teamOrdersMenuInfo.gametype = UI_RetrieveGametypeNumFromInfo( info );
 
 	trap_GetConfigString( CS_PLAYERS + cg.localPlayers[0].playerNum, info, MAX_INFO_STRING );
 	playerTeam = *Info_ValueForKey( info, "t" );
@@ -451,8 +451,8 @@ void UI_TeamOrdersMenu_f( void ) {
 
 	// make sure it's a team game
 	trap_GetConfigString( CS_SERVERINFO, info, sizeof(info) );
-	teamOrdersMenuInfo.gametype = atoi( Info_ValueForKey( info, "g_gameType" ) );
-	if( teamOrdersMenuInfo.gametype < GT_TEAM ) {
+	teamOrdersMenuInfo.gametype = UI_RetrieveGametypeNumFromInfo( info );
+	if(gt[teamOrdersMenuInfo.gametype].gtFlags & GTF_TEAMS) {
 		return;
 	}
 

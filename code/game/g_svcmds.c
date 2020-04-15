@@ -42,15 +42,15 @@ PACKET FILTERING
 
 You can add or remove addresses from the filter list with:
 
-addip <ip>
-removeip <ip>
+addIP <ip>
+removeIP <ip>
 
 The ip address is specified in dot format, and you can use '*' to match any value
-so you can specify an entire class C network with "addip 192.246.40.*"
+so you can specify an entire class C network with "addIP 192.246.40.*"
 
-Removeip will only remove an address specified exactly the same way.  You cannot addip a subnet, then removeip a single host.
+Removeip will only remove an address specified exactly the same way.  You cannot addIP a subnet, then removeIP a single host.
 
-listip
+listIP
 Prints the current list of filters.
 
 g_filterban <0 or 1>
@@ -274,7 +274,7 @@ void Svcmd_AddIP_f (void)
 	char		str[MAX_TOKEN_CHARS];
 
 	if ( trap_Argc() < 2 ) {
-		G_Printf("Usage: addip <ip-mask>\n");
+		G_Printf("Usage: addIP <ip-mask>\n");
 		return;
 	}
 
@@ -296,7 +296,7 @@ void Svcmd_RemoveIP_f (void)
 	char		str[MAX_TOKEN_CHARS];
 
 	if ( trap_Argc() < 2 ) {
-		G_Printf("Usage: removeip <ip-mask>\n");
+		G_Printf("Usage: removeIP <ip-mask>\n");
 		return;
 	}
 
@@ -515,8 +515,8 @@ void	Svcmd_Teleport_f( void ) {
 		return;
 	}
 
-	if ( trap_Argc() < 3 ) {
-		G_Printf("Usage: teleport <player> <x> <y> <z> [yaw]\n");
+	if ( trap_Argc() < 5 || trap_Argc() > 7 ) {
+		G_Printf("Usage: teleport <player> <x> <y> <z> [pitch] [yaw]\n");
 		return;
 	}
 
@@ -524,6 +524,7 @@ void	Svcmd_Teleport_f( void ) {
 	trap_Argv( 1, str, sizeof( str ) );
 	playerNum = PlayerForString( str );
 	if ( playerNum == -1 ) {
+		G_Printf( "Player name not found.\n" );
 		return;
 	}
 
@@ -542,10 +543,15 @@ void	Svcmd_Teleport_f( void ) {
 
 	if ( trap_Argc() > 5 ) {
 		trap_Argv( 5, str, sizeof( str ) );
+		angles[PITCH] = atoi( str );
+	}
+
+	if ( trap_Argc() > 6 ) {
+		trap_Argv( 6, str, sizeof( str ) );
 		angles[YAW] = atoi( str );
 	}
 
-	TeleportPlayer( ent, position, angles, qfalse, qfalse );
+	TeleportPlayer( ent, position, angles, qtrue, qfalse );
 }
 
 /*
@@ -636,14 +642,14 @@ struct svcmd
   void     ( *complete )( char *, int );
 } svcmds[ ] = {
   { "abort_podium", qfalse, Svcmd_AbortPodium_f },
-  { "addbot", qfalse, Svcmd_AddBot_f, Svcmd_AddBotComplete },
-  { "addip", qfalse, Svcmd_AddIP_f },
-  { "botlist", qfalse, Svcmd_BotList_f },
-  { "botreport", qfalse, Svcmd_BotTeamplayReport_f },
+  { "addBot", qfalse, Svcmd_AddBot_f, Svcmd_AddBotComplete },
+  { "addIP", qfalse, Svcmd_AddIP_f },
+  { "botList", qfalse, Svcmd_BotList_f },
+  { "botReport", qfalse, Svcmd_BotTeamplayReport_f },
   { "entityList", qfalse, Svcmd_EntityList_f },
   { "forceTeam", qfalse, Svcmd_ForceTeam_f, Svcmd_ForceTeamComplete },
-  { "listip", qfalse, Svcmd_ListIPs_f },
-  { "removeip", qfalse, Svcmd_RemoveIP_f },
+  { "listIP", qfalse, Svcmd_ListIPs_f },
+  { "removeIP", qfalse, Svcmd_RemoveIP_f },
   { "say", qtrue, Svcmd_Say_f },
   { "teleport", qfalse, Svcmd_Teleport_f, Svcmd_TeleportComplete },
   { "tell", qtrue, Svcmd_Tell_f, Svcmd_TellComplete },

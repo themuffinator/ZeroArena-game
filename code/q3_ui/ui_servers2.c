@@ -107,19 +107,16 @@ MULTIPLAYER MENU (SERVER BROWSER)
 #define SORT_PING			4
 #define SORT_NUM_SORTS		5
 
+//TODO integrate below to gt system
 #define GAMES_ALL			0
 #define GAMES_FFA			1
-#define GAMES_TEAMPLAY		2
-#define GAMES_TOURNEY		3
+#define GAMES_TOURNEY		2
+#define GAMES_TEAMPLAY		3
 #define GAMES_CTF			4
-#ifdef MISSIONPACK
 #define GAMES_1FCTF			5
 #define GAMES_OBELISK		6
 #define GAMES_HARVESTER		7
 #define GAMES_NUM_GAMES		8
-#else
-#define GAMES_NUM_GAMES		5
-#endif // MISSIONPACK
 
 static const char *master_items[] = {
 	"Local",
@@ -159,15 +156,13 @@ static const char *mod_dir_items[] = {
 
 static const char *servertype_items[] = {
 	"All",
-	"Free For All",
+	"Free for All",
+	"Duel",
 	"Team Deathmatch",
-	"Tournament",
 	"Capture the Flag",
-#ifdef MISSIONPACK
-	"1 Flag CTF",
+	"One Flag CTF",
 	"Overload",
 	"Harvester",
-#endif // MISSIONPACK
 	NULL
 };
 
@@ -393,7 +388,7 @@ int ArenaServers_GametypeForGames(int games) {
 		break;
 
 	case GAMES_TOURNEY:
-		gametype = GT_TOURNAMENT;
+		gametype = GT_DUEL;
 		break;
 
 	case GAMES_TEAMPLAY:
@@ -404,19 +399,17 @@ int ArenaServers_GametypeForGames(int games) {
 		gametype = GT_CTF;
 		break;
 
-#ifdef MISSIONPACK
 	case GAMES_1FCTF:
 		gametype = GT_1FCTF;
 		break;
 
 	case GAMES_OBELISK:
-		gametype = GT_OBELISK;
+		gametype = GT_OVERLOAD;
 		break;
 
 	case GAMES_HARVESTER:
 		gametype = GT_HARVESTER;
 		break;
-#endif
 	}
 
 	return gametype;
@@ -593,7 +586,7 @@ static void ArenaServers_UpdateMenu( void ) {
 
 		gametype = ArenaServers_GametypeForGames(g_gameType);
 		if( gametype >= 0 && gametype < GT_MAX_GAME_TYPE
-			&& Q_stricmp(servernodeptr->gametypeName, bg_netGametypeNames[gametype]) != 0 ) {
+			&& Q_stricmp(servernodeptr->gametypeName, gt[gametype].shortName) != 0 ) {
 			continue;
 		}
 
@@ -1073,7 +1066,7 @@ static void ArenaServers_StartRefresh( void )
 
 		// add requested gametype to args for dpmaster protocol
 		if (gametype != -1) {
-			Com_sprintf( myargs, sizeof (myargs), " gametype=%s", bg_netGametypeNames[gametype] );
+			Com_sprintf( myargs, sizeof (myargs), " gametype=%s", gt[gametype].shortName);
 		} else {
 			myargs[0] = '\0';
 		}

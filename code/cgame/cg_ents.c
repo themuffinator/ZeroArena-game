@@ -990,15 +990,11 @@ CG_TeamBase
 */
 static void CG_TeamBase( centity_t *cent ) {
 	refEntity_t model;
-#ifdef MISSIONPACK
 	vec3_t angles;
 	int t, h;
 	float c;
 
-	if ( cgs.gametype == GT_CTF || cgs.gametype == GT_1FCTF ) {
-#else
-	if ( cgs.gametype == GT_CTF) {
-#endif
+	if ( GTL(GTL_CAPTURES) ) {
 		// show the flag base
 		memset(&model, 0, sizeof(model));
 		model.reType = RT_MODEL;
@@ -1016,8 +1012,7 @@ static void CG_TeamBase( centity_t *cent ) {
 		}
 		CG_AddRefEntityWithMinLight( &model );
 	}
-#ifdef MISSIONPACK
-	else if ( cgs.gametype == GT_OBELISK ) {
+	else if ( cgs.gameType == GT_OVERLOAD ) {
 		// show the obelisk
 		memset(&model, 0, sizeof(model));
 		model.reType = RT_MODEL;
@@ -1111,7 +1106,7 @@ static void CG_TeamBase( centity_t *cent ) {
 			CG_AddRefEntityWithMinLight( &model );
 		}
 	}
-	else if ( cgs.gametype == GT_HARVESTER ) {
+	else if ( cgs.gameType == GT_HARVESTER ) {
 		// show harvester model
 		memset(&model, 0, sizeof(model));
 		model.reType = RT_MODEL;
@@ -1133,7 +1128,6 @@ static void CG_TeamBase( centity_t *cent ) {
 		}
 		CG_AddRefEntityWithMinLight( &model );
 	}
-#endif
 }
 
 /*

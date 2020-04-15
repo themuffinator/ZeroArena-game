@@ -63,9 +63,8 @@ gconnection_t	g_connections[MAX_CLIENTS];
 
 vmCvar_t	g_gameType;
 vmCvar_t	g_dmFlags;
-vmCvar_t	g_fragLimit;
+vmCvar_t	g_scoreLimit;
 vmCvar_t	g_timeLimit;
-vmCvar_t	g_captureLimit;
 vmCvar_t	g_friendlyFire;
 vmCvar_t	g_password;
 vmCvar_t	g_needPassword;
@@ -104,18 +103,26 @@ vmCvar_t	pmove_msec;
 vmCvar_t	g_rankings;
 vmCvar_t	g_listEntity;
 vmCvar_t	g_singlePlayerActive;
-#ifdef MISSIONPACK
 vmCvar_t	g_obeliskHealth;
 vmCvar_t	g_obeliskRegenPeriod;
 vmCvar_t	g_obeliskRegenAmount;
 vmCvar_t	g_obeliskRespawnDelay;
 vmCvar_t	g_harvester_skullTimeout;
+#ifdef MISSIONPACK
 vmCvar_t	g_redTeamName;
 vmCvar_t	g_blueTeamName;
 vmCvar_t	g_proxMineTimeout;
 #endif
 vmCvar_t	g_playerCapsule;
 vmCvar_t	g_instaGib;
+
+vmCvar_t	g_gt_frags_limit;
+vmCvar_t	g_gt_captures_limit;
+vmCvar_t	g_gt_elim_limit;
+vmCvar_t	g_gt_point_limit;
+vmCvar_t	g_gt_round_limit;
+vmCvar_t	g_gt_round_maxtime;
+
 
 static cvarTable_t		gameCvarTable[] = {
 	// don't override the cheat state set by the system
@@ -135,9 +142,8 @@ static cvarTable_t		gameCvarTable[] = {
 
 	// change anytime vars
 	{ &g_dmFlags, "dmFlags", "0", CVAR_SERVERINFO | CVAR_ARCHIVE, GCF_TRACK_CHANGE, RANGE_ALL, "deathmatch flags to alter game rules" },
-	{ &g_fragLimit, "fragLimit", "20", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT(0, INT_MAX), "frag score to win the match" },
+	{ &g_scoreLimit, "scoreLimit", "20", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT(0, INT_MAX), "score to win the match" },
 	{ &g_timeLimit, "timeLimit", "0", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT(0, INT_MAX/60000), "maximum duration of the match" },
-	{ &g_captureLimit, "captureLimit", "8", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT(0, INT_MAX), "number of flag captures to win a CTF match" },
 
 	{ &g_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO, 0, RANGE_BOOL },
 
@@ -180,13 +186,13 @@ static cvarTable_t		gameCvarTable[] = {
 
 	{ &g_singlePlayerActive, "ui_singlePlayerActive", "0", CVAR_SYSTEMINFO | CVAR_ROM, 0, RANGE_ALL },
 
-#ifdef MISSIONPACK
 	{ &g_obeliskHealth, "g_obeliskHealth", "2500", 0, 0, RANGE_ALL },
 	{ &g_obeliskRegenPeriod, "g_obeliskRegenPeriod", "1", 0, 0, RANGE_ALL },
 	{ &g_obeliskRegenAmount, "g_obeliskRegenAmount", "15", 0, 0, RANGE_ALL },
 	{ &g_obeliskRespawnDelay, "g_obeliskRespawnDelay", "10", CVAR_SYSTEMINFO, 0, RANGE_ALL },
 
 	{ &g_harvester_skullTimeout, "g_harvester_skullTimeout", "30", 0, 0, RANGE_ALL },
+#ifdef MISSIONPACK
 	{ &g_redTeamName, "g_redTeamName", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE | CVAR_SYSTEMINFO, GCF_TRACK_CHANGE | GCF_TEAM_SHADER, RANGE_ALL },
 	{ &g_blueTeamName, "g_blueTeamName", DEFAULT_BLUETEAM_NAME, CVAR_ARCHIVE | CVAR_SYSTEMINFO, GCF_TRACK_CHANGE | GCF_TEAM_SHADER, RANGE_ALL },
 
@@ -197,6 +203,13 @@ static cvarTable_t		gameCvarTable[] = {
 	{ &pmove_overbounce, "pmove_overbounce", "0", CVAR_SYSTEMINFO, 0, RANGE_BOOL },
 	{ &pmove_fixed, "pmove_fixed", "0", CVAR_SYSTEMINFO, 0, RANGE_BOOL },
 	{ &pmove_msec, "pmove_msec", "8", CVAR_SYSTEMINFO, 0, RANGE_ALL },
+
+	{ &g_gt_frags_limit, "g_gt_frags_limit", "50", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT(0, 1000), "total frags to win frag-based gametypes" },
+	{ &g_gt_captures_limit, "g_gt_captures_limit", "8", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT(0, 1000), "total captures to win capture-based gametypes" },
+	{ &g_gt_elim_limit, "g_gt_elim_limit", "3", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT(0, 1000), "total elimination scoring to win elimination-based gametypes" },
+	{ &g_gt_point_limit, "g_gt_point_limit", "20", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT(0, 1000), "total points to win point-based gametypes" },
+	{ &g_gt_round_limit, "g_gt_round_limit", "8", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT(0, 1000), "total round wins to win round-based gametypes" },
+	{ &g_gt_round_maxtime, "g_gt_round_maxtime", "3", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT(0, 1000), "maximum round time in round-based gametypes" },
 
 	{ &g_rankings, "g_rankings", "0", 0, 0, RANGE_ALL }
 
@@ -418,7 +431,7 @@ void G_RegisterCvars( void ) {
 
 	// Don't allow single player gametype to be used in multiplayer.
 	if ( g_gameType.integer == GT_SINGLE_PLAYER && !g_singlePlayerActive.integer) {
-		trap_Cvar_SetValue( "g_gameType", GT_FFA );
+		trap_Cvar_SetValue( "g_gameType", DEFAULT_GAMETYPE );
 		trap_Cvar_Update( &g_gameType );
 	}
 
@@ -429,11 +442,11 @@ void G_RegisterCvars( void ) {
 	}
 
 	if ( g_instaGib.integer ) {
-		trap_Cvar_Set( "sv_gametypeName", va( "Instagib %s", bg_displayGametypeNames[g_gameType.integer] ) );
-		trap_Cvar_Set( "sv_gametypeNetName", va( "Insta%s", bg_netGametypeNames[g_gameType.integer] ) );
+		trap_Cvar_Set( "sv_gametypeName", va( "Instagib %s", gt[g_gameType.integer].longName ) );
+		trap_Cvar_Set( "sv_gametypeNetName", va( "Insta%s", gt[g_gameType.integer].shortName ) );
 	} else {
-		trap_Cvar_Set( "sv_gametypeName", bg_displayGametypeNames[g_gameType.integer] );
-		trap_Cvar_Set( "sv_gametypeNetName", bg_netGametypeNames[g_gameType.integer] );
+		trap_Cvar_Set( "sv_gametypeName", gt[g_gameType.integer].longName);
+		trap_Cvar_Set( "sv_gametypeNetName", gt[g_gameType.integer].shortName);
 	}
 
 	level.warmupModificationCount = g_warmupCountdownTime.modificationCount;
@@ -582,7 +595,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	G_FindTeams();
 
 	// make sure we have flags for CTF, etc
-	if( g_gameType.integer >= GT_TEAM ) {
+	if( GTF(GTF_TEAMBASES) ) {
 		G_CheckTeamItems();
 	}
 
@@ -590,7 +603,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 
 	G_DPrintf ("-----------------------------------\n");
 
-	if( g_gameType.integer == GT_SINGLE_PLAYER || trap_Cvar_VariableIntegerValue( "com_buildScript" ) ) {
+	if ( g_gameType.integer == GT_SINGLE_PLAYER || trap_Cvar_VariableIntegerValue( "com_buildScript" ) ) {
 		G_ModelIndex( SP_PODIUM_MODEL );
 	}
 
@@ -1037,7 +1050,7 @@ void CalculateRanks( void ) {
 		sizeof(level.sortedPlayers[0]), SortRanks );
 
 	// set the rank value for all players that are connected and not spectators
-	if ( g_gameType.integer >= GT_TEAM ) {
+	if (GTF(GTF_TEAMS)) {
 		// in team games, rank is just the order of the teams, 0=red, 1=blue, 2=tied
 		for ( i = 0;  i < level.numConnectedPlayers; i++ ) {
 			cl = &level.players[ level.sortedPlayers[i] ];
@@ -1072,7 +1085,7 @@ void CalculateRanks( void ) {
 	}
 
 	// set the CS_SCORES1/2 configstrings, which will be visible to everyone
-	if ( g_gameType.integer >= GT_TEAM ) {
+	if (GTF(GTF_TEAMS)) {
 		trap_SetConfigstring( CS_SCORES1, va("%i", level.teamScores[TEAM_RED] ) );
 		trap_SetConfigstring( CS_SCORES2, va("%i", level.teamScores[TEAM_BLUE] ) );
 	} else {
@@ -1202,7 +1215,7 @@ void BeginIntermission( void ) {
 	}
 
 	// if in tournement mode, change the wins / losses
-	if ( g_gameType.integer == GT_TOURNAMENT ) {
+	if (GTF(GTF_DUEL)) {
 		AdjustTournamentScores();
 	}
 
@@ -1257,7 +1270,7 @@ void ExitLevel (void) {
 
 	// if we are running a tournement map, kick the loser to spectator status,
 	// which will automatically grab the next spectator and restart
-	if ( g_gameType.integer == GT_TOURNAMENT  ) {
+	if (GTF(GTF_DUEL)) {
 		if ( !level.restarted ) {
 			RemoveTournamentLoser();
 			trap_Cmd_ExecuteText( EXEC_APPEND, "map_restart 0\n" );
@@ -1369,7 +1382,7 @@ void LogExit( const char *string ) {
 		numSorted = 32;
 	}
 
-	if ( g_gameType.integer >= GT_TEAM ) {
+	if (GTF(GTF_TEAMS)) {
 		G_LogPrintf( "red:%i  blue:%i\n",
 			level.teamScores[TEAM_RED], level.teamScores[TEAM_BLUE] );
 	}
@@ -1393,7 +1406,7 @@ void LogExit( const char *string ) {
 		if (g_singlePlayerActive.integer && !(g_entities[cl - level.players].r.svFlags & SVF_BOT)) {
 			team = cl->sess.sessionTeam;
 		}
-		if (g_singlePlayerActive.integer && g_gameType.integer < GT_TEAM) {
+		if (g_singlePlayerActive.integer && !GTF(GTF_TEAMS)) {
 			if (g_entities[cl - level.players].r.svFlags & SVF_BOT && cl->ps.persistant[PERS_RANK] == 0) {
 				won = qfalse;
 			}
@@ -1404,7 +1417,7 @@ void LogExit( const char *string ) {
 
 #ifdef MISSIONPACK
 	if (g_singlePlayerActive.integer) {
-		if (g_gameType.integer >= GT_TEAM) {
+		if (GTF(GTF_TEAMS)) {
 			if (team == TEAM_BLUE) {
 				won = level.teamScores[TEAM_BLUE] > level.teamScores[TEAM_RED];
 			} else {
@@ -1414,7 +1427,6 @@ void LogExit( const char *string ) {
 		trap_Cmd_ExecuteText( EXEC_APPEND, (won) ? "spWin\n" : "spLose\n" );
 	}
 #endif
-
 
 }
 
@@ -1512,7 +1524,7 @@ qboolean ScoreIsTied( void ) {
 		return qfalse;
 	}
 	
-	if ( g_gameType.integer >= GT_TEAM ) {
+	if (GTF(GTF_TEAMS)) {
 		return level.teamScores[TEAM_RED] == level.teamScores[TEAM_BLUE];
 	}
 
@@ -1565,54 +1577,59 @@ void CheckExitRules( void ) {
 
 	if ( g_timeLimit.integer && !level.warmupTime ) {
 		if ( level.time - level.startTime >= g_timeLimit.integer*60000 ) {
-			trap_SendServerCommand( -1, "print \"Timelimit hit.\n\"");
-			LogExit( "Timelimit hit." );
+			trap_SendServerCommand( -1, "print \"Time Limit hit.\n\"");
+			LogExit( "Time Limit hit." );
 			return;
 		}
 	}
 
-	if ( g_gameType.integer < GT_CTF && g_fragLimit.integer ) {
-		if ( level.teamScores[TEAM_RED] >= g_fragLimit.integer ) {
-			trap_SendServerCommand( -1, "print \"Red hit the fragLimit.\n\"" );
-			LogExit( "Fraglimit hit." );
-			return;
-		}
-
-		if ( level.teamScores[TEAM_BLUE] >= g_fragLimit.integer ) {
-			trap_SendServerCommand( -1, "print \"Blue hit the fragLimit.\n\"" );
-			LogExit( "Fraglimit hit." );
-			return;
-		}
-
-		for ( i=0 ; i< g_maxClients.integer ; i++ ) {
-			cl = level.players + i;
-			if ( cl->pers.connected != CON_CONNECTED ) {
-				continue;
-			}
-			if ( cl->sess.sessionTeam != TEAM_FREE ) {
-				continue;
+	if ( GTL(GTL_FRAGS) && g_scoreLimit.integer ) {
+		if (GTF(GTF_TEAMS)) {
+			if (level.teamScores[TEAM_RED] >= g_scoreLimit.integer) {
+				trap_SendServerCommand(-1, "print \"Red hit the Frag Limit.\n\"");
+				LogExit("Frag Limit hit.");
+				return;
 			}
 
-			if ( cl->ps.persistant[PERS_SCORE] >= g_fragLimit.integer ) {
-				LogExit( "Fraglimit hit." );
-				trap_SendServerCommand( -1, va("print \"%s" S_COLOR_WHITE " hit the fragLimit.\n\"",
-					cl->pers.netname ) );
+			if (level.teamScores[TEAM_BLUE] >= g_scoreLimit.integer) {
+				trap_SendServerCommand(-1, "print \"Blue hit the Frag Limit.\n\"");
+				LogExit("Frag Limit hit.");
 				return;
 			}
 		}
+		else {
+			for (i = 0; i < g_maxClients.integer; i++) {
+				cl = level.players + i;
+				if (cl->pers.connected != CON_CONNECTED) {
+					continue;
+				}
+				if (cl->sess.sessionTeam != TEAM_FREE) {
+					continue;
+				}
+
+				if (cl->ps.persistant[PERS_SCORE] >= g_scoreLimit.integer) {
+					LogExit("Frag Limit hit.");
+					trap_SendServerCommand(-1, va("print \"%s" S_COLOR_WHITE " hit the Frag Limit.\n\"",
+						cl->pers.netname));
+					return;
+				}
+			}
+		}
+
+		
 	}
 
-	if ( g_gameType.integer >= GT_CTF && g_captureLimit.integer ) {
+	if (GTL(GTL_CAPTURES) && g_scoreLimit.integer ) {
 
-		if ( level.teamScores[TEAM_RED] >= g_captureLimit.integer ) {
-			trap_SendServerCommand( -1, "print \"Red hit the captureLimit.\n\"" );
-			LogExit( "Capturelimit hit." );
+		if ( level.teamScores[TEAM_RED] >= g_scoreLimit.integer ) {
+			trap_SendServerCommand( -1, "print \"Red hit the Capture Limit.\n\"" );
+			LogExit( "Capture Limit hit." );
 			return;
 		}
 
-		if ( level.teamScores[TEAM_BLUE] >= g_captureLimit.integer ) {
-			trap_SendServerCommand( -1, "print \"Blue hit the captureLimit.\n\"" );
-			LogExit( "Capturelimit hit." );
+		if ( level.teamScores[TEAM_BLUE] >= g_scoreLimit.integer ) {
+			trap_SendServerCommand( -1, "print \"Blue hit the Capture Limit.\n\"" );
+			LogExit( "Capture Limit hit." );
 			return;
 		}
 	}
@@ -1643,7 +1660,7 @@ void CheckTournament( void ) {
 		return;
 	}
 
-	if ( g_gameType.integer == GT_TOURNAMENT ) {
+	if (GTF(GTF_DUEL)) {
 
 		// pull in a spectator if needed
 		if ( level.numPlayingPlayers < 2 ) {
@@ -1697,7 +1714,7 @@ void CheckTournament( void ) {
 		int		counts[TEAM_NUM_TEAMS];
 		qboolean	notEnough = qfalse;
 
-		if ( g_gameType.integer >= GT_TEAM ) {
+		if (GTF(GTF_TEAMS)) {
 			counts[TEAM_BLUE] = TeamCount( -1, TEAM_BLUE );
 			counts[TEAM_RED] = TeamCount( -1, TEAM_RED );
 

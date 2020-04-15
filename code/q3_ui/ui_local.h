@@ -35,7 +35,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 #include "../ui/ui_public.h"
 
 typedef void (*voidfunc_f)(void);
-
+/*
 extern vmCvar_t	ui_ffa_fraglimit;
 extern vmCvar_t	ui_ffa_timelimit;
 
@@ -50,7 +50,6 @@ extern vmCvar_t	ui_ctf_capturelimit;
 extern vmCvar_t	ui_ctf_timelimit;
 extern vmCvar_t	ui_ctf_friendly;
 
-#ifdef MISSIONPACK
 extern vmCvar_t	ui_1flag_capturelimit;
 extern vmCvar_t	ui_1flag_timelimit;
 extern vmCvar_t	ui_1flag_friendly;
@@ -62,7 +61,39 @@ extern vmCvar_t	ui_obelisk_friendly;
 extern vmCvar_t	ui_harvester_capturelimit;
 extern vmCvar_t	ui_harvester_timelimit;
 extern vmCvar_t	ui_harvester_friendly;
-#endif
+*/
+extern vmCvar_t	ui_gt_frags_free_scoreLimit;
+extern vmCvar_t	ui_gt_frags_free_timeLimit;
+extern vmCvar_t	ui_gt_frags_free_instaGib;
+extern vmCvar_t	ui_gt_frags_teams_scoreLimit;
+extern vmCvar_t	ui_gt_frags_teams_timeLimit;
+extern vmCvar_t	ui_gt_frags_teams_friendlyFire;
+extern vmCvar_t	ui_gt_frags_teams_instaGib;
+extern vmCvar_t	ui_gt_frags_1v1_scoreLimit;
+extern vmCvar_t	ui_gt_frags_1v1_timeLimit;
+extern vmCvar_t	ui_gt_frags_1v1_instaGib;
+extern vmCvar_t	ui_gt_captures_teams_scoreLimit;
+extern vmCvar_t	ui_gt_captures_teams_timeLimit;
+extern vmCvar_t	ui_gt_captures_teams_friendlyFire;
+extern vmCvar_t	ui_gt_captures_teams_instaGib;
+extern vmCvar_t	ui_gt_elim_free_lives;
+extern vmCvar_t	ui_gt_elim_free_timeLimit;
+extern vmCvar_t	ui_gt_elim_free_instaGib;
+extern vmCvar_t	ui_gt_elim_teams_lives;
+extern vmCvar_t	ui_gt_elim_teams_timeLimit;
+extern vmCvar_t	ui_gt_elim_teams_friendlyFire;
+extern vmCvar_t	ui_gt_elim_teams_instaGib;
+extern vmCvar_t	ui_gt_points_free_scoreLimit;
+extern vmCvar_t	ui_gt_points_free_timeLimit;
+extern vmCvar_t	ui_gt_points_free_instaGib;
+extern vmCvar_t	ui_gt_points_teams_scoreLimit;
+extern vmCvar_t	ui_gt_points_teams_timeLimit;
+extern vmCvar_t	ui_gt_points_teams_friendlyFire;
+extern vmCvar_t	ui_gt_points_teams_instaGib;
+extern vmCvar_t	ui_gt_rounds_free_maxRounds;
+extern vmCvar_t	ui_gt_rounds_free_maxRoundTime;
+extern vmCvar_t	ui_gt_rounds_teams_maxRounds;
+extern vmCvar_t	ui_gt_rounds_teams_maxRoundTime;
 
 extern vmCvar_t	ui_publicServer;
 
@@ -655,6 +686,13 @@ void UI_SoundOptionsMenu( void );
 //
 void UI_NetworkOptionsMenu_Cache( void );
 void UI_NetworkOptionsMenu( void );
+
+//
+// ui_main.c
+//
+int UI_RetrieveGametypeNum( void );
+int UI_RetrieveGametypeNumFromInfo( char info[MAX_INFO_STRING] );
+
 
 //
 // ui_gameinfo.c

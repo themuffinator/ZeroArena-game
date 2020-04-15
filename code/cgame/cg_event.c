@@ -231,7 +231,7 @@ static void CG_Obituary( entityState_t *ent ) {
 
 			ps = &cg.snap->pss[i];
 
-			if ( cgs.gametype < GT_TEAM ) {
+			if (!GTF(GTF_TEAMS)) {
 				s = va("You fragged %s\n%s place with %i", targetName, 
 					CG_PlaceString( ps->persistant[PERS_RANK] + 1 ),
 					ps->persistant[PERS_SCORE] );
@@ -1076,13 +1076,11 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 					CG_AddBufferedSound( cgs.media.blueFlagReturnedSound );
 					break;
 				case GTS_BLUE_RETURN: // CTF red flag returned, 1FCTF: neutral flag returned
-#ifdef MISSIONPACK
-					if ( cgs.gametype == GT_1FCTF ) {
+					if ( cgs.gameType == GT_1FCTF ) {
 						CG_AddBufferedSound( cgs.media.returnOpponentSound );
 						CG_AddBufferedSound( cgs.media.neutralFlagReturnedSound );
 						break;
 					}
-#endif
 
 					if ( blueTeam )
 						CG_AddBufferedSound( cgs.media.returnYourTeamSound );
@@ -1098,20 +1096,16 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 					}
 					else if (!(redTeam && blueTeam)) {
 						if (blueTeam) {
-#ifdef MISSIONPACK
-							if (cgs.gametype == GT_1FCTF) 
+							if (cgs.gameType == GT_1FCTF) 
 								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
 							else
-#endif
-							CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
+								CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
 						}
 						else if (redTeam) {
-#ifdef MISSIONPACK
-							if (cgs.gametype == GT_1FCTF)
+							if (cgs.gameType == GT_1FCTF)
 								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
 							else
-#endif
- 							CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
+ 								CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
 						}
 					} else {
 						// ZTM: NOTE: There are local players on both teams, so have no correct sound to play. New games should fix this.
@@ -1123,26 +1117,22 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 					}
 					else if (!(redTeam && blueTeam)) {
 						if (redTeam) {
-#ifdef MISSIONPACK
-							if (cgs.gametype == GT_1FCTF)
+							if (cgs.gameType == GT_1FCTF)
 								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
 							else
-#endif
-							CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
+								CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
 						}
 						else if (blueTeam) {
-#ifdef MISSIONPACK
-							if (cgs.gametype == GT_1FCTF)
+							if (cgs.gameType == GT_1FCTF)
 								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
 							else
-#endif
-							CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
+								CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
 						}
 					} else {
 						// ZTM: NOTE: There are local players on both teams, so have no correct sound to play. New games should fix this.
 					}
 					break;
-#ifdef MISSIONPACK
+
 				// ZTM: NOTE: These are confusing when there are players on both teams (players don't know which base is attacked). New games should fix this.
 				case GTS_REDOBELISK_ATTACKED: // Overload: red obelisk is being attacked
 					if (redTeam) {
@@ -1154,7 +1144,6 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 						CG_AddBufferedSound( cgs.media.yourBaseIsUnderAttackSound );
 					}
 					break;
-#endif
 
 				case GTS_REDTEAM_SCORED:
 					CG_AddBufferedSound(cgs.media.redScoredSound);
@@ -1163,17 +1152,17 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 					CG_AddBufferedSound(cgs.media.blueScoredSound);
 					break;
 				case GTS_REDTEAM_TOOK_LEAD:
-					if ( cgs.gametype != GT_TEAM || cg_teamDmLeadAnnouncements.integer ) {
+					if (!GTF(GTF_TDM) || cg_teamDmLeadAnnouncements.integer ) {
 						CG_AddBufferedSound(cgs.media.redLeadsSound);
 					}
 					break;
 				case GTS_BLUETEAM_TOOK_LEAD:
-					if ( cgs.gametype != GT_TEAM || cg_teamDmLeadAnnouncements.integer ) {
+					if (!GTF(GTF_TDM) || cg_teamDmLeadAnnouncements.integer ) {
 						CG_AddBufferedSound(cgs.media.blueLeadsSound);
 					}
 					break;
 				case GTS_TEAMS_ARE_TIED:
-					if ( cgs.gametype != GT_TEAM || cg_teamDmLeadAnnouncements.integer ) {
+					if (!GTF(GTF_TDM) || cg_teamDmLeadAnnouncements.integer ) {
 						CG_AddBufferedSound( cgs.media.teamsTiedSound );
 					}
 					break;
