@@ -744,5 +744,5 @@ qboolean GTF(const int gtFlags) {
 }
 
 qboolean GTL(const int gtGoal) {
-	return (qboolean)(gt[g_gameType.integer].gtGoal);
+	return (qboolean)(gt[g_gameType.integer].gtGoal == gtGoal);
 }
