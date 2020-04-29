@@ -16,7 +16,7 @@ bggametypes_t	gt[GT_MAX_GAME_TYPE] = {
 	},
 	{
 /* index */			GT_FFA,
-/* longName */		"Free for All",
+/* longName */		"Free For All",
 /* shortName */		"FFA",
 /* gtSpawnRef */	"ffa",
 /* gtArenaRef */	"ffa",
@@ -49,7 +49,7 @@ bggametypes_t	gt[GT_MAX_GAME_TYPE] = {
 	},
 	{
 /* index */			GT_CTF,
-/* longName */		"Capture the Flag",
+/* longName */		"Capture The Flag",
 /* shortName */		"CTF",
 /* gtSpawnRef */	"ctf",
 /* gtArenaRef */	"ctf",
