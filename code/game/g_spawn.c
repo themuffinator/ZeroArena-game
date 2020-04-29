@@ -365,10 +365,6 @@ qboolean G_CallSpawn( gentity_t *ent ) {
 				// only spawn team play items in instagib mode
 				return qfalse;
 			}
-
-			if ( ent->item->giType == IT_WEAPON ) {
-				level.mapWeapons |= (1 << ent->item->giTag);
-			}
 			G_SpawnItem( ent, item );
 			return qtrue;
 		}
