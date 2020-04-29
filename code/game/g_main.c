@@ -148,6 +148,7 @@ vmCvar_t	g_doReady;
 
 vmCvar_t	g_warmupDelay;
 vmCvar_t	g_warmupReadyPercentage;
+vmCvar_t	g_warmupWeaponSet;
 
 static cvarTable_t		gameCvarTable[] = {
 	// don't override the cheat state set by the system
@@ -258,6 +259,7 @@ static cvarTable_t		gameCvarTable[] = {
 
 	{ &g_warmupDelay, "g_warmupDelay", "10", 0, 0, RANGE_INT( 0, 60 ) },	//ql = 30
 	{ &g_warmupReadyPercentage, "g_warmupReadyPercentage", "0.51", 0, 0, RANGE_FLOAT( 0.0f, 1.0f ) },
+	{ &g_warmupWeaponSet, "g_warmupWeaponSet", "1", 0, 0, RANGE_BOOL },
 
 	{ &g_rankings, "g_rankings", "0", 0, 0, RANGE_ALL }
 
@@ -2148,7 +2150,7 @@ void CheckWarmup( void ) {
 			trap_SetConfigstring( CS_WARMUP_VAL, va( "%i", level.warmupVal ) );
 			level.warmupOldVal = level.warmupVal;
 		}
-		G_Printf( "CheckWarmup: new state = %i\n", level.warmupState );
+		//G_Printf( "CheckWarmup: new state = %i\n", level.warmupState );
 	}
 	if ( level.warmupState != WARMUP_COUNTDOWN ) return;
 

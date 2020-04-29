@@ -917,6 +917,13 @@ void ClearRegisteredItems( void ) {
 	if ( g_instaGib.integer ) {
 		RegisterItem( BG_FindItemForWeapon( WP_RAILGUN ) );
 	} else {
+		if ( g_doWarmup.integer && g_warmupWeaponSet.integer ) {
+			int i;
+			for ( i = WP_MACHINEGUN; i < WP_NUM_WEAPONS; i++ ) {
+				if ( level.mapWeapons & ( 1 << i ) )
+					RegisterItem( BG_FindItemForWeapon( i ) );
+			}
+		}
 		RegisterItem( BG_FindItemForWeapon( WP_MACHINEGUN ) );
 	}
 	RegisterItem( BG_FindItemForWeapon( WP_GAUNTLET ) );
@@ -1011,6 +1018,10 @@ void G_SpawnItem( gentity_t* ent, gitem_t* item ) {
 	if ( item->giType == IT_POWERUP ) {
 		G_SoundIndex( "sound/items/poweruprespawn.wav" );
 		G_SpawnFloat( "noglobalsound", "0", &ent->speed );
+	}
+
+	if ( item->giType == IT_WEAPON ) {
+		level.mapWeapons |= (1 << item->giTag);
 	}
 
 #ifdef MISSIONPACK

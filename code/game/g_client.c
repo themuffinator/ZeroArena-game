@@ -1213,14 +1213,19 @@ void PlayerSpawn(gentity_t *ent) {
 
 	if ( g_instaGib.integer ) {
 		player->ps.stats[STAT_WEAPONS] = ( 1 << WP_RAILGUN );
-		player->ps.ammo[WP_RAILGUN] = 999;
+		player->ps.ammo[WP_RAILGUN] = AMMO_INFINITE;
 	} else {
-		player->ps.stats[STAT_WEAPONS] = ( 1 << WP_MACHINEGUN );
-		if (GTF(GTF_TDM)) {
-			player->ps.ammo[WP_MACHINEGUN] = 50;
-		} else {
-			player->ps.ammo[WP_MACHINEGUN] = 100;
+		if ( level.warmupTime && g_warmupWeaponSet.integer ) {
+			int i;
+			player->ps.stats[STAT_WEAPONS] = level.mapWeapons;
+
+			for ( i = WP_MACHINEGUN; i < WP_NUM_WEAPONS; i++ ) {
+				if ( level.mapWeapons & (1 << i) )
+					player->ps.ammo[i] = 50;
+			}
 		}
+		player->ps.stats[STAT_WEAPONS] |= (1 << WP_MACHINEGUN);
+		player->ps.ammo[WP_MACHINEGUN] = GTF( GTF_TDM ) ? 50 : 100;
 	}
 
 	player->ps.stats[STAT_WEAPONS] |= ( 1 << WP_GAUNTLET );

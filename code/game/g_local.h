@@ -493,6 +493,9 @@ typedef struct {
 	int			total_secrets;
 //-q2
 
+	//map
+	int			mapWeapons;
+
 	// team checks
 	int			sortedTeams[TEAM_NUM_TEAMS];	// teams sorted by score, always ignore 0 as it is TEAM_FREE
 	int			numPlayingTeams;				// number of teams still with players
@@ -902,3 +905,4 @@ extern	vmCvar_t	g_doReady;
 
 extern	vmCvar_t	g_warmupDelay;
 extern	vmCvar_t	g_warmupReadyPercentage;
+extern	vmCvar_t	g_warmupWeaponSet;
