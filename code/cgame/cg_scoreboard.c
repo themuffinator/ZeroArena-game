@@ -260,12 +260,32 @@ static void CG_DrawPlayerScore( int y, score_t* score, float* color, float fade,
 	}
 }
 
+
+/*
+=================
+CG_TeamCount
+=================
+*/
+static int CG_TeamCount( const team_t team, const int maxPlayers ) {
+	int		i;
+	int		count = 0;
+
+	for ( i = 0; i < cg.numScores && count < maxPlayers; i++ ) {
+		if ( team != cgs.playerinfo[cg.scores[i].playerNum].team ) continue;
+		
+		count++;
+	}
+
+	return count;
+}
+
+
 /*
 =================
 CG_TeamScoreboard
 =================
 */
-static int CG_TeamScoreboard( int y, team_t team, float fade, int maxPlayers, int lineHeight ) {
+static void CG_TeamScoreboard( int y, team_t team, float fade, int maxPlayers, int lineHeight ) {
 	int		i;
 	score_t* score;
 	float	color[4];
@@ -286,9 +306,8 @@ static int CG_TeamScoreboard( int y, team_t team, float fade, int maxPlayers, in
 
 		count++;
 	}
-
-	return count;
 }
+
 
 /*
 =================
@@ -347,50 +366,52 @@ qboolean CG_DrawOldScoreboard( void ) {
 	}
 
 	// current rank
-	if ( !GTF( GTF_TEAMS ) ) {
-		if ( cg.cur_ps && cg.cur_ps->persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
-			if ( cg.intermissionStarted ) {
-				if ( !cg.cur_ps->persistant[PERS_RANK] ) {
-					s = va( "You won the match with a score of %i!",
-						cg.cur_ps->persistant[PERS_SCORE] );
+	if ( !cg.warmupTime ) {
+		if ( !GTF( GTF_TEAMS ) ) {
+			if ( cg.cur_ps && cg.cur_ps->persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
+				if ( cg.intermissionStarted ) {
+					if ( !cg.cur_ps->persistant[PERS_RANK] ) {
+						s = va( "You won the match with a score of %i!",
+							cg.cur_ps->persistant[PERS_SCORE] );
+					} else {
+						s = va( "You finished %s place with a score of %i.",
+							CG_PlaceString( cg.cur_ps->persistant[PERS_RANK] + 1 ),
+							cg.cur_ps->persistant[PERS_SCORE] );
+					}
 				} else {
-					s = va( "You finished %s place with a score of %i.",
+					s = va( "%s place with a score of %i",
 						CG_PlaceString( cg.cur_ps->persistant[PERS_RANK] + 1 ),
 						cg.cur_ps->persistant[PERS_SCORE] );
 				}
-			} else {
-				s = va( "%s place with a score of %i",
-					CG_PlaceString( cg.cur_ps->persistant[PERS_RANK] + 1 ),
-					cg.cur_ps->persistant[PERS_SCORE] );
+				y = SB_HEADER - 6 - CG_DrawStringLineHeight( UI_BIGFONT );
+				CG_DrawString( SCREEN_WIDTH / 2, y, s, UI_CENTER | UI_DROPSHADOW | UI_BIGFONT, NULL );
 			}
+		} else {
+			int high = SCORE_NOT_PRESENT, low = SCORE_NOT_PRESENT;
+			qboolean tie = qfalse;
+			for ( i = FIRST_TEAM; i <= cgs.numTeams; i++ ) {
+				if ( cgs.sortedTeams[i] == SCORE_NOT_PRESENT ) continue;
+				if ( high < cgs.sortedTeams[i] ) high = cg.teamScores[cgs.sortedTeams[i]];
+				if ( low > cgs.sortedTeams[i] ) low = cg.teamScores[cgs.sortedTeams[i]];
+				if ( i > FIRST_TEAM && cg.teamScores[cgs.sortedTeams[i]] == cg.teamScores[cgs.sortedTeams[i - 1]] ) tie = qtrue;
+			}
+			if ( cg.intermissionStarted ) {
+				if ( low == high || tie ) {
+					s = va( "Teams are tied at %i", high );
+				} else {
+					s = va( "%s wins with a score of %i", CG_TeamName( cgs.sortedTeams[1] ), cg.teamScores[cgs.sortedTeams[1]] );
+				}
+			} else {
+				if ( low == high || tie ) {
+					s = va( "Teams are tied at %i", high );
+				} else {
+					s = va( "%s leads with a score of %i", CG_TeamName( cgs.sortedTeams[1] ), cg.teamScores[cgs.sortedTeams[1]] );
+				}
+			}
+
 			y = SB_HEADER - 6 - CG_DrawStringLineHeight( UI_BIGFONT );
 			CG_DrawString( SCREEN_WIDTH / 2, y, s, UI_CENTER | UI_DROPSHADOW | UI_BIGFONT, NULL );
 		}
-	} else {
-		int high = SCORE_NOT_PRESENT, low = SCORE_NOT_PRESENT;
-		qboolean tie = qfalse;
-		for ( i = FIRST_TEAM; i <= cgs.numTeams; i++ ) {
-			if ( cgs.sortedTeams[i] == SCORE_NOT_PRESENT ) break;
-			if ( high < cgs.sortedTeams[i] ) high = cgs.sortedTeams[i];
-			if ( low > cgs.sortedTeams[i] ) low = cgs.sortedTeams[i];
-			if ( i > FIRST_TEAM && cgs.sortedTeams[i] == cgs.sortedTeams[i - 1] ) tie = qtrue;
-		}
-		if ( cg.intermissionStarted ) {
-			if ( low == high || tie ) {
-				s = va( "Teams are tied at %i", high );
-			} else {
-				s = va( "%s wins with a score of %i", CG_TeamName( cgs.sortedTeams[1] ), cg.teamScores[cgs.sortedTeams[1]] );
-			}
-		} else {
-			if ( low == high || tie ) {
-				s = va( "Teams are tied at %i", high );
-			} else {
-				s = va( "%s leads with a score of %i", CG_TeamName( cgs.sortedTeams[1] ), cg.teamScores[cgs.sortedTeams[1]] );
-			}
-		}
-
-		y = SB_HEADER - 6 - CG_DrawStringLineHeight( UI_BIGFONT );
-		CG_DrawString( SCREEN_WIDTH / 2, y, s, UI_CENTER | UI_DROPSHADOW | UI_BIGFONT, NULL );
 	}
 
 	// scoreboard
@@ -419,7 +440,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 	localPlayer = qfalse;
 
 	if ( GTF( GTF_TEAMS ) ) {
-		int n[TEAM_NUM_TEAMS];
+		int teamCount;
 		//
 		// teamplay scoreboard
 		//
@@ -427,22 +448,34 @@ qboolean CG_DrawOldScoreboard( void ) {
 
 		for ( i = FIRST_TEAM; i <= cgs.numTeams; i++ ) {
 			team_t team = cgs.sortedTeams[i];
-			n[i] = CG_TeamScoreboard( y, team, fade, maxPlayers, lineHeight );
-			CG_DrawTeamBackground( 0, y - topBorderSize, SCREEN_WIDTH, n[i] * lineHeight + bottomBorderSize, 0.33f, team );
-			y += (n[i] * lineHeight) + BIGCHAR_HEIGHT;
+			teamCount = CG_TeamCount( team, maxPlayers );
+			if ( teamCount ) {
+				CG_DrawTeamBackground( 0, y - topBorderSize, SCREEN_WIDTH, teamCount* lineHeight + bottomBorderSize, 0.33f, team );
+				CG_TeamScoreboard( y, team, fade, teamCount, lineHeight );
+				y += (teamCount * lineHeight) + BIGCHAR_HEIGHT;
+			}
 		}
 
-		n1 = CG_TeamScoreboard( y, TEAM_SPECTATOR, fade, maxPlayers, lineHeight );
-		y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
+		teamCount = CG_TeamCount( TEAM_SPECTATOR, maxPlayers );
+		if ( teamCount ) {
+			CG_TeamScoreboard( y, TEAM_SPECTATOR, fade, teamCount, lineHeight );
+			y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
+		}
 
 	} else {
 		//
 		// free for all scoreboard
 		//
-		n1 = CG_TeamScoreboard( y, TEAM_FREE, fade, maxPlayers, lineHeight );
-		y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
-		n2 = CG_TeamScoreboard( y, TEAM_SPECTATOR, fade, maxPlayers - n1, lineHeight );
-		y += (n2 * lineHeight) + BIGCHAR_HEIGHT;
+		n1 = CG_TeamCount( TEAM_FREE, maxPlayers );
+		if ( n1 ) {
+			CG_TeamScoreboard( y, TEAM_FREE, fade, n1, lineHeight );
+			y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
+		}
+		n2 = CG_TeamCount( TEAM_SPECTATOR, maxPlayers - n1 );
+		if ( n2 ) {
+			CG_TeamScoreboard( y, TEAM_SPECTATOR, fade, n2, lineHeight );
+			y += (n2 * lineHeight) + BIGCHAR_HEIGHT;
+		}
 	}
 
 	if ( cg.cur_ps && !localPlayer ) {
