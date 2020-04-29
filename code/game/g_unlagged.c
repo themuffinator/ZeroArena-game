@@ -268,7 +268,7 @@ void G_TimeShiftAllClients( int time, gentity_t *skip ) {
 	// for every client
 	ent = &g_entities[0];
 	for ( i = 0; i < MAX_CLIENTS; i++, ent++ ) {
-		if ( ent->player && ent->inuse && ent->player->sess.sessionTeam < TEAM_SPECTATOR && ent != skip ) {
+		if ( ent->player && ent->inuse && ent->player->sess.sessionTeam != TEAM_SPECTATOR && ent != skip ) {
 			G_TimeShiftClient( ent, time, debug, skip );
 		}
 	}
@@ -345,7 +345,7 @@ void G_UnTimeShiftAllClients( gentity_t *skip ) {
 
 	ent = &g_entities[0];
 	for ( i = 0; i < MAX_CLIENTS; i++, ent++) {
-		if ( ent->player && ent->inuse && ent->player->sess.sessionTeam < TEAM_SPECTATOR && ent != skip ) {
+		if ( ent->player && ent->inuse && ent->player->sess.sessionTeam != TEAM_SPECTATOR && ent != skip ) {
 			G_UnTimeShiftClient( ent );
 		}
 	}

@@ -359,7 +359,7 @@ void CG_SurfaceBeam( const refEntity_t *originEnt )
 	oldorigin[0] = re.oldorigin[0];
 	oldorigin[1] = re.oldorigin[1];
 	oldorigin[2] = re.oldorigin[2];
-
+	
 	origin[0] = re.origin[0];
 	origin[1] = re.origin[1];
 	origin[2] = re.origin[2];
@@ -373,7 +373,8 @@ void CG_SurfaceBeam( const refEntity_t *originEnt )
 
 	PerpendicularVector( perpvec, normalized_direction );
 
-	VectorScale( perpvec, 4, perpvec );
+	//VectorScale( perpvec, 4, perpvec );					//q3
+	VectorScale( perpvec, re.frame / 2, perpvec );		//q2
 
 	for ( i = 0; i < NUM_BEAM_SEGS ; i++ )
 	{
@@ -383,7 +384,7 @@ void CG_SurfaceBeam( const refEntity_t *originEnt )
 	}
 
 	re.customShader = cgs.media.whiteShader;
-
+	
 	numVerts = 0;
 	for ( i = 0; i < NUM_BEAM_SEGS; i++ ) {
 		for ( j = 0; j < 4; j++ ) {
@@ -393,10 +394,10 @@ void CG_SurfaceBeam( const refEntity_t *originEnt )
 				VectorCopy( start_points[ (i+(j>1)) % NUM_BEAM_SEGS], verts[numVerts].xyz );
 			verts[numVerts].st[0] = ( j < 2 );
 			verts[numVerts].st[1] = ( j && j != 3 );
-			verts[numVerts].modulate[0] = 0xff;
-			verts[numVerts].modulate[1] = 0;
-			verts[numVerts].modulate[2] = 0;
-			verts[numVerts].modulate[3] = 0xff;
+			verts[numVerts].modulate[0] = re.shaderRGBA[0];
+			verts[numVerts].modulate[1] = re.shaderRGBA[1];
+			verts[numVerts].modulate[2] = re.shaderRGBA[2];
+			verts[numVerts].modulate[3] = re.shaderRGBA[3];
 			numVerts++;
 		}
 	}

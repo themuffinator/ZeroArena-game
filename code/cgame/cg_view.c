@@ -41,7 +41,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 The viewthing and gun positioning tools from Q2 have been integrated and
 enhanced into a single model testing facility.
 
-Model viewing can begin with either "testmodel <modelname>" or "testgun <modelname>".
+Model viewing can begin with either "testModel <modelname>" or "testGun <modelname>".
 
 The names must be the full pathname after the basedir, like 
 "models/weapons/v_launch/tris.md3" or "players/male/tris.md3"
@@ -54,8 +54,8 @@ Testgun will cause the model to follow the player around and suppress the real
 view weapon model.  The default frame 0 of most guns is completely off screen,
 so you will probably have to cycle a couple frames to see it.
 
-"nextframe", "prevframe", "nextskin", and "prevskin" commands will change the
-frame or skin of the testmodel.  These are bound to F5, F6, F7, and F8 in
+"nextFrame", "previousFrame", "nextSkin", and "previousSkin" commands will change the
+frame or skin of the testModel.  These are bound to F5, F6, F7, and F8 in
 q3default.cfg.
 
 If a gun is being tested, the "gun_x", "gun_y", and "gun_z" variables will let
@@ -295,7 +295,7 @@ void CG_CalcVrect (void) {
 	if ( !cg.cur_ps || cg.cur_ps->pm_type == PM_INTERMISSION ) {
 		size = 100;
 	} else {
-		size = cg_viewsize.integer;
+		size = cg_viewSize.integer;
 	}
 
 	// Rendered window for drawing world
@@ -459,13 +459,13 @@ static void CG_OffsetFirstPersonView( void ) {
 		ratio = cg.time - cg.cur_lc->damageTime;
 		if ( ratio < DAMAGE_DEFLECT_TIME ) {
 			ratio /= DAMAGE_DEFLECT_TIME;
-			angles[PITCH] += ratio * cg.cur_lc->v_dmg_pitch;
-			angles[ROLL] += ratio * cg.cur_lc->v_dmg_roll;
+			angles[PITCH] += ratio * cg.cur_lc->v_dmg_pitch * cg_kickScale.value;
+			angles[ROLL] += ratio * cg.cur_lc->v_dmg_roll * cg_kickScale.value;
 		} else {
 			ratio = 1.0 - ( ratio - DAMAGE_DEFLECT_TIME ) / DAMAGE_RETURN_TIME;
 			if ( ratio > 0 ) {
-				angles[PITCH] += ratio * cg.cur_lc->v_dmg_pitch;
-				angles[ROLL] += ratio * cg.cur_lc->v_dmg_roll;
+				angles[PITCH] += ratio * cg.cur_lc->v_dmg_pitch * cg_kickScale.value;
+				angles[ROLL] += ratio * cg.cur_lc->v_dmg_roll * cg_kickScale.value;
 			}
 		}
 	}
@@ -478,26 +478,26 @@ static void CG_OffsetFirstPersonView( void ) {
 	angles[PITCH] += ratio * cg.fall_value;
 #endif
 
-	if ( !cg.cur_lc->renderingThirdPerson && cg_viewbob.integer ) {
+	if ( !cg.cur_lc->renderingThirdPerson && cg_viewBobScale.value > 0 ) {
 		// add angles based on velocity
 		VectorCopy( cg.cur_lc->predictedPlayerState.velocity, predictedVelocity );
 
 		delta = DotProduct ( predictedVelocity, cg.refdef.viewaxis[0]);
-		angles[PITCH] += delta * cg_runpitch.value;
+		angles[PITCH] += delta * cg_runPitch.value * cg_viewBobScale.value;
 	
 		delta = DotProduct ( predictedVelocity, cg.refdef.viewaxis[1]);
-		angles[ROLL] -= delta * cg_runroll.value;
+		angles[ROLL] -= delta * cg_runRoll.value * cg_viewBobScale.value;
 
 		// add angles based on bob
 
 		// make sure the bob is visible even at low speeds
 		speed = cg.xyspeed > 200 ? cg.xyspeed : 200;
 
-		delta = cg.bobfracsin * cg_bobpitch.value * speed;
+		delta = cg.bobfracsin * cg_bobPitch.value * speed;
 		if (cg.cur_lc->predictedPlayerState.pm_flags & PMF_DUCKED)
 			delta *= 3;		// crouching
 		angles[PITCH] += delta;
-		delta = cg.bobfracsin * cg_bobroll.value * speed;
+		delta = cg.bobfracsin * cg_bobRoll.value * speed;
 		if (cg.cur_lc->predictedPlayerState.pm_flags & PMF_DUCKED)
 			delta *= 3;		// crouching accentuates roll
 		if (cg.bobcycle & 1)
@@ -505,7 +505,7 @@ static void CG_OffsetFirstPersonView( void ) {
 		angles[ROLL] += delta;
 
 		// add bob height
-		bob = cg.bobfracsin * cg.xyspeed * cg_bobup.value;
+		bob = cg.bobfracsin * cg.xyspeed * cg_bobUp.value;
 		if (bob > 6) {
 			bob = 6;
 		}
@@ -560,6 +560,10 @@ void CG_ZoomDown_f( int localPlayerNum ) {
 	localPlayer_t *player = &cg.localPlayers[localPlayerNum];
 
 	if ( player->zoomed ) {
+		if ( cg_zoomToggle.integer ) {
+			player->zoomed = qfalse;
+			player->zoomTime = cg.time;
+		}
 		return;
 	}
 
@@ -573,6 +577,7 @@ void CG_ZoomUp_f( int localPlayerNum ) {
 	if ( !player->zoomed ) {
 		return;
 	}
+	if ( cg_zoomToggle.integer ) return;
 
 	player->zoomed = qfalse;
 	player->zoomTime = cg.time;
@@ -611,19 +616,24 @@ static void CG_CalcFov2( const refdef_t *refdef, float *input_fov, float *out_fo
 			fov_x = *input_fov;
 		}
 
+//fnq3
+		if ( cg.cur_lc->predictedPlayerState.stats[STAT_HEALTH] <= 0 && cg.cur_lc->zoomed && cg_zoomOutOnDeath.integer )
+			cg.cur_lc->zoomed = qfalse;
+//-fnq3
+		
 		// account for zooms
 		zoomFov = cg_zoomFov.value;
 
 		if ( cg.cur_lc->zoomed ) {
 			f = ( cg.time - cg.cur_lc->zoomTime ) / (float)ZOOM_TIME;
-			if ( f > 1.0 ) {
+			if ( f > 1.0 || !cg_zoomScaling.integer ) {
 				fov_x = zoomFov;
 			} else {
 				fov_x = fov_x + f * ( zoomFov - fov_x );
 			}
 		} else {
 			f = ( cg.time - cg.cur_lc->zoomTime ) / (float)ZOOM_TIME;
-			if ( f <= 1.0 ) {
+			if ( f <= 1.0 || !cg_zoomScaling.integer ) {
 				fov_x = zoomFov + f * ( fov_x - zoomFov );
 			}
 		}
@@ -661,7 +671,7 @@ static int CG_CalcFov( void ) {
 
 	// check if underwater
 	contents = CG_PointContents( cg.refdef.vieworg, -1 );
-	if ( contents & ( CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA ) ){
+	if ( contents & MASK_WATER ){
 		cg.refdef.rdflags |= RDF_UNDERWATER;
 	}
 	else {
@@ -677,7 +687,7 @@ static int CG_CalcFov( void ) {
 	CG_CalcFov2( &cg.refdef, &cg.viewWeaponFov, &cg.refdef.weapon_fov_x, &cg.refdef.weapon_fov_y );
 
 	if ( !cg.cur_lc->zoomed ) {
-		cg.cur_lc->zoomSensitivity = 1;
+		cg.cur_lc->zoomSensitivity = cg_zoomSensitivity.value;
 	} else {
 		cg.cur_lc->zoomSensitivity = cg.refdef.fov_y / 75.0;
 	}
@@ -694,7 +704,7 @@ CG_DrawSkyBoxPortal
 void CG_DrawSkyBoxPortal( void ) {
 	refdef_t backuprefdef;
 
-	if ( !cg_skybox.integer || !cg.hasSkyPortal ) {
+	if ( !cg_skyBox.integer || !cg.hasSkyPortal ) {
 		return;
 	}
 
@@ -714,7 +724,7 @@ void CG_DrawSkyBoxPortal( void ) {
 
 	cg.refdef.time = cg.time;
 
-	if ( cg_skybox.integer == 2 ) {
+	if ( cg_skyBox.integer == 2 ) {
 		cg.refdef.rdflags |= RDF_ONLYSKY;
 	}
 

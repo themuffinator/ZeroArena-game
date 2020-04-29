@@ -54,6 +54,28 @@ void CG_AddRefEntityWithMinLight( const refEntity_t *entity ) {
 	trap_R_AddRefEntityToScene( &re );
 }
 
+
+/*
+======================
+CG_AddRefEntityWithMinLightExt
+======================
+*/
+void CG_AddRefEntityWithMinLightCol( const refEntity_t* entity, const byte rgba[4] ) {
+	refEntity_t re;
+
+	if ( !entity ) return;
+
+	re = *entity;
+
+	// give everything a minimum light add
+	re.ambientLight[0] = 32;
+	re.ambientLight[1] = 32;
+	re.ambientLight[2] = 32;
+
+	trap_R_AddRefEntityToScene( &re );
+}
+
+
 /*
 ======================
 CG_PositionEntityOnTag
@@ -417,11 +439,12 @@ static void CG_Item( centity_t *cent ) {
 	}
 
 	wi = NULL;
-	// the weapons have their origin where they attatch to player
+	// the weapons have their origin where they attach to player
 	// models, so we need to offset them or they will rotate
 	// eccentricly
 	if ( item->giType == IT_WEAPON ) {
 		wi = &cg_weapons[item->giTag];
+
 		cent->lerpOrigin[0] -= 
 			wi->weaponMidpoint[0] * ent.axis[0][0] +
 			wi->weaponMidpoint[1] * ent.axis[1][0] +
@@ -436,11 +459,11 @@ static void CG_Item( centity_t *cent ) {
 			wi->weaponMidpoint[2] * ent.axis[2][2];
 
 		cent->lerpOrigin[2] += 8;	// an extra height boost
-	}
-	
-	if( item->giType == IT_WEAPON ) {
-		playerInfo_t *pi = &cgs.playerinfo[cg.cur_ps->playerNum];
-		Byte4Copy( pi->c1RGBA, ent.shaderRGBA );
+
+		ent.shaderRGBA[0] = 0xff * wi->weaponColor[0];
+		ent.shaderRGBA[1] = 0xff * wi->weaponColor[1];
+		ent.shaderRGBA[2] = 0xff * wi->weaponColor[2];
+		ent.shaderRGBA[3] = 0xff * wi->weaponColor[3];
 	}
 
 	ent.hModel = cg_items[es->modelindex].models[0];
@@ -542,20 +565,29 @@ static void CG_Item( centity_t *cent ) {
 
 //============================================================================
 
+static void CG_AltMissile( entityState_t* es ) {
+	
+}
+
+
 /*
 ===============
 CG_Missile
 ===============
 */
 static void CG_Missile( centity_t *cent ) {
-	refEntity_t			ent;
-	entityState_t		*s1;
+	refEntity_t				ent;
+	entityState_t			*s1;
 	const weaponInfo_t		*weapon;
-//	int	col;
 
 	s1 = &cent->currentState;
 	if ( s1->weapon >= WP_NUM_WEAPONS ) {
 		s1->weapon = 0;
+	}
+
+	if ( s1->weapon <= 0 ) {	// not a conventional weapon (ie: blaster shooter)
+		CG_AltMissile( s1 );
+		return;
 	}
 	weapon = &cg_weapons[s1->weapon];
 
@@ -567,23 +599,7 @@ static void CG_Missile( centity_t *cent ) {
 	{
 		weapon->missileTrailFunc( cent, weapon );
 	}
-/*
-	if ( s1->team == TEAM_RED ) {
-		col = 1;
-	}
-	else if ( s1->team == TEAM_BLUE ) {
-		col = 2;
-	}
-	else {
-		col = 0;
-	}
 
-	// add dynamic light
-	if ( weapon->missileDlight ) {
-		trap_R_AddLightToScene(cent->lerpOrigin, weapon->missileDlight, 1.0f,
-			weapon->missileDlightColor[col][0], weapon->missileDlightColor[col][1], weapon->missileDlightColor[col][2], 0 );
-	}
-*/
 	// add dynamic light
 	if ( weapon->missileDlight ) {
 		trap_R_AddLightToScene(cent->lerpOrigin, weapon->missileDlight, 1.0f,
@@ -594,7 +610,7 @@ static void CG_Missile( centity_t *cent ) {
 	if ( weapon->missileSound ) {
 		vec3_t	velocity;
 
-		BG_EvaluateTrajectoryDelta( &cent->currentState.pos, cg.time, velocity );
+		BG_EvaluateTrajectoryDelta( &cent->currentState.pos, cg.time, velocity, cgs.gravity );
 
 		trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, velocity, weapon->missileSound );
 	}
@@ -771,6 +787,31 @@ void CG_Beam( centity_t *cent ) {
 	AxisClear( ent.axis );
 	ent.reType = RT_BEAM;
 
+	ent.frame = s1->frame;	// for diameter
+
+	// set the color
+	if ( s1->modelindex2 & 4 ) {
+		ent.shaderRGBA[0] = 0x00;
+		ent.shaderRGBA[1] = 0xff;
+		ent.shaderRGBA[2] = 0x00;
+	} else if ( s1->modelindex2 & 8 ) {
+		ent.shaderRGBA[0] = 0x00;
+		ent.shaderRGBA[1] = 0x00;
+		ent.shaderRGBA[2] = 0xff;
+	} else if ( s1->modelindex2 & 16 ) {
+		ent.shaderRGBA[0] = 0xff;
+		ent.shaderRGBA[1] = 0xff;
+		ent.shaderRGBA[2] = 0x00;
+	} else if ( s1->modelindex2 & 32 ) {
+		ent.shaderRGBA[0] = 0xff;
+		ent.shaderRGBA[1] = 0x40;
+		ent.shaderRGBA[2] = 0x00;
+	} else {
+		ent.shaderRGBA[0] = 0xff;
+		ent.shaderRGBA[1] = 0x00;
+		ent.shaderRGBA[2] = 0x00;
+	}
+	ent.shaderRGBA[3] = 0x4d;
 	ent.renderfx = RF_NOSHADOW;
 
 	// add to refresh list
@@ -876,11 +917,11 @@ void CG_AdjustPositionForMover(const vec3_t in, int moverNum, int fromTime, int 
 		return;
 	}
 
-	BG_EvaluateTrajectory( &cent->currentState.pos, fromTime, oldOrigin );
-	BG_EvaluateTrajectory( &cent->currentState.apos, fromTime, oldAngles );
+	BG_EvaluateTrajectory( &cent->currentState.pos, fromTime, oldOrigin, cgs.gravity );
+	BG_EvaluateTrajectory( &cent->currentState.apos, fromTime, oldAngles, cgs.gravity );
 
-	BG_EvaluateTrajectory( &cent->currentState.pos, toTime, origin );
-	BG_EvaluateTrajectory( &cent->currentState.apos, toTime, angles );
+	BG_EvaluateTrajectory( &cent->currentState.pos, toTime, origin, cgs.gravity );
+	BG_EvaluateTrajectory( &cent->currentState.apos, toTime, angles, cgs.gravity );
 
 	VectorSubtract( origin, oldOrigin, deltaOrigin );
 	VectorSubtract( angles, oldAngles, deltaAngles );
@@ -918,15 +959,15 @@ static void CG_InterpolateEntityPosition( centity_t *cent ) {
 
 	// this will linearize a sine or parabolic curve, but it is important
 	// to not extrapolate player positions if more recent data is available
-	BG_EvaluateTrajectory( &cent->currentState.pos, cg.snap->serverTime, current );
-	BG_EvaluateTrajectory( &cent->nextState.pos, cg.nextSnap->serverTime, next );
+	BG_EvaluateTrajectory( &cent->currentState.pos, cg.snap->serverTime, current, cgs.gravity );
+	BG_EvaluateTrajectory( &cent->nextState.pos, cg.nextSnap->serverTime, next, cgs.gravity );
 
 	cent->lerpOrigin[0] = current[0] + f * ( next[0] - current[0] );
 	cent->lerpOrigin[1] = current[1] + f * ( next[1] - current[1] );
 	cent->lerpOrigin[2] = current[2] + f * ( next[2] - current[2] );
 
-	BG_EvaluateTrajectory( &cent->currentState.apos, cg.snap->serverTime, current );
-	BG_EvaluateTrajectory( &cent->nextState.apos, cg.nextSnap->serverTime, next );
+	BG_EvaluateTrajectory( &cent->currentState.apos, cg.snap->serverTime, current, cgs.gravity );
+	BG_EvaluateTrajectory( &cent->nextState.apos, cg.nextSnap->serverTime, next, cgs.gravity );
 
 	cent->lerpAngles[0] = LerpAngle( current[0], next[0], f );
 	cent->lerpAngles[1] = LerpAngle( current[1], next[1], f );
@@ -966,8 +1007,8 @@ static void CG_CalcEntityLerpPositions( centity_t *cent ) {
 	}
 
 	// just use the current frame and evaluate as best we can
-	BG_EvaluateTrajectory( &cent->currentState.pos, cg.time, cent->lerpOrigin );
-	BG_EvaluateTrajectory( &cent->currentState.apos, cg.time, cent->lerpAngles );
+	BG_EvaluateTrajectory( &cent->currentState.pos, cg.time, cent->lerpOrigin, cgs.gravity );
+	BG_EvaluateTrajectory( &cent->currentState.apos, cg.time, cent->lerpAngles, cgs.gravity );
 
 	// adjust for riding a mover if it wasn't rolled into the predicted
 	// player state
@@ -1001,15 +1042,12 @@ static void CG_TeamBase( centity_t *cent ) {
 		VectorCopy( cent->lerpOrigin, model.lightingOrigin );
 		VectorCopy( cent->lerpOrigin, model.origin );
 		AnglesToAxis( cent->currentState.angles, model.axis );
-		if ( cent->currentState.modelindex == TEAM_RED ) {
-			model.hModel = cgs.media.redFlagBaseModel;
-		}
-		else if ( cent->currentState.modelindex == TEAM_BLUE ) {
-			model.hModel = cgs.media.blueFlagBaseModel;
-		}
-		else {
-			model.hModel = cgs.media.neutralFlagBaseModel;
-		}
+		model.hModel = cgs.media.flagBaseModel;
+
+		model.shaderRGBA[0] = teamColor[t][0] * 0xff;
+		model.shaderRGBA[1] = teamColor[t][1] * 0xff;
+		model.shaderRGBA[2] = teamColor[t][2] * 0xff;
+		model.shaderRGBA[3] = teamColor[t][3] * 0xff;
 		CG_AddRefEntityWithMinLight( &model );
 	}
 	else if ( cgs.gameType == GT_OVERLOAD ) {
@@ -1114,17 +1152,21 @@ static void CG_TeamBase( centity_t *cent ) {
 		VectorCopy( cent->lerpOrigin, model.origin );
 		AnglesToAxis( cent->currentState.angles, model.axis );
 
-		if ( cent->currentState.modelindex == TEAM_RED ) {
-			model.hModel = cgs.media.harvesterModel;
-			model.customSkin = CG_AddSkinToFrame( &cgs.media.harvesterRedSkin );
-		}
-		else if ( cent->currentState.modelindex == TEAM_BLUE ) {
-			model.hModel = cgs.media.harvesterModel;
-			model.customSkin = CG_AddSkinToFrame( &cgs.media.harvesterBlueSkin );
-		}
-		else {
-			model.hModel = cgs.media.harvesterNeutralModel;
+		if ( cent->currentState.modelindex == TEAM_FREE ) {
+			model.hModel = cgs.media.skullGeneratorModel;
 			model.customSkin = 0;
+			model.shaderRGBA[0] = 0xff;	
+			model.shaderRGBA[1] = 0xff;
+			model.shaderRGBA[2] = 0xff;
+			model.shaderRGBA[3] = 0xff;
+		} else {
+			team_t t = cent->currentState.modelindex;
+			model.hModel = cgs.media.baseRecepticleModel;
+			model.shaderRGBA[0] = teamColor[t][0] * 0xff;
+			model.shaderRGBA[1] = teamColor[t][1] * 0xff;
+			model.shaderRGBA[2] = teamColor[t][2] * 0xff;
+			model.shaderRGBA[3] = teamColor[t][3] * 0xff;
+			//model.customSkin = CG_AddSkinToFrame( &cgs.media.baseRecepticleSkin );
 		}
 		CG_AddRefEntityWithMinLight( &model );
 	}
@@ -1167,7 +1209,7 @@ static void CG_Corona( centity_t *cent ) {
 		VectorSubtract( cg.refdef.vieworg, cent->lerpOrigin, dir );
 
 		dist = VectorNormalize2( dir, dir );
-		if ( dist > cg_coronafardist.integer ) {   // performance variable cg_coronafardist will keep down super long traces
+		if ( dist > cg_coronaFarDist.integer ) {   // performance variable cg_coronaFarDist will keep down super long traces
 			toofar = qtrue;
 		}
 

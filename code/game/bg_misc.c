@@ -33,6 +33,52 @@ Suite 120, Rockville, Maryland 20850 USA.
 #include "../qcommon/q_shared.h"
 #include "bg_public.h"
 
+gitem_health_t bghealth[3][HEALTH_NUM] = {
+	{	// NONE
+		{ 5, 200, 20 },
+		{ 25, 100, 20 },
+		{ 50, 100, 20 },
+		{ 100, 200, 20 },
+	},
+	{	// QW
+		{ 2, 200, 20 },
+		{ 15, 100, 20 },
+		{ 25, 100, 20 },
+		{ 100, 200, 20 },
+	},
+	{	// Q2
+		{ 2, 250, 20 },
+		{ 10, 100, 20 },
+		{ 25, 100, 20 },
+		{ 100, 250, 20 },
+	}
+};
+
+//muff: tiered armor (armor variables struct)
+gitem_armor_t bgarmor[ARR_COUNT][ARMOR_NUM] = {
+	{	// NONE
+		{ ARMOR_SHARD, 5, 200, ARMOR_PROTECTION, ARMOR_PROTECTION },
+		{ ARMOR_JACKET, 25, 200, ARMOR_PROTECTION, ARMOR_PROTECTION },
+		{ ARMOR_COMBAT, 50, 200, ARMOR_PROTECTION, ARMOR_PROTECTION },
+		{ ARMOR_BODY, 100, 200, ARMOR_PROTECTION, ARMOR_PROTECTION }
+	},
+	{	// QW
+		{ ARMOR_SHARD, 2, 200, .30, .30 },
+		{ ARMOR_JACKET, 100, 100, .30, .30 },
+		{ ARMOR_COMBAT, 150, 150, .60, .60 },
+		{ ARMOR_BODY, 200, 200, .80, .80 }
+	},
+	{	// Q2
+		{ ARMOR_SHARD, 2, 300, .30, .00 },
+		{ ARMOR_JACKET, 25, 50, .30, .00 },
+		{ ARMOR_COMBAT, 50, 100, .60, .30 },
+		{ ARMOR_BODY, 100, 200, .80, .60 }
+	}
+};
+
+//-muff
+
+
 /*QUAKED item_***** ( 0 0 0 ) (-16 -16 -16) (16 16 16) suspended
 DO NOT USE THIS CLASS, IT JUST HOLDS GENERAL INFORMATION.
 The suspended flag will allow items to hang in the air, otherwise they are dropped to the next surface.
@@ -80,7 +126,7 @@ gitem_t	bg_itemlist[] =
 /* pickup */	"Armor Shard",
 		5,
 		IT_ARMOR,
-		0,
+		ARMOR_SHARD,
 /* sounds */ ""
 	},
 
@@ -93,9 +139,9 @@ gitem_t	bg_itemlist[] =
 			NULL, NULL, NULL},
 /* icon */		"icons/iconr_green",
 /* pickup */	"Green Armor",
-			25,
-			IT_ARMOR,
-			0,
+		25,
+		IT_ARMOR,
+		ARMOR_JACKET,
 /* sounds */ ""
 				},
 
@@ -110,7 +156,7 @@ gitem_t	bg_itemlist[] =
 /* pickup */	"Yellow Armor",
 		50,
 		IT_ARMOR,
-		0,
+		ARMOR_COMBAT,
 /* sounds */ ""
 	},
 
@@ -125,7 +171,7 @@ gitem_t	bg_itemlist[] =
 /* pickup */	"Red Armor",
 		100,
 		IT_ARMOR,
-		0,
+		ARMOR_BODY,
 /* sounds */ ""
 	},
 
@@ -216,6 +262,21 @@ gitem_t	bg_itemlist[] =
 /* sounds */ ""
 	},
 
+/*QUAKED weapon_machinegun (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
+*/
+	{
+		"weapon_machinegun",
+		"sound/misc/w_pkup.wav",
+		{ "models/weapons2/machinegun/machinegun.md3",
+		NULL, NULL, NULL},
+		/* icon */		"icons/iconw_machinegun",
+		/* pickup */	"Machinegun",
+				40,
+				IT_WEAPON,
+				WP_MACHINEGUN,
+				/* sounds */ ""
+	},
+
 /*QUAKED weapon_shotgun (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
 */
 	{
@@ -228,21 +289,6 @@ gitem_t	bg_itemlist[] =
 		10,
 		IT_WEAPON,
 		WP_SHOTGUN,
-/* sounds */ ""
-	},
-
-/*QUAKED weapon_machinegun (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
-*/
-	{
-		"weapon_machinegun", 
-		"sound/misc/w_pkup.wav",
-        { "models/weapons2/machinegun/machinegun.md3", 
-		NULL, NULL, NULL},
-/* icon */		"icons/iconw_machinegun",
-/* pickup */	"Machinegun",
-		40,
-		IT_WEAPON,
-		WP_MACHINEGUN,
 /* sounds */ ""
 	},
 
@@ -355,6 +401,21 @@ gitem_t	bg_itemlist[] =
 	// AMMO ITEMS
 	//
 
+/*QUAKED ammo_bullets (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
+*/
+	{
+		"ammo_bullets",
+		"sound/misc/am_pkup.wav",
+		{ "models/powerups/ammo/machinegunam.md3",
+		NULL, NULL, NULL},
+		/* icon */		"icons/icona_machinegun",
+		/* pickup */	"Bullets",
+				50,
+				IT_AMMO,
+				WP_MACHINEGUN,
+				/* sounds */ ""
+	},
+
 /*QUAKED ammo_shells (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
 */
 	{
@@ -367,21 +428,6 @@ gitem_t	bg_itemlist[] =
 		10,
 		IT_AMMO,
 		WP_SHOTGUN,
-/* sounds */ ""
-	},
-
-/*QUAKED ammo_bullets (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
-*/
-	{
-		"ammo_bullets",
-		"sound/misc/am_pkup.wav",
-        { "models/powerups/ammo/machinegunam.md3", 
-		NULL, NULL, NULL},
-/* icon */		"icons/icona_machinegun",
-/* pickup */	"Bullets",
-		50,
-		IT_AMMO,
-		WP_MACHINEGUN,
 /* sounds */ ""
 	},
 
@@ -400,19 +446,19 @@ gitem_t	bg_itemlist[] =
 /* sounds */ ""
 	},
 
-/*QUAKED ammo_cells (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
+/*QUAKED ammo_rockets (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
 */
 	{
-		"ammo_cells",
+		"ammo_rockets",
 		"sound/misc/am_pkup.wav",
-        { "models/powerups/ammo/plasmaam.md3", 
+		{ "models/powerups/ammo/rocketam.md3",
 		NULL, NULL, NULL},
-/* icon */		"icons/icona_plasma",
-/* pickup */	"Cells",
-		30,
-		IT_AMMO,
-		WP_PLASMAGUN,
-/* sounds */ ""
+		/* icon */		"icons/icona_rocket",
+		/* pickup */	"Rockets",
+				5,
+				IT_AMMO,
+				WP_ROCKET_LAUNCHER,
+				/* sounds */ ""
 	},
 
 /*QUAKED ammo_lightning (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
@@ -430,21 +476,6 @@ gitem_t	bg_itemlist[] =
 /* sounds */ ""
 	},
 
-/*QUAKED ammo_rockets (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
-*/
-	{
-		"ammo_rockets",
-		"sound/misc/am_pkup.wav",
-        { "models/powerups/ammo/rocketam.md3", 
-		NULL, NULL, NULL},
-/* icon */		"icons/icona_rocket",
-/* pickup */	"Rockets",
-		5,
-		IT_AMMO,
-		WP_ROCKET_LAUNCHER,
-/* sounds */ ""
-	},
-
 /*QUAKED ammo_slugs (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
 */
 	{
@@ -458,6 +489,21 @@ gitem_t	bg_itemlist[] =
 		IT_AMMO,
 		WP_RAILGUN,
 /* sounds */ ""
+	},
+
+/*QUAKED ammo_cells (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
+*/
+	{
+		"ammo_cells",
+		"sound/misc/am_pkup.wav",
+		{ "models/powerups/ammo/plasmaam.md3",
+		NULL, NULL, NULL},
+		/* icon */		"icons/icona_plasma",
+		/* pickup */	"Cells",
+				30,
+				IT_AMMO,
+				WP_PLASMAGUN,
+				/* sounds */ ""
 	},
 
 /*QUAKED ammo_bfg (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
@@ -607,13 +653,29 @@ gitem_t	bg_itemlist[] =
 /* sounds */ "sound/items/flight.wav"
 	},
 
+/*QUAKED team_CTF_neutralflag (0 0 1) (-16 -16 -16) (16 16 16)
+Only in One Flag CTF games
+*/
+	{
+		"team_CTF_neutralflag",
+		NULL,
+		{ "models/flags/n_flag.md3",
+		NULL, NULL, NULL },
+/* icon */		"icons/iconf_neutral1",
+/* pickup */	"Neutral Flag",
+		0,
+		IT_TEAM,
+		PW_NEUTRALFLAG,
+/* sounds */ ""
+	},
+
 /*QUAKED team_CTF_redflag (1 0 0) (-16 -16 -16) (16 16 16)
 Only in CTF games
 */
 	{
 		"team_CTF_redflag",
 		NULL,
-        { "models/flags/r_flag.md3",
+        { "models/flags/flag.md3",
 		NULL, NULL, NULL },
 /* icon */		"icons/iconf_red1",
 /* pickup */	"Red Flag",
@@ -629,7 +691,7 @@ Only in CTF games
 	{
 		"team_CTF_blueflag",
 		NULL,
-        { "models/flags/b_flag.md3",
+        { "models/flags/flag.md3",
 		NULL, NULL, NULL },
 /* icon */		"icons/iconf_blu1",
 /* pickup */	"Blue Flag",
@@ -639,6 +701,147 @@ Only in CTF games
 /* sounds */ ""
 	},
 
+/*QUAKED team_CTF_greenflag (0 0 1) (-16 -16 -16) (16 16 16)
+Only in CTF games
+*/
+	{
+		"team_CTF_greenflag",
+		NULL,
+		{ "models/flags/flag.md3",
+		NULL, NULL, NULL },
+		/* icon */		"icons/iconf_grn1",
+		/* pickup */	"Green Flag",
+				0,
+				IT_TEAM,
+				PW_GREENFLAG,
+				/* sounds */ ""
+	},
+
+/*QUAKED team_CTF_yellowflag (0 0 1) (-16 -16 -16) (16 16 16)
+Only in CTF games
+*/
+	{
+		"team_CTF_yellowflag",
+		NULL,
+		{ "models/flags/flag.md3",
+		NULL, NULL, NULL },
+		/* icon */		"icons/iconf_yel1",
+		/* pickup */	"Yellow Flag",
+				0,
+				IT_TEAM,
+				PW_YELLOWFLAG,
+				/* sounds */ ""
+	},
+
+/*QUAKED team_CTF_tealflag (0 0 1) (-16 -16 -16) (16 16 16)
+Only in CTF games
+*/
+	{
+		"team_CTF_tealflag",
+		NULL,
+		{ "models/flags/flag.md3",
+		NULL, NULL, NULL },
+		/* icon */		"icons/iconf_tea1",
+		/* pickup */	"Teal Flag",
+				0,
+				IT_TEAM,
+				PW_TEALFLAG,
+				/* sounds */ ""
+	},
+
+/*QUAKED team_CTF_pinkflag (0 0 1) (-16 -16 -16) (16 16 16)
+Only in CTF games
+*/
+	{
+		"team_CTF_pinkflag",
+		NULL,
+		{ "models/flags/p_flag.md3",
+		NULL, NULL, NULL },
+		/* icon */		"icons/iconf_pnk1",
+		/* pickup */	"Pink Flag",
+				0,
+				IT_TEAM,
+				PW_PINKFLAG,
+				/* sounds */ ""
+	},
+
+	{
+		"item_redskull",
+		"sound/misc/am_pkup.wav",
+		{ "models/powerups/harvester/skull.md3",
+		NULL, NULL, NULL },
+		/* icon */		"icons/iconh_rhskull",
+		/* pickup */	"Red Skull",
+				0,
+				IT_TEAM,
+				0,
+				/* sounds */ ""
+	},
+
+	{
+		"item_blueskull",
+		"sound/misc/am_pkup.wav",
+		{ "models/powerups/harvester/skull.md3",
+		NULL, NULL, NULL },
+		/* icon */		"icons/iconh_bhskull",
+		/* pickup */	"Blue Skull",
+				0,
+				IT_TEAM,
+				0,
+				/* sounds */ ""
+	},
+
+	{
+		"item_greenskull",
+		"sound/misc/am_pkup.wav",
+		{ "models/powerups/harvester/skull.md3",
+		NULL, NULL, NULL },
+		/* icon */		"icons/iconh_ghskull",
+		/* pickup */	"Green Skull",
+				0,
+				IT_TEAM,
+				0,
+				/* sounds */ ""
+	},
+
+	{
+		"item_yellowskull",
+		"sound/misc/am_pkup.wav",
+		{ "models/powerups/harvester/skull.md3",
+		NULL, NULL, NULL },
+		/* icon */		"icons/iconh_yhskull",
+		/* pickup */	"Yellow Skull",
+				0,
+				IT_TEAM,
+				0,
+				/* sounds */ ""
+	},
+
+	{
+		"item_tealskull",
+		"sound/misc/am_pkup.wav",
+		{ "models/powerups/harvester/skull.md3",
+		NULL, NULL, NULL },
+		/* icon */		"icons/iconh_thskull",
+		/* pickup */	"Teal Skull",
+				0,
+				IT_TEAM,
+				0,
+				/* sounds */ ""
+	},
+
+	{
+		"item_pinkskull",
+		"sound/misc/am_pkup.wav",
+		{ "models/powerups/harvester/skull.md3",
+		NULL, NULL, NULL },
+		/* icon */		"icons/iconh_phskull",
+		/* pickup */	"Pink Skull",
+				0,
+				IT_TEAM,
+				0,
+				/* sounds */ ""
+	},
 #ifdef MISSIONPACK
 /*QUAKED holdable_kamikaze (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
 */
@@ -778,7 +981,7 @@ Only in CTF games
 /* sounds */ ""
 	},
 
-/*QUAKED item_doubler (.3 .3 1) (-16 -16 -16) (16 16 16) suspended redTeam blueTeam
+/*QUAKED item_ammoregen (.3 .3 1) (-16 -16 -16) (16 16 16) suspended redTeam blueTeam
 */
 	{
 		"item_ammoregen",
@@ -792,49 +995,7 @@ Only in CTF games
 		PW_AMMOREGEN,
 /* sounds */ ""
 	},
-#endif
-	/*QUAKED team_CTF_neutralflag (0 0 1) (-16 -16 -16) (16 16 16)
-Only in One Flag CTF games
-*/
-	{
-		"team_CTF_neutralflag",
-		NULL,
-        { "models/flags/n_flag.md3",
-		NULL, NULL, NULL },
-/* icon */		"icons/iconf_neutral1",
-/* pickup */	"Neutral Flag",
-		0,
-		IT_TEAM,
-		PW_NEUTRALFLAG,
-/* sounds */ ""
-	},
 
-	{
-		"item_redskull",
-		"sound/misc/am_pkup.wav",
-        { "models/powerups/orb/r_orb.md3",
-		NULL, NULL, NULL },
-/* icon */		"icons/iconh_rorb",
-/* pickup */	"Red Skull",
-		0,
-		IT_TEAM,
-		0,
-/* sounds */ ""
-	},
-
-	{
-		"item_blueskull",
-		"sound/misc/am_pkup.wav",
-        { "models/powerups/orb/b_orb.md3",
-		NULL, NULL, NULL },
-/* icon */		"icons/iconh_borb",
-/* pickup */	"Blue Skull",
-		0,
-		IT_TEAM,
-		0,
-/* sounds */ ""
-	},
-#ifdef MISSIONPACK
 /*QUAKED weapon_nailgun (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
 */
 	{
@@ -937,7 +1098,7 @@ vmNetField_t	bg_entityStateFields[] =
 { NETF(modelindex), MODELINDEX_BITS },
 { NETF(otherEntityNum2), GENTITYNUM_BITS },
 { NETF(loopSound), 8 },
-{ NETF(tokens), 8 },
+{ NETF(skullsES), 8 },
 { NETF(team), 8 },
 { NETF(origin2[2]), 0 },
 { NETF(origin2[0]), 0 },
@@ -1009,7 +1170,7 @@ vmNetField_t	bg_playerStateFields[] =
 { PSF(damageYaw), 8 },
 { PSF(damagePitch), 8 },
 { PSF(damageCount), 8 },
-{ PSF(tokens), 8 },
+{ PSF(skulls), 8 },
 { PSF(pm_type), 8 },					
 { PSF(delta_angles[0]), 16 },
 { PSF(delta_angles[2]), 16 },
@@ -1080,8 +1241,20 @@ qboolean BG_CheckSpawnEntity( const bgEntitySpawnInfo_t *info ) {
 
 	info->spawnInt("spawnflags", "0", &i);
 	if (i) {
-		if (gametype != GT_SINGLE_PLAYER && (i & SPAWNFLAG_NOT_DEATHMATCH) )
-			return qfalse;
+		if ( gt[gametype].gtFlags & GTF_CAMPAIGN  ) {
+			float skill = trap_Cvar_VariableValue( "g_spSkill" );
+			if ( (i & SPAWNFLAG_NOT_COOP) )
+				return qfalse;
+			if ( (i & SPAWNFLAG_NOT_EASY) && skill < 2 )
+				return qfalse;
+			if ( (i & SPAWNFLAG_NOT_MEDIUM) && skill >= 2 && skill < 4 )
+				return qfalse;
+			if ( (i & SPAWNFLAG_NOT_HARD) && skill >= 4 )
+				return qfalse;
+		} else {
+			if ( i & SPAWNFLAG_NOT_DEATHMATCH )
+				return qfalse;
+		}
 	}
 
 	if( info->spawnString( "!gametype", NULL, &value ) ) {
@@ -1204,6 +1377,48 @@ gitem_t	*BG_FindItem( const char *pickupName ) {
 	return NULL;
 }
 
+qboolean BG_ItemIsAnyFlag( const int index ) {
+	if ( index >= PW_FLAGS_INDEX &&
+		index < (PW_FLAGS_INDEX + TEAM_NUM_TEAMS) ) {
+		return qtrue;
+	} else return qfalse;
+}
+
+qboolean BG_ItemIsTeamFlag( const int index ) {
+	if ( index > PW_FLAGS_INDEX &&
+		index < (PW_FLAGS_INDEX + TEAM_NUM_TEAMS) ) {
+		return qtrue;
+	} else return qfalse;
+}
+
+/*
+============
+BG_CarryingCapturableFlag
+
+Checks player holds a capturable flag and returns the team index of the flag, -1 for nothing
+============
+*/
+int BG_CarryingCapturableFlag( const playerState_t *ps, const gametype_t gametype ) {
+	int i;
+
+	if ( gt[gametype].gtGoal != GTL_CAPTURES ) return -1;
+
+	if ( gametype == GT_1FCTF && ps->powerups[PW_NEUTRALFLAG] ) {
+		return TEAM_FREE;
+	}
+
+	for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ ) {
+		int flagIndex = PW_FLAGS_INDEX + i;
+		//muff: should never be able to hold own flag except for capture handling
+		if ( ps->powerups[flagIndex] ) {	// && ps->persistant[PERS_TEAM] != i ) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+
 /*
 ============
 BG_PlayerTouchesItem
@@ -1212,10 +1427,10 @@ Items can be picked up without actually touching their physical bounds to make
 grabbing them easier
 ============
 */
-qboolean	BG_PlayerTouchesItem( playerState_t *ps, entityState_t *item, int atTime ) {
+qboolean	BG_PlayerTouchesItem( playerState_t *ps, entityState_t *item, int atTime, const float gravity ) {
 	vec3_t		origin;
 
-	BG_EvaluateTrajectory( &item->pos, atTime, origin );
+	BG_EvaluateTrajectory( &item->pos, atTime, origin, gravity );
 
 	// we are ignoring ducked differences here
 	if ( ps->origin[0] - origin[0] > 44
@@ -1240,9 +1455,8 @@ Returns false if the item should not be picked up.
 This needs to be the same for client side prediction and server use.
 ================
 */
-qboolean BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const playerState_t *ps ) {
+qboolean BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const playerState_t *ps, const int dmFlags, const int tieredArmor ) {
 	gitem_t	*item;
-	int		upperBound;
 
 	if ( ent->modelindex < 1 || ent->modelindex >= BG_NumItems() ) {
 		Com_Error( ERR_DROP, "BG_CanItemBeGrabbed: index out of range" );
@@ -1252,32 +1466,84 @@ qboolean BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const play
 
 	switch( item->giType ) {
 	case IT_WEAPON:
-		return qtrue;	// weapons are always picked up
-
-	case IT_AMMO:
-		if ( ps->ammo[ item->giTag ] >= 200 ) {
-			return qfalse;		// can't hold any more
+		if ( ent->eFlags & EF_DROPPED_ITEM ) return qtrue;	// dropped weapons are always picked up
+		if ( dmFlags & DF_WEAPONS_STAY ) {
+			if ( (ps->stats[STAT_WEAPONS] & (1 << item->giTag)) ) return qfalse;
 		}
 		return qtrue;
 
+	case IT_AMMO:
+		if ( ps->ammo[item->giTag] == AMMO_INFINITE ) return qfalse;
+		if ( dmFlags & DF_INFINITE_AMMO ) return qfalse;
+		if ( ps->ammo[ item->giTag ] >= 200 ) return qfalse;		// can't hold any more
+
+		return qtrue;
+
 	case IT_ARMOR:
+		if ( tieredArmor ) {
+			
+			switch ( tieredArmor ) {
+			case ARR_QW:
+			{
+				gitem_armor_t* current, * it;
+
+				// get armor info
+				current = &bgarmor[tieredArmor][ps->stats[STAT_ARMOR_TYPE]];
+				it = &bgarmor[tieredArmor][item->giTag];
+
+				// shards don't apply to tiers
+				if ( it->armor == ARMOR_SHARD )
+					return (ps->stats[STAT_ARMOR] >= it->max_count) ? qfalse : qtrue;
+
+				// higher tier always gets picked up
+				if ( current->armor < it->armor ) return qtrue;
+
+				// picking up lower tier armor
+				if ( current->armor > it->armor ) {
+					float oldValue = (float)ps->stats[STAT_ARMOR] * current->normal_protection;
+
+					float newValue = it->base_count * it->normal_protection;
+					if ( oldValue >= newValue ) return qfalse;
+				}
+
+				// consider max count
+				return (it->max_count > ps->stats[STAT_ARMOR]) ? qtrue : qfalse;
+			}
+			case ARR_Q2:
+			{
+				int tier;
+				// shards can be picked up up to shard max
+				if ( item->giTag == ARMOR_SHARD && ps->stats[STAT_ARMOR] < bgarmor[tieredArmor][ARMOR_SHARD].max_count )
+					return qtrue;
+
+				if ( ps->stats[STAT_ARMOR_TYPE] > item->giTag ) tier = ps->stats[STAT_ARMOR_TYPE];
+				else tier = item->giTag;
+
+				return (ps->stats[STAT_ARMOR] >= bgarmor[tieredArmor][tier].max_count) ? qfalse : qtrue;
+			}
+			default:
+				break;
+			}
+		} else {
+			int		upperBound;
+
 #ifdef MISSIONPACK
-		if( BG_ItemForItemNum( ps->stats[STAT_PERSISTANT_POWERUP] )->giTag == PW_SCOUT ) {
-			return qfalse;
-		}
+			if ( BG_ItemForItemNum( ps->stats[STAT_PERSISTANT_POWERUP] )->giTag == PW_SCOUT ) {
+				return qfalse;
+			}
 
-		if( BG_ItemForItemNum( ps->stats[STAT_PERSISTANT_POWERUP] )->giTag == PW_GUARD ) {
-			upperBound = ps->stats[STAT_MAX_HEALTH];
-		}
-		else
+			if ( BG_ItemForItemNum( ps->stats[STAT_PERSISTANT_POWERUP] )->giTag == PW_GUARD ) {
+				upperBound = ps->stats[STAT_MAX_HEALTH];
+			} else
 #endif
-		{
-			upperBound = ps->stats[STAT_MAX_HEALTH] * 2;
-		}
+			{
+				upperBound = ps->stats[STAT_MAX_HEALTH] * 2;
+			}
 
-		// we also clamp armor to the maxhealth for handicapping
-		if ( ps->stats[STAT_ARMOR] >= upperBound ) {
-			return qfalse;
+			// we also clamp armor to the maxhealth for handicapping
+			if ( ps->stats[STAT_ARMOR] >= upperBound ) {
+				return qfalse;
+			}
 		}
 		return qtrue;
 
@@ -1328,33 +1594,35 @@ qboolean BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const play
 	case IT_TEAM: // team items, such as flags
 		if ( gametype == GT_1FCTF ) {
 			// neutral flag can always be picked up
-			if( item->giTag == PW_NEUTRALFLAG ) {
+			if ( item->giTag == PW_NEUTRALFLAG ) {
 				return qtrue;
 			}
-			if (ps->persistant[PERS_TEAM] == TEAM_RED) {
-				if (item->giTag == PW_BLUEFLAG  && ps->powerups[PW_NEUTRALFLAG] ) {
-					return qtrue;
-				}
-			} else if (ps->persistant[PERS_TEAM] == TEAM_BLUE) {
-				if (item->giTag == PW_REDFLAG  && ps->powerups[PW_NEUTRALFLAG] ) {
-					return qtrue;
-				}
+
+			// allow player to drop neutral flag off at any enemy base
+			if ( BG_ItemIsTeamFlag( item->giTag ) && ps->persistant[PERS_TEAM] != (item->giTag - PW_FLAGS_INDEX) ) {
+				if ( ps->powerups[PW_NEUTRALFLAG] ) return qtrue;
 			}
+
 		} else if( gt[gametype].gtFlags & GTF_CTF ) {
+			const qboolean isOwnTeamFlag = ( item->giTag == PW_FLAGS_INDEX + ps->persistant[PERS_TEAM] ) ? qtrue : qfalse;
+
 			// ent->modelindex2 is non-zero on items if they are dropped
 			// we need to know this because we can pick up our dropped flag (and return it)
 			// but we can't pick up our flag at base
-			if (ps->persistant[PERS_TEAM] == TEAM_RED) {
-				if (item->giTag == PW_BLUEFLAG ||
-					(item->giTag == PW_REDFLAG && ent->modelindex2) ||
-					(item->giTag == PW_REDFLAG && ps->powerups[PW_BLUEFLAG]) )
-					return qtrue;
-			} else if (ps->persistant[PERS_TEAM] == TEAM_BLUE) {
-				if (item->giTag == PW_REDFLAG ||
-					(item->giTag == PW_BLUEFLAG && ent->modelindex2) ||
-					(item->giTag == PW_BLUEFLAG && ps->powerups[PW_REDFLAG]) )
-					return qtrue;
+
+			// pick up enemy flag if not currently holding any flags
+			if ( !isOwnTeamFlag ) {
+				if ( BG_CarryingCapturableFlag( ps, gametype ) < 0 ) return qtrue;
+				else return qfalse;
 			}
+
+			if ( isOwnTeamFlag ) {
+				// clear own team's dropped flags
+				if ( ent->modelindex2 < 0 ) return qtrue;
+				// capture the flag!
+				if ( BG_CarryingCapturableFlag( ps, gametype ) ) return qtrue;
+			}
+			
 		} else if( gametype == GT_HARVESTER ) {
 			return qtrue;
 		}
@@ -1386,7 +1654,7 @@ BG_EvaluateTrajectory
 
 ================
 */
-void BG_EvaluateTrajectory( const trajectory_t *tr, int atTime, vec3_t result ) {
+void BG_EvaluateTrajectory( const trajectory_t* tr, int atTime, vec3_t result, const float gravity ) {
 	float		deltaTime;
 	float		phase;
 
@@ -1417,7 +1685,7 @@ void BG_EvaluateTrajectory( const trajectory_t *tr, int atTime, vec3_t result ) 
 	case TR_GRAVITY:
 		deltaTime = ( atTime - tr->trTime ) * 0.001;	// milliseconds to seconds
 		VectorMA( tr->trBase, deltaTime, tr->trDelta, result );
-		result[2] -= 0.5 * DEFAULT_GRAVITY * deltaTime * deltaTime;		// FIXME: local gravity...
+		result[2] -= 0.5 * gravity * deltaTime * deltaTime;
 		break;
 	default:
 		Com_Error( ERR_DROP, "BG_EvaluateTrajectory: unknown trType: %i", tr->trType );
@@ -1432,7 +1700,7 @@ BG_EvaluateTrajectoryDelta
 For determining velocity at a given time
 ================
 */
-void BG_EvaluateTrajectoryDelta( const trajectory_t *tr, int atTime, vec3_t result ) {
+void BG_EvaluateTrajectoryDelta( const trajectory_t *tr, int atTime, vec3_t result, const float gravity ) {
 	float	deltaTime;
 	float	phase;
 
@@ -1460,7 +1728,7 @@ void BG_EvaluateTrajectoryDelta( const trajectory_t *tr, int atTime, vec3_t resu
 	case TR_GRAVITY:
 		deltaTime = ( atTime - tr->trTime ) * 0.001;	// milliseconds to seconds
 		VectorCopy( tr->trDelta, result );
-		result[2] -= DEFAULT_GRAVITY * deltaTime;		// FIXME: local gravity...
+		result[2] -= gravity * deltaTime;		// FIXME: local gravity...
 		break;
 	default:
 		Com_Error( ERR_DROP, "BG_EvaluateTrajectoryDelta: unknown trType: %i", tr->trType );
@@ -1473,6 +1741,8 @@ char *eventnames[] = {
 
 	"EV_FOOTSTEP",
 	"EV_FOOTSTEP_METAL",
+	"EV_FOOTSTEP_SNOW",
+	"EV_FOOTSTEP_WOOD",
 	"EV_FOOTSPLASH",
 	"EV_FOOTWADE",
 	"EV_SWIM",
@@ -1712,7 +1982,7 @@ void BG_PlayerStateToEntityState( playerState_t *ps, entityState_t *s, qboolean 
 
 	s->contents = ps->contents;
 	s->loopSound = ps->loopSound;
-	s->tokens = ps->tokens;
+	s->skullsES = ps->skulls;
 	s->team = ps->persistant[PERS_TEAM];
 
 	s->collisionType = ps->collisionType;
@@ -1801,7 +2071,7 @@ void BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s
 
 	s->contents = ps->contents;
 	s->loopSound = ps->loopSound;
-	s->tokens = ps->tokens;
+	s->skullsES = ps->skulls;
 	s->team = ps->persistant[PERS_TEAM];
 
 	s->collisionType = ps->collisionType;
@@ -1955,7 +2225,7 @@ void PC_SourceWarning(int handle, char *format, ...) {
 	line = 0;
 	trap_PC_SourceFileAndLine(handle, filename, &line);
 
-	Com_Printf(S_COLOR_YELLOW "WARNING: %s, line %d: %s\n", filename, line, string);
+	Com_DPrintf(S_COLOR_YELLOW "WARNING: %s, line %d: %s\n", filename, line, string);
 }
 
 /*
@@ -2254,7 +2524,7 @@ int ReadString(int source, fielddef_t *fd, void *p)
 
 	if (!PC_ExpectTokenType(source, TT_STRING, 0, &token)) return 0;
 	//copy the string
-	strncpy((char *) p, token.string, MAX_STRINGFIELD);
+	Q_strncpyz((char *) p, token.string, MAX_STRINGFIELD);
 	//make sure the string is closed with a zero
 	((char *)p)[MAX_STRINGFIELD-1] = '\0';
 	//

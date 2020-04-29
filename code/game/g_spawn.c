@@ -126,9 +126,10 @@ field_t fields[] = {
 //muff: rotating doors
 	{"distance", FOFS(distance), F_FLOAT},
 //-muff
-//muff
-	{"author", FOFS(message), F_STRING},
-	{"author2", FOFS(message), F_STRING},
+//q2
+	{"delay", FOFS( delay ), F_FLOAT},
+	{"killtarget", FOFS( killtarget ), F_STRING},
+//-q2
 	{NULL}
 };
 
@@ -153,6 +154,7 @@ void SP_func_train (gentity_t *ent);
 void SP_func_timer (gentity_t *self);
 //muff: rotating doors
 void SP_func_door_rotating(gentity_t* ent);
+void SP_func_water(gentity_t* ent);
 //-muff
 
 void SP_trigger_always (gentity_t *ent);
@@ -177,6 +179,7 @@ void SP_target_position (gentity_t *ent);
 void SP_target_location (gentity_t *ent);
 void SP_target_push (gentity_t *ent);
 void SP_target_secret(gentity_t* ent);
+void SP_target_blaster(gentity_t* ent);
 
 void SP_light (gentity_t *self);
 void SP_lightJunior (gentity_t *self);
@@ -200,12 +203,24 @@ void SP_shooter_grenade( gentity_t *ent );
 
 void SP_team_CTF_redplayer( gentity_t *ent );
 void SP_team_CTF_blueplayer( gentity_t *ent );
+void SP_team_CTF_greenplayer( gentity_t *ent );
+void SP_team_CTF_yellowplayer( gentity_t *ent );
+void SP_team_CTF_tealplayer( gentity_t *ent );
+void SP_team_CTF_pinkplayer( gentity_t *ent );
 
 void SP_team_CTF_redspawn( gentity_t *ent );
 void SP_team_CTF_bluespawn( gentity_t *ent );
+void SP_team_CTF_greenspawn( gentity_t *ent );
+void SP_team_CTF_yellowspawn( gentity_t *ent );
+void SP_team_CTF_tealspawn( gentity_t *ent );
+void SP_team_CTF_pinkspawn( gentity_t *ent );
 
+void SP_team_redobelisk( gentity_t* ent );
 void SP_team_blueobelisk( gentity_t *ent );
-void SP_team_redobelisk( gentity_t *ent );
+void SP_team_greenobelisk( gentity_t *ent );
+void SP_team_yellowobelisk( gentity_t *ent );
+void SP_team_tealobelisk( gentity_t *ent );
+void SP_team_pinkobelisk( gentity_t *ent );
 void SP_team_neutralobelisk( gentity_t *ent );
 
 void SP_item_botroam( gentity_t *ent ) { }
@@ -237,6 +252,7 @@ spawn_t	spawns[] = {
 	{"func_timer", SP_func_timer},			// rename trigger_timer?
 //muff: rotating doors
 	{ "func_door_rotating", SP_func_door_rotating },
+	{"func_water", SP_func_water},
 //-muff
 
 	// Triggers are brush objects that cause an effect when contacted
@@ -268,6 +284,7 @@ spawn_t	spawns[] = {
 	{"target_location", SP_target_location},
 	{"target_push", SP_target_push},
 	{"target_secret", SP_target_secret},
+	{"target_blaster", SP_target_blaster},
 
 	{"light", SP_light},
 	{"lightJunior", SP_lightJunior},
@@ -289,12 +306,24 @@ spawn_t	spawns[] = {
 
 	{"team_CTF_redplayer", SP_team_CTF_redplayer},
 	{"team_CTF_blueplayer", SP_team_CTF_blueplayer},
+	{"team_CTF_greenplayer", SP_team_CTF_greenplayer},
+	{"team_CTF_yellowplayer", SP_team_CTF_yellowplayer},
+	{"team_CTF_tealplayer", SP_team_CTF_tealplayer},
+	{"team_CTF_pinkplayer", SP_team_CTF_pinkplayer},
 
 	{"team_CTF_redspawn", SP_team_CTF_redspawn},
 	{"team_CTF_bluespawn", SP_team_CTF_bluespawn},
+	{"team_CTF_greenspawn", SP_team_CTF_greenspawn},
+	{"team_CTF_yellowspawn", SP_team_CTF_yellowspawn},
+	{"team_CTF_tealspawn", SP_team_CTF_tealspawn},
+	{"team_CTF_pinkspawn", SP_team_CTF_pinkspawn},
 
 	{"team_redobelisk", SP_team_redobelisk},
 	{"team_blueobelisk", SP_team_blueobelisk},
+	{"team_greenobelisk", SP_team_greenobelisk},
+	{"team_yellowobelisk", SP_team_yellowobelisk},
+	{"team_tealobelisk", SP_team_tealobelisk},
+	{"team_pinkobelisk", SP_team_pinkobelisk},
 	{"team_neutralobelisk", SP_team_neutralobelisk},
 
 	{"item_botroam", SP_item_botroam},
@@ -601,6 +630,15 @@ void SP_worldspawn( void ) {
 	G_SpawnString( "message", "", &s );
 	trap_SetConfigstring( CS_MESSAGE, s );				// map specific message
 
+	G_SpawnString( "author", "", &s );
+	trap_SetConfigstring( CS_MAPAUTHOR1, s );			// map author
+
+	G_SpawnString( "author2", "", &s );
+	trap_SetConfigstring( CS_MAPAUTHOR2, s );			// map author
+
+	G_SpawnString( "quote", "", &s );
+	trap_SetConfigstring( CS_MAPQUOTE, s );				// map quote
+
 	trap_SetConfigstring( CS_MOTD, g_motd.string );		// message of the day
 
 	G_SpawnString( "gravity", "800", &s );
@@ -627,12 +665,15 @@ void SP_worldspawn( void ) {
 	if ( g_restarted.integer ) {
 		trap_Cvar_SetValue( "g_restarted", 0 );
 		level.warmupTime = 0;
-	} else if ( g_doWarmup.integer ) { // Turn it on
+	} else if ( g_doWarmup.integer && g_gameType.integer > GT_SINGLE_PLAYER ) { // Turn it on
 		level.warmupTime = -1;
 		trap_SetConfigstring( CS_WARMUP, va("%i", level.warmupTime) );
 		G_LogPrintf( "Warmup:\n" );
 	}
 
+	level.warmupState = WARMUP_DEFAULT;
+	trap_SetConfigstring( CS_WARMUP_STATE, va( "%i", level.warmupState ) );
+	trap_SetConfigstring( CS_WARMUP_VAL, "0" );
 }
 
 

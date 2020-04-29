@@ -809,7 +809,15 @@ CG_PlayerColorFromIndex
 ====================
 */
 void CG_PlayerColorFromIndex( int val, vec3_t color ) {
+	int num = val;
 
+	if ( num > 26 ) num = 26;
+	else if ( num < 1 ) num = 1;
+	color[0] = colorTable[num + 9][0];
+	color[1] = colorTable[num + 9][1];
+	color[2] = colorTable[num + 9][2];
+	color[3] = colorTable[num + 9][3];
+#if 0
 	switch (val)
 	{
 		case 1: // blue
@@ -855,6 +863,7 @@ void CG_PlayerColorFromIndex( int val, vec3_t color ) {
 			VectorSet( color, 1, 1, 1 );
 			break;
 	}
+#endif
 }
 
 /*
@@ -1124,18 +1133,18 @@ void CG_NewPlayerInfo( int playerNum ) {
 	v = Info_ValueForKey( configstring, "c1" );
 	CG_PlayerColorFromString( v, newInfo.color1 );
 
-	newInfo.c1RGBA[0] = 255 * newInfo.color1[0];
-	newInfo.c1RGBA[1] = 255 * newInfo.color1[1];
-	newInfo.c1RGBA[2] = 255 * newInfo.color1[2];
-	newInfo.c1RGBA[3] = 255;
+	newInfo.c1RGBA[0] = 0xff * newInfo.color1[0];
+	newInfo.c1RGBA[1] = 0xff * newInfo.color1[1];
+	newInfo.c1RGBA[2] = 0xff * newInfo.color1[2];
+	newInfo.c1RGBA[3] = 0xff;
 
 	v = Info_ValueForKey( configstring, "c2" );
 	CG_PlayerColorFromString( v, newInfo.color2 );
 
-	newInfo.c2RGBA[0] = 255 * newInfo.color2[0];
-	newInfo.c2RGBA[1] = 255 * newInfo.color2[1];
-	newInfo.c2RGBA[2] = 255 * newInfo.color2[2];
-	newInfo.c2RGBA[3] = 255;
+	newInfo.c2RGBA[0] = 0xff * newInfo.color2[0];
+	newInfo.c2RGBA[1] = 0xff * newInfo.color2[1];
+	newInfo.c2RGBA[2] = 0xff * newInfo.color2[2];
+	newInfo.c2RGBA[3] = 0xff;
 
 	// bot skill
 	v = Info_ValueForKey( configstring, "skill" );
@@ -1899,7 +1908,7 @@ static void CG_DustTrail( centity_t *cent ) {
 CG_TrailItem
 ===============
 */
-static void CG_TrailItem( centity_t *cent, qhandle_t hModel ) {
+static void CG_TrailItem( centity_t* cent, qhandle_t hModel, const byte rgba[4] ) {
 	refEntity_t		ent;
 	vec3_t			angles;
 	vec3_t			axis[3];
@@ -1921,6 +1930,11 @@ static void CG_TrailItem( centity_t *cent, qhandle_t hModel ) {
 		// flag blocks view in third person, so only draw in mirrors
 		ent.renderfx |= RF_ONLY_MIRROR;
 	}
+
+	ent.shaderRGBA[0] = rgba[0];
+	ent.shaderRGBA[1] = rgba[1];
+	ent.shaderRGBA[2] = rgba[2];
+	ent.shaderRGBA[3] = rgba[3];
 
 	ent.hModel = hModel;
 	CG_AddRefEntityWithMinLight( &ent );
@@ -2059,7 +2073,7 @@ static void CG_PlayerHarvesterSkulls( centity_t *cent, int renderfx ) {
 		return;
 	}
 	trail = &cg.skullTrails[cent->currentState.number];
-	tokens = cent->currentState.tokens;
+	tokens = cent->currentState.skullsES;
 	if ( !tokens ) {
 		trail->numpositions = 0;
 		return;
@@ -2089,11 +2103,8 @@ static void CG_PlayerHarvesterSkulls( centity_t *cent, int renderfx ) {
 	}
 
 	memset( &ent, 0, sizeof( ent ) );
-	if( cgs.playerinfo[ cent->currentState.playerNum ].team == TEAM_BLUE ) {
-		ent.hModel = cgs.media.redSkullModel;
-	} else {
-		ent.hModel = cgs.media.blueSkullModel;
-	}
+	ent.hModel = cgs.media.skullModel;
+
 	ent.renderfx = renderfx;
 
 	VectorCopy(cent->lerpOrigin, origin);
@@ -2119,7 +2130,7 @@ CG_PlayerPowerups
 ===============
 */
 static void CG_PlayerPowerups( centity_t *cent, refEntity_t *torso ) {
-	int		powerups;
+	int		powerups, i;
 	playerInfo_t	*pi;
 
 	powerups = cent->currentState.powerups;
@@ -2129,7 +2140,12 @@ static void CG_PlayerPowerups( centity_t *cent, refEntity_t *torso ) {
 
 	// quad gives a dlight
 	if ( powerups & ( 1 << PW_QUAD ) ) {
-		trap_R_AddLightToScene( cent->lerpOrigin, 200 + (rand()&31), 1.0f, 0.2f, 0.2f, 1, 0 );
+		//trap_R_AddLightToScene( cent->lerpOrigin, 200 + (rand()&31), 1.0f, 0.2f, 0.4f, 1, 0 );
+		trap_R_AddLightToScene( cent->lerpOrigin, 144 + (rand()&15),0.8f, 0.094f, 0.360f, 0.917f, 0 );
+	}
+	// bs gives a dlight
+	if ( powerups & (1 << PW_BATTLESUIT) ) {
+		trap_R_AddLightToScene( cent->lerpOrigin, 144 + (rand() & 15), 0.8f, 0.839f, 0.501f, 0.156f, 0 );
 	}
 
 	// flight plays a looped sound
@@ -2138,37 +2154,20 @@ static void CG_PlayerPowerups( centity_t *cent, refEntity_t *torso ) {
 	}
 
 	pi = &cgs.playerinfo[ cent->currentState.playerNum ];
-	// redflag
-	if ( powerups & ( 1 << PW_REDFLAG ) ) {
-		if (pi->newAnims) {
-			CG_PlayerFlag( cent, &cgs.media.redFlagFlapSkin, torso );
+	for ( i = 0; i < TEAM_NUM_TEAMS; i++ ) {
+		if ( powerups & (1 << (PW_FLAGS_INDEX + i)) ) {
+			if ( pi->newAnims ) {
+				CG_PlayerFlag( cent, &cgs.media.flagFlapSkin, torso );
+			} else {
+				byte col[4];
+				col[0] = teamColor[i][0] * 0xff;
+				col[1] = teamColor[i][1] * 0xff;
+				col[2] = teamColor[i][2] * 0xff;
+				col[3] = 0xff;
+				CG_TrailItem( cent, cgs.media.flagModel, col );
+			}
+			trap_R_AddLightToScene( cent->lerpOrigin, 200 + (rand() & 31), 1.0f, teamColor[i][0], teamColor[i][1], teamColor[i][2], 0 );
 		}
-		else {
-			CG_TrailItem( cent, cgs.media.redFlagModel );
-		}
-		trap_R_AddLightToScene( cent->lerpOrigin, 200 + (rand()&31), 1.0f, 1.0f, 0.2f, 0.2f, 0 );
-	}
-
-	// blueflag
-	if ( powerups & ( 1 << PW_BLUEFLAG ) ) {
-		if (pi->newAnims){
-			CG_PlayerFlag( cent, &cgs.media.blueFlagFlapSkin, torso );
-		}
-		else {
-			CG_TrailItem( cent, cgs.media.blueFlagModel );
-		}
-		trap_R_AddLightToScene( cent->lerpOrigin, 200 + (rand()&31), 1.0f, 0.2f, 0.2f, 1.0f, 0 );
-	}
-
-	// neutralflag
-	if ( powerups & ( 1 << PW_NEUTRALFLAG ) ) {
-		if (pi->newAnims) {
-			CG_PlayerFlag( cent, &cgs.media.neutralFlagFlapSkin, torso );
-		}
-		else {
-			CG_TrailItem( cent, cgs.media.neutralFlagModel );
-		}
-		trap_R_AddLightToScene( cent->lerpOrigin, 200 + (rand()&31), 1.0f, 1.0f, 1.0f, 1.0f, 0 );
 	}
 
 	// haste leaves smoke trails
@@ -2339,7 +2338,7 @@ static qboolean CG_PlayerShadow( centity_t *cent, vec3_t start, float alphaMult,
 	//assert( DotProduct( trace.plane.normal, trace.plane.normal ) != 0.0f ) 
 
 	// add the mark as a temporary, so it goes directly to the renderer
-	// without taking a spot in the cg_marks array
+	// without taking a spot in the cg_impactMarks array
 	CG_ImpactMark( cgs.media.shadowMarkShader, trace.endpos, trace.plane.normal, 
 		cent->pe.legs.yawAngle, alpha,alpha,alpha,1, qfalse, 24, qtrue );
 
@@ -2370,7 +2369,7 @@ static void CG_PlayerSplash( centity_t *cent ) {
 	// if the feet aren't in liquid, don't make a mark
 	// this won't handle moving water brushes, but they wouldn't draw right anyway...
 	contents = CG_PointContents( end, 0 );
-	if ( !( contents & ( CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA ) ) ) {
+	if ( !( contents & MASK_WATER ) ) {
 		return;
 	}
 
@@ -2379,12 +2378,12 @@ static void CG_PlayerSplash( centity_t *cent ) {
 
 	// if the head isn't out of liquid, don't make a mark
 	contents = CG_PointContents( start, 0 );
-	if ( contents & ( CONTENTS_SOLID | CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA ) ) {
+	if ( contents & MASK_WATER ) {
 		return;
 	}
 
 	// trace down to find the surface
-	trap_CM_BoxTrace( &trace, start, end, NULL, NULL, 0, ( CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA ) );
+	trap_CM_BoxTrace( &trace, start, end, NULL, NULL, 0, MASK_WATER );
 
 	if ( trace.fraction == 1.0 ) {
 		return;
@@ -2464,10 +2463,7 @@ void CG_AddRefEntityWithPowerups( refEntity_t *ent, entityState_t *state ) {
 
 		if ( state->powerups & ( 1 << PW_QUAD ) )
 		{
-			if ( state->team == TEAM_RED )
-				ent->customShader = cgs.media.redQuadShader;
-			else
-				ent->customShader = cgs.media.quadShader;
+			ent->customShader = cgs.media.quadShader;
 			CG_AddRefEntityWithMinLight( ent );
 		}
 		if ( state->powerups & ( 1 << PW_REGEN ) ) {
@@ -2626,7 +2622,7 @@ void CG_Player( centity_t *cent ) {
 
 	if ( renderfx != RF_ONLY_MIRROR ) {
 		float bboxColor[4] = { 0, 0, 0, 0.375f };
-
+		//multiteam TODO
 		if ( pi->team == TEAM_RED ) {
 			bboxColor[0] = 0.625f;
 		} else if ( pi->team == TEAM_BLUE ) {
@@ -2993,8 +2989,8 @@ void CG_ResetPlayerEntity( centity_t *cent ) {
 	CG_ClearLerpFrame( &cgs.playerinfo[ cent->currentState.playerNum ], &cent->pe.legs, cent->currentState.legsAnim );
 	CG_ClearLerpFrame( &cgs.playerinfo[ cent->currentState.playerNum ], &cent->pe.torso, cent->currentState.torsoAnim );
 
-	BG_EvaluateTrajectory( &cent->currentState.pos, cg.time, cent->lerpOrigin );
-	BG_EvaluateTrajectory( &cent->currentState.apos, cg.time, cent->lerpAngles );
+	BG_EvaluateTrajectory( &cent->currentState.pos, cg.time, cent->lerpOrigin, cgs.gravity );
+	BG_EvaluateTrajectory( &cent->currentState.apos, cg.time, cent->lerpAngles, cgs.gravity );
 
 	VectorCopy( cent->lerpOrigin, cent->rawOrigin );
 	VectorCopy( cent->lerpAngles, cent->rawAngles );

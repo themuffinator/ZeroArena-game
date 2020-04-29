@@ -57,12 +57,23 @@ void multi_trigger( gentity_t *ent, gentity_t *activator ) {
 	}
 
 	if ( activator->player ) {
+#if 0
 		if ( ( ent->spawnflags & 1 ) &&
 			activator->player->sess.sessionTeam != TEAM_RED ) {
 			return;
 		}
 		if ( ( ent->spawnflags & 2 ) &&
 			activator->player->sess.sessionTeam != TEAM_BLUE ) {
+			return;
+		}
+#endif
+		if ( !(ent->spawnflags & activator->player->sess.sessionTeam) ) {
+			return;
+		}
+
+		if ( activator->player && ent->message ) {
+			trap_SendServerCommand( activator - g_entities, va( "cp \"%s\"", ent->message ) );
+			ent->message = NULL;
 			return;
 		}
 	}
@@ -92,7 +103,7 @@ void Touch_Multi( gentity_t *self, gentity_t *other, trace_t *trace ) {
 	multi_trigger( self, other );
 }
 
-/*QUAKED trigger_multiple (.5 .5 .5) ? RED_ONLY BLUE_ONLY
+/*QUAKED trigger_multiple (.5 .5 .5) ? RED_ONLY BLUE_ONLY GREEN_ONLY YELLOW_ONLY TEAL_ONLY PINK_ONLY
 "wait" : Seconds between triggerings, 0.5 default, -1 = one time only.
 "random"	wait variance, default is 0
 Variable sized repeatable trigger.  Must be targeted at one or more entities.
@@ -179,8 +190,9 @@ void AimAtTarget( gentity_t *self ) {
 		G_FreeEntity( self );
 		return;
 	}
-
+		
 	height = ent->s.origin[2] - origin[2];
+	
 	gravity = g_gravity.value;
 	time = sqrt( height / ( .5 * gravity ) );
 	if ( !time ) {
@@ -221,6 +233,11 @@ void SP_trigger_push( gentity_t *self ) {
 }
 
 
+/*QUAKED target_push (.5 .5 .5) (-8 -8 -8) (8 8 8) bouncepad
+Pushes the activator in the direction.of angle, or towards a target apex.
+"speed"		defaults to 1000
+if "bouncepad", play bounce noise instead of windfly
+*/
 void Use_target_push( gentity_t *self, gentity_t *other, gentity_t *activator ) {
 	if ( !activator->player ) {
 		return;
@@ -242,11 +259,7 @@ void Use_target_push( gentity_t *self, gentity_t *other, gentity_t *activator ) 
 	}
 }
 
-/*QUAKED target_push (.5 .5 .5) (-8 -8 -8) (8 8 8) bouncepad
-Pushes the activator in the direction.of angle, or towards a target apex.
-"speed"		defaults to 1000
-if "bouncepad", play bounce noise instead of windfly
-*/
+
 void SP_target_push( gentity_t *self ) {
 	if (!self->speed) {
 		self->speed = 1000;
@@ -298,7 +311,7 @@ void trigger_teleporter_touch (gentity_t *self, gentity_t *other, trace_t *trace
 		return;
 	}
 
-	TeleportPlayer( other, dest->s.origin, dest->s.angles, qfalse, qfalse );
+	TeleportPlayer( other, dest->s.origin, dest->s.angles, qfalse, qfalse, qtrue );
 }
 
 
@@ -501,12 +514,13 @@ void SP_trigger_once(gentity_t* ent)
 		G_Printf("fixed TRIGGERED flag on %s at %s\n", ent->classname, vtos(v));
 	}
 
+	InitTrigger(ent);
+
 	ent->wait = -1;
 
 	ent->touch = Touch_Multi;
 	ent->use = Use_Multi;
 
-	InitTrigger(ent);
 	trap_LinkEntity(ent);
 }
 

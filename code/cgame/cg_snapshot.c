@@ -215,7 +215,7 @@ static void CG_TransitionSnapshot( void ) {
 			// if we are not doing client side movement prediction for any
 			// reason, then the player events and view changes will be issued now
 			if ( cg.demoPlayback || (ps->pm_flags & PMF_FOLLOW)
-				|| cg_nopredict.integer || cg_synchronousClients.integer ) {
+				|| cg_noPredict.integer || cg_synchronousClients.integer ) {
 				CG_TransitionPlayerState( ps, ops );
 			}
 		}
@@ -412,11 +412,11 @@ void CG_ProcessSnapshots( qboolean initialOnly ) {
 	// greater than cg.time to interpolate towards, or we run
 	// out of available snapshots
 	do {
-		// if we don't have a nextframe, try and read a new one in
+		// if we don't have a nextFrame, try and read a new one in
 		if ( !cg.nextSnap ) {
 			snap = CG_ReadNextSnapshot();
 
-			// if we still don't have a nextframe, we will just have to
+			// if we still don't have a nextFrame, we will just have to
 			// extrapolate
 			if ( !snap ) {
 				break;

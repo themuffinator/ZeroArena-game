@@ -2743,12 +2743,12 @@ static void UI_Update(const char *name) {
 				trap_Cvar_SetValue( "r_depthbits", 24 );
 				trap_Cvar_SetValue( "r_stencilbits", 8 );
 				trap_Cvar_SetValue( "r_picmip", 0 );
-				trap_Cvar_SetValue( "r_mode", 4 );
+				//trap_Cvar_SetValue( "r_mode", 4 );
 				trap_Cvar_SetValue( "r_texturebits", 32 );
 				trap_Cvar_SetValue( "r_fastSky", 0 );
 				trap_Cvar_SetValue( "r_inGameVideo", 1 );
 				trap_Cvar_SetValue( "cg_shadows", 1 );
-				trap_Cvar_SetValue( "cg_brassTime", 2500 );
+				trap_Cvar_SetValue( "cg_brassTime", 5000 );
 				trap_Cvar_Set( "r_texturemode", "GL_LINEAR_MIPMAP_LINEAR" );
 			break;
 			case 1: // normal 
@@ -2760,7 +2760,7 @@ static void UI_Update(const char *name) {
 				trap_Cvar_SetValue( "r_depthbits", 0 );
 				trap_Cvar_Reset( "r_stencilbits" );
 				trap_Cvar_SetValue( "r_picmip", 1 );
-				trap_Cvar_SetValue( "r_mode", 3 );
+				//trap_Cvar_SetValue( "r_mode", 3 );
 				trap_Cvar_SetValue( "r_texturebits", 0 );
 				trap_Cvar_SetValue( "r_fastSky", 0 );
 				trap_Cvar_SetValue( "r_inGameVideo", 1 );
@@ -2777,7 +2777,7 @@ static void UI_Update(const char *name) {
 				trap_Cvar_SetValue( "r_depthbits", 0 );
 				trap_Cvar_Reset( "r_stencilbits" );
 				trap_Cvar_SetValue( "r_picmip", 1 );
-				trap_Cvar_SetValue( "r_mode", 3 );
+				//trap_Cvar_SetValue( "r_mode", 3 );
 				trap_Cvar_SetValue( "r_texturebits", 0 );
 				trap_Cvar_SetValue( "cg_shadows", 0 );
 				trap_Cvar_SetValue( "r_fastSky", 1 );
@@ -2788,12 +2788,12 @@ static void UI_Update(const char *name) {
 			case 3: // fastest
 				trap_Cvar_SetValue( "r_fullScreen", 1 );
 				trap_Cvar_SetValue( "r_subdivisions", 20 );
-				trap_Cvar_SetValue( "r_vertexlight", 1 );
+				trap_Cvar_SetValue( "r_vertexlight", 0 );
 				trap_Cvar_SetValue( "r_lodbias", 2 );
 				trap_Cvar_SetValue( "r_colorbits", 16 );
 				trap_Cvar_SetValue( "r_depthbits", 16 );
 				trap_Cvar_SetValue( "r_stencilbits", 0 );
-				trap_Cvar_SetValue( "r_mode", 3 );
+				//trap_Cvar_SetValue( "r_mode", 3 );
 				trap_Cvar_SetValue( "r_picmip", 2 );
 				trap_Cvar_SetValue( "r_texturebits", 16 );
 				trap_Cvar_SetValue( "cg_shadows", 0 );
@@ -3509,7 +3509,7 @@ serverStatusCvar_t serverStatusCvars[] = {
 	{"sv_gametypeName", "Game type"},
 	{"sv_gametypeNetName", "Game type abbr"},
 	{"g_gameType", "Game type number"},
-	{"mapname", "Map"},
+	{"mapName", "Map"},
 	{"version", ""},
 	{"protocol", ""},
 	{"gameVersion", ""},
@@ -3995,7 +3995,7 @@ static const char *UI_FeederItemText(float feederID, int index, int column, qhan
 							return hostname;
 						}
 					}
-				case COLUMN_MAP : return Info_ValueForKey(info, "mapname");
+				case COLUMN_MAP : return Info_ValueForKey(info, "mapName");
 				case COLUMN_CLIENTS :
 					{
 						char *clients;
@@ -4133,12 +4133,12 @@ static void UI_FeederSelection(float feederID, int index) {
 		const char *mapName = NULL;
 		uiInfo.serverStatus.currentServer = index;
 		trap_LAN_GetServerInfo(UI_SourceForLAN(), uiInfo.serverStatus.displayServers[index], info, MAX_STRING_CHARS);
-		uiInfo.serverStatus.currentServerPreview = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "mapname")));
+		uiInfo.serverStatus.currentServerPreview = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "mapName")));
 		if (uiInfo.serverStatus.currentServerCinematic >= 0) {
 		  trap_CIN_StopCinematic(uiInfo.serverStatus.currentServerCinematic);
 			uiInfo.serverStatus.currentServerCinematic = -1;
 		}
-		mapName = Info_ValueForKey(info, "mapname");
+		mapName = Info_ValueForKey(info, "mapName");
 		if (mapName && *mapName) {
 			uiInfo.serverStatus.currentServerCinematic = trap_CIN_PlayCinematic(va("%s.roq", mapName), 0, 0, 0, 0, (CIN_loop | CIN_silent) );
 		}
@@ -5227,7 +5227,7 @@ void UI_DrawConnectScreen( qboolean overlay ) {
 
 	info[0] = '\0';
 	if( trap_GetConfigString( CS_SERVERINFO, info, sizeof(info) ) ) {
-		UI_Text_PaintCenter(centerPoint, yStart, scale, colorWhite, va( "Loading %s", Info_ValueForKey( info, "mapname" )), 0);
+		UI_Text_PaintCenter(centerPoint, yStart, scale, colorWhite, va( "Loading %s", Info_ValueForKey( info, "mapName" )), 0);
 	}
 
 	if (!Q_stricmp(cstate.servername,"localhost")) {
@@ -5389,7 +5389,7 @@ static cvarTable_t		cvarTable[] = {
 	{ &ui_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE },
 	{ &ui_drawCrosshair, "cg_drawCrosshair", "4", CVAR_ARCHIVE },
 	{ &ui_drawCrosshairNames, "cg_drawCrosshairNames", "1", CVAR_ARCHIVE },
-	{ &ui_marks, "cg_marks", "1", CVAR_ARCHIVE },
+	{ &ui_marks, "cg_impactMarks", "1", CVAR_ARCHIVE },
 
 	{ &ui_new, "ui_new", "0", CVAR_TEMP },
 	{ &ui_debug, "ui_debug", "0", CVAR_TEMP },

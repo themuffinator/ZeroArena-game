@@ -79,7 +79,7 @@ void BotSetUserInfo(bot_state_t *bs, char *key, char *value);
 // set the team status (offense, defense etc.)
 void BotSetTeamStatus(bot_state_t *bs);
 //returns the name of the player
-char *PlayerName(int playernum, char *name, int size);
+char *GetPlayerName(int playernum, char *name, int size);
 //returns a simplified player name
 char *EasyPlayerName(int playernum, char *name, int size);
 // returns the appropriate synonym context for the current game type and situation
@@ -191,14 +191,6 @@ int BotPointAreaNum(vec3_t origin);
 //
 void BotMapScripts(bot_state_t *bs);
 
-//ctf flags
-#define CTF_FLAG_NONE		0
-#define CTF_FLAG_RED		1
-#define CTF_FLAG_BLUE		2
-//CTF skins
-#define CTF_SKIN_REDTEAM	"red"
-#define CTF_SKIN_BLUETEAM	"blue"
-
 extern int gametype;		//game type
 extern int maxplayers;		//maximum number of players
 
@@ -211,12 +203,9 @@ extern vmCvar_t bot_testrchat;
 extern vmCvar_t bot_challenge;
 extern vmCvar_t bot_droppedweight;
 extern vmCvar_t bot_offhandgrapple;
-
-extern bot_goal_t ctf_redflag;
-extern bot_goal_t ctf_blueflag;
-
-extern bot_goal_t ctf_neutralflag;
-extern bot_goal_t redobelisk;
-extern bot_goal_t blueobelisk;
-extern bot_goal_t neutralobelisk;
-
+#if 0
+extern bot_goal_t ctf_flag[TEAM_RED];
+extern bot_goal_t ctf_flag[TEAM_BLUE];
+#endif
+extern bot_goal_t ctf_flag[TEAM_NUM_TEAMS];
+extern bot_goal_t team_obelisk[TEAM_NUM_TEAMS];

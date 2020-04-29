@@ -872,7 +872,7 @@ int AAS_Reachability_Swim(int area1num, int area2num)
 			{
 				AAS_FaceCenter(face1num, start);
 				//
-				if (AAS_PointContents(start) & (CONTENTS_LAVA|CONTENTS_SLIME|CONTENTS_WATER))
+				if (AAS_PointContents(start) & (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA) )
 				{
 					//
 					face1 = &aasworld.faces[face1num];
@@ -890,7 +890,7 @@ int AAS_Reachability_Swim(int area1num, int area2num)
 					//if the volume of the area is rather small
 					if (AAS_AreaVolume(area2num) < 800)
 						lreach->traveltime += 200;
-					//if (!(AAS_PointContents(start) & (CONTENTS_LAVA|CONTENTS_SLIME|CONTENTS_WATER)))
+					//if (!(AAS_PointContents(start) & (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA)))
 						//lreach->traveltime += 500;
 					//link the reachability
 					lreach->next = areareachability[area1num];
@@ -3824,7 +3824,7 @@ int AAS_Reachability_Grapple(int area1num, int area2num)
 	} //end if
 	else
 	{
-		if (!(AAS_PointContents(start) & (CONTENTS_LAVA|CONTENTS_SLIME|CONTENTS_WATER))) return qfalse;
+		if (!(AAS_PointContents(start) & (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA))) return qfalse;
 	} //end else
 	//
 	//start is now the start point

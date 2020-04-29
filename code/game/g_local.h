@@ -51,7 +51,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define	FL_NOTARGET				0x00000020
 #define	FL_TEAMSLAVE			0x00000400	// not the first on the team
 #define FL_NO_KNOCKBACK			0x00000800
-#define FL_DROPPED_ITEM			0x00001000
+//#define FL_DROPPED_ITEM			0x00001000
 #define FL_NO_BOTS				0x00002000	// spawn point not for bot use
 #define FL_NO_HUMANS			0x00004000	// spawn point just for bots
 #define FL_FORCE_GESTURE		0x00008000	// force gesture on player
@@ -198,8 +198,13 @@ struct gentity_s {
 	gitem_t		*item;			// for bonus items
 
 //muff: rotating doors
-	float		distance;		// VALKYRIE: for rotating door
+	float		distance;
 //-muff
+
+//q2
+	float		delay;
+	char		*killtarget;
+//-q2
 
 	// dlights
 	vec3_t		dl_color;
@@ -217,9 +222,6 @@ struct gentity_s {
 	vec3_t		lastMins;
 	vec3_t		lastMaxs;
 	int			areanum;
-//muff
-	char		*author;
-//-muff
 };
 
 
@@ -257,7 +259,8 @@ typedef struct {
 // MUST be dealt with in G_InitSessionData() / G_ReadSessionData() / G_WriteSessionData()
 typedef struct {
 	team_t		sessionTeam;
-	int			spectatorNum;		// for determining next-in-line to play
+	team_t		sessionPlayState;
+	int			queueNum;		// for determining next-in-line to play
 	spectatorState_t	spectatorState;
 	int			spectatorPlayer;	// for chasecam and follow mode
 	int			wins, losses;		// tournament stats
@@ -285,8 +288,9 @@ typedef struct {
 	int			enterTime;			// level.time the player entered the game
 	playerTeamState_t teamState;	// status in teamplay games
 	int			voteCount;			// to prevent people from constantly calling votes
-	int			teamVoteCount;		// to prevent people from constantly calling votes
 	qboolean	teamInfo;			// send team overlay updates?
+
+	qboolean	readyToBegin;
 } playerPersistant_t;
 
 #define MAX_PLAYER_MARKERS 17
@@ -433,6 +437,11 @@ typedef struct {
 
 	int			snd_fry;				// sound index for standing in lava
 
+	int			warmupState;				// warmup checks for validating match starting
+	int			warmupOldState;				// check for changes in warmup state
+	int			warmupVal;					// additional warmup info to send clients
+	int			warmupOldVal;				// check for changes in warmup value
+
 	int			warmupModificationCount;	// for detecting if g_warmupCountdownTime is changed
 	int			botReportModificationCount;
 
@@ -444,13 +453,6 @@ typedef struct {
 	int			voteYes;
 	int			voteNo;
 	int			numVotingPlayers;		// set by CalculateRanks
-
-	// team voting state
-	char		teamVoteString[2][MAX_STRING_CHARS];
-	int			teamVoteTime[2];		// level.time vote was called
-	int			teamVoteYes[2];
-	int			teamVoteNo[2];
-	int			numTeamVotingPlayers[2];// set by CalculateRanks
 
 	// spawn variables
 	qboolean	spawning;				// the G_Spawn*() functions are valid
@@ -480,10 +482,25 @@ typedef struct {
 #ifdef MISSIONPACK
 	int			portalSequence;
 #endif
+
+	//multiteam
+	//int			flagCarrier[TEAM_NUM_TEAMS];	// client num for each flag's carrier
+	int			map_teamBaseSpawns;		// detect which teams are supported in team base maps
+	int			map_teamBaseCount;		// return a count of the above
+	int			teams_max;				// maximum number of teams in team gametypes
 //q2
 	int			found_secrets;
 	int			total_secrets;
 //-q2
+
+	// team checks
+	int			sortedTeams[TEAM_NUM_TEAMS];	// teams sorted by score, always ignore 0 as it is TEAM_FREE
+	int			numPlayingTeams;				// number of teams still with players
+	int			numTeamPlayers[TEAM_NUM_TEAMS];	// count number of players per team
+	int			shortTeams;						// bit flag of teams with less players than minimum
+	int			numShortTeams;					// number of teams with less players than minimum
+	int			smallestTeamCount;
+	int			largestTeamCount;
 } level_locals_t;
 
 
@@ -561,8 +578,18 @@ void G_AddEvent( gentity_t *ent, int event, int eventParm );
 void G_SetOrigin( gentity_t *ent, vec3_t origin );
 void AddRemap(const char *oldShader, const char *newShader, float timeOffset);
 const char *BuildShaderStateConfig( void );
-qboolean GTF(const int gtFlags);
-qboolean GTL(const int gtGoal);
+extern qboolean GTF(const int gtFlags);
+extern qboolean GTL(const int gtGoal);
+
+extern char* g_teamNames[TEAM_NUM_TEAMS];
+extern char* g_teamNamesLower[TEAM_NUM_TEAMS];
+extern char* g_teamNamesLetter[TEAM_NUM_TEAMS];
+extern char* g_teamShortNames[TEAM_NUM_TEAMS];
+extern char* G_TeamName( team_t team );
+extern qboolean	IsValidTeam( const team_t team );
+extern char* PlayerName( playerPersistant_t p );
+
+char* G_PlayerTeamName( team_t team );
 
 //
 // g_combat.c
@@ -587,6 +614,7 @@ void TossPlayerSkulls( gentity_t *self );
 #ifdef MISSIONPACK
 #define DAMAGE_NO_TEAM_PROTECTION	0x00000010  // armor, shields, invulnerability, and godmode have no effect
 #endif
+#define DAMAGE_ENERGY				0x00000010	// high energy damage (ie: plasma, bfg)
 
 //
 // g_missile.c
@@ -602,7 +630,7 @@ gentity_t *fire_grapple (gentity_t *self, vec3_t start, vec3_t dir);
 gentity_t *fire_nail( gentity_t *self, vec3_t start, vec3_t forward, vec3_t right, vec3_t up );
 gentity_t *fire_prox( gentity_t *self, vec3_t start, vec3_t aimdir );
 #endif
-
+void fire_blaster( gentity_t* self, vec3_t start, vec3_t dir, int damage, int speed );
 
 //
 // g_mover.c
@@ -614,12 +642,12 @@ void Touch_DoorTrigger( gentity_t *ent, gentity_t *other, trace_t *trace );
 // g_trigger.c
 //
 void trigger_teleporter_touch (gentity_t *self, gentity_t *other, trace_t *trace );
-
+void AimAtTarget( gentity_t* self );
 
 //
 // g_misc.c
 //
-void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles, const qboolean freezeVelocity, const qboolean saveAngles);
+void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles, const qboolean freezeVelocity, const qboolean saveAngles, const qboolean effect );
 #ifdef MISSIONPACK
 void DropPortalSource( gentity_t *ent );
 void DropPortalDestination( gentity_t *ent );
@@ -651,6 +679,7 @@ void InitBodyQueue (void);
 void PlayerSpawn( gentity_t *ent );
 void player_die (gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int mod);
 void AddScore( gentity_t *ent, vec3_t origin, int score );
+void CountPopulation( void );
 void CalculateRanks( void );
 qboolean SpotWouldTelefrag( gentity_t *spot );
 
@@ -698,7 +727,7 @@ void FindIntermissionPoint( void );
 void SetLeader(int team, int player);
 void CheckTeamLeader( int team );
 void G_RunThink (gentity_t *ent);
-void AddTournamentQueue(gplayer_t *player);
+void AddToTournamentQueue(gplayer_t *player);
 void QDECL G_LogPrintf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
 void SendScoreboardMessageToAllClients( void );
 void QDECL G_DPrintf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
@@ -788,64 +817,88 @@ void Svcmd_BotTeamplayReport_f( void );
 #include "g_team.h" // teamplay specific stuff
 #include "g_syscalls.h"
 
-
 extern	level_locals_t	level;
 extern	gentity_t		g_entities[MAX_GENTITIES];
 
 #define	FOFS(x) ((size_t)&(((gentity_t *)0)->x))
 
-extern	vmCvar_t	g_gameType;
-extern	vmCvar_t	g_dedicated;
+extern	vmCvar_t	g_allowVote;
+extern	vmCvar_t	g_banIPs;
+extern	vmCvar_t	g_blueTeamName;
 extern	vmCvar_t	g_cheats;
+extern	vmCvar_t	g_debugDamage;
+extern	vmCvar_t	g_debugMove;
+extern	vmCvar_t	g_dedicated;
+extern	vmCvar_t	g_dmFlags;
+extern	vmCvar_t	g_doWarmup;
+extern	vmCvar_t	g_filterBan;
+extern	vmCvar_t	g_forcePlayerRespawnTime;
+extern	vmCvar_t	g_friendlyFire;
+extern	vmCvar_t	g_gameType;
+extern	vmCvar_t	g_gravity;
+extern	vmCvar_t	g_greenTeamName;
+extern	vmCvar_t	g_harvester_skullTimeout;
+extern	vmCvar_t	g_inactivity;
+extern	vmCvar_t	g_instaGib;
+extern	vmCvar_t	g_knockback;
 extern	vmCvar_t	g_maxClients;			// allow this many total, including spectators
 extern	vmCvar_t	g_maxGameClients;		// allow this many active
-extern	vmCvar_t	g_restarted;
-
-extern	vmCvar_t	g_dmFlags;
-extern	vmCvar_t	g_scoreLimit;
-extern	vmCvar_t	g_timeLimit;
-extern	vmCvar_t	g_friendlyFire;
-extern	vmCvar_t	g_password;
-extern	vmCvar_t	g_needPassword;
-extern	vmCvar_t	g_gravity;
-extern	vmCvar_t	g_speed;
-extern	vmCvar_t	g_knockback;
-extern	vmCvar_t	g_quadFactor;
-extern	vmCvar_t	g_forcePlayerRespawnTime;
-extern	vmCvar_t	g_inactivity;
-extern	vmCvar_t	g_debugMove;
-extern	vmCvar_t	g_debugDamage;
-extern	vmCvar_t	g_weaponRespawn;
-extern	vmCvar_t	g_weaponTeamRespawn;
-extern	vmCvar_t	g_synchronousClients;
 extern	vmCvar_t	g_motd;
-extern	vmCvar_t	g_warmupCountdownTime;
-extern	vmCvar_t	g_doWarmup;
-extern	vmCvar_t	g_allowVote;
+extern	vmCvar_t	g_needPassword;
+extern	vmCvar_t	g_obeliskHealth;
+extern	vmCvar_t	g_obeliskRegenAmount;
+extern	vmCvar_t	g_obeliskRegenPeriod;
+extern	vmCvar_t	g_obeliskRespawnDelay;
+extern	vmCvar_t	g_password;
+extern	vmCvar_t	g_pinkTeamName;
+extern	vmCvar_t	g_playerCapsule;
+extern	vmCvar_t	g_proxMineTimeout;
+extern	vmCvar_t	g_quadFactor;
+extern	vmCvar_t	g_rankings;
+extern	vmCvar_t	g_redTeamName;
+extern	vmCvar_t	g_restarted;
+extern	vmCvar_t	g_scoreLimit;
+extern	vmCvar_t	g_singlePlayerActive;
+extern	vmCvar_t	g_smoothClients;
+extern	vmCvar_t	g_speed;
+extern	vmCvar_t	g_synchronousClients;
+extern	vmCvar_t	g_tealTeamName;
 extern	vmCvar_t	g_teamAutoJoin;
 extern	vmCvar_t	g_teamForceBalance;
-extern	vmCvar_t	g_banIPs;
-extern	vmCvar_t	g_filterBan;
-extern	vmCvar_t	g_obeliskHealth;
-extern	vmCvar_t	g_obeliskRegenPeriod;
-extern	vmCvar_t	g_obeliskRegenAmount;
-extern	vmCvar_t	g_obeliskRespawnDelay;
-extern	vmCvar_t	g_harvester_skullTimeout;
-extern	vmCvar_t	g_redTeamName;
-extern	vmCvar_t	g_blueTeamName;
-extern	vmCvar_t	g_smoothClients;
-extern	vmCvar_t	pmove_overbounce;
+extern	vmCvar_t	g_timeLimit;
+extern	vmCvar_t	g_warmupCountdownTime;
+extern	vmCvar_t	g_weaponRespawn;
+extern	vmCvar_t	g_weaponTeamRespawn;
+extern	vmCvar_t	g_yellowTeamName;
 extern	vmCvar_t	pmove_fixed;
 extern	vmCvar_t	pmove_msec;
-extern	vmCvar_t	g_rankings;
-extern	vmCvar_t	g_singlePlayerActive;
-extern	vmCvar_t	g_proxMineTimeout;
-extern	vmCvar_t	g_playerCapsule;
-extern	vmCvar_t	g_instaGib;
+extern	vmCvar_t	pmove_overBounce;
 
-extern	vmCvar_t	g_gt_frags_limit;
-extern	vmCvar_t	g_gt_captures_limit;
-extern	vmCvar_t	g_gt_elim_limit;
-extern	vmCvar_t	g_gt_point_limit;
-extern	vmCvar_t	g_gt_round_limit;
-extern	vmCvar_t	g_gt_round_maxtime;
+extern	vmCvar_t	gt_frags_limit;
+extern	vmCvar_t	gt_frags_timelimit;
+extern	vmCvar_t	gt_duel_frags_limit;
+extern	vmCvar_t	gt_duel_frags_timelimit;
+extern	vmCvar_t	gt_teams_frags_limit;
+extern	vmCvar_t	gt_teams_frags_mercylimit;
+extern	vmCvar_t	gt_teams_frags_timelimit;
+extern	vmCvar_t	gt_teams_captures_limit;
+extern	vmCvar_t	gt_teams_captures_timelimit;
+extern	vmCvar_t	gt_elimination_lives_limit;
+extern	vmCvar_t	gt_elimination_timelimit;
+extern	vmCvar_t	gt_points_limit;
+extern	vmCvar_t	gt_points_timelimit;
+extern	vmCvar_t	gt_rounds_limit;
+extern	vmCvar_t	gt_rounds_timelimit;
+
+extern	vmCvar_t	g_teamSize_max;
+extern	vmCvar_t	g_teamSize_min;
+extern	vmCvar_t	g_teamTotal_max;
+extern	vmCvar_t	g_teamTotal_min;
+
+extern	vmCvar_t	g_armorTiered;
+extern	vmCvar_t	g_classicItemRespawns;
+
+extern	vmCvar_t	g_doReady;
+
+extern	vmCvar_t	g_warmupDelay;
+extern	vmCvar_t	g_warmupReadyPercentage;

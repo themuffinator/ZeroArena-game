@@ -73,16 +73,13 @@ takes away all the activators powerups.
 Used to drop flight powerups into death puts.
 */
 void Use_target_remove_powerups( gentity_t *ent, gentity_t *other, gentity_t *activator ) {
-	if( !activator->player ) {
-		return;
-	}
+	int i;
 
-	if( activator->player->ps.powerups[PW_REDFLAG] ) {
-		Team_ReturnFlag( TEAM_RED );
-	} else if( activator->player->ps.powerups[PW_BLUEFLAG] ) {
-		Team_ReturnFlag( TEAM_BLUE );
-	} else if( activator->player->ps.powerups[PW_NEUTRALFLAG] ) {
-		Team_ReturnFlag( TEAM_FREE );
+	if( !activator->player ) return;
+
+	for ( i = 0; i < TEAM_NUM_TEAMS; i++ ) {
+		if ( activator->player->ps.powerups[PW_FLAGS_INDEX + i] )
+			Team_ReturnFlag( i );
 	}
 
 	memset( activator->player->ps.powerups, 0, sizeof( activator->player->ps.powerups ) );
@@ -143,7 +140,7 @@ void SP_target_score( gentity_t *ent ) {
 
 //==========================================================
 
-/*QUAKED target_print (1 0 0) (-8 -8 -8) (8 8 8) redteam blueteam private
+/*QUAKED target_print (1 0 0) (-8 -8 -8) (8 8 8) REDTEAM BLUETEAM PRIVATE GREENTEAM YELLOWTEAM TEALTEAM PINKTEAM SPECTATORS
 "message"	text to print
 If "private", only the activator gets the message.  If no checks, all clients get the message.
 */
@@ -160,10 +157,26 @@ void Use_Target_Print (gentity_t *ent, gentity_t *other, gentity_t *activator) {
 		if ( ent->spawnflags & 2 ) {
 			G_TeamCommand( TEAM_BLUE, va("cp \"%s\"", ent->message) );
 		}
+
+		if ( ent->spawnflags & 8 ) {
+			G_TeamCommand( TEAM_GREEN, va( "cp \"%s\"", ent->message ) );
+		}
+		if ( ent->spawnflags & 16 ) {
+			G_TeamCommand( TEAM_YELLOW, va( "cp \"%s\"", ent->message ) );
+		}
+		if ( ent->spawnflags & 32 ) {
+			G_TeamCommand( TEAM_TEAL, va( "cp \"%s\"", ent->message ) );
+		}
+		if ( ent->spawnflags & 64 ) {
+			G_TeamCommand( TEAM_PINK, va( "cp \"%s\"", ent->message ) );
+		}
+		if ( ent->spawnflags & 128 ) {
+			G_TeamCommand( TEAM_SPECTATOR, va( "cp \"%s\"", ent->message ) );
+		}
 		return;
 	}
 
-	trap_SendServerCommand( -1, va("cp \"%s\"", ent->message ));
+	AP( va("cp \"%s\"", ent->message ));
 }
 
 void SP_target_print( gentity_t *ent ) {
@@ -273,7 +286,36 @@ void SP_target_speaker( gentity_t *ent ) {
 	trap_LinkEntity( ent );
 }
 
+//==========================================================
 
+//==========================================================
+
+/*QUAKED target_blaster (1 0 0) (-8 -8 -8) (8 8 8) NOTRAIL NOEFFECTS
+Fires a blaster bolt in the set direction when triggered.
+
+dmg		default is 15
+speed	default is 1000
+*/
+
+void use_target_blaster( gentity_t* self, gentity_t* other, gentity_t* activator ) {
+	int effect;
+
+	fire_blaster( self, self->s.origin, self->movedir, self->damage, self->speed );	// , EF_BLASTER, MOD_TARGET_BLASTER );
+	G_Sound( self, CHAN_VOICE, self->noise_index );	// , 1, ATTN_NORM, 0 );
+}
+
+void SP_target_blaster( gentity_t* self ) {
+	self->use = use_target_blaster;
+	G_SetMovedir( self->s.angles, self->movedir );
+	self->noise_index = G_SoundIndex( "sound/weapons/laser2.wav" );
+
+	if ( !self->damage )
+		self->damage = 15;
+	if ( !self->speed )
+		self->speed = 1000;
+
+	self->r.svFlags = SVF_NOCLIENT;
+}
 
 //==========================================================
 
@@ -296,12 +338,13 @@ void target_laser_think (gentity_t *self) {
 	// fire forward and see what we hit
 	VectorMA (self->s.origin, 2048, self->movedir, end);
 
-	trap_Trace( &tr, self->s.origin, NULL, NULL, end, self->s.number, CONTENTS_SOLID|CONTENTS_BODY|CONTENTS_CORPSE);
+	trap_Trace( &tr, self->s.origin, NULL, NULL, end, self->s.number, MASK_SHOT );
 
-	if ( tr.entityNum ) {
+	if ( tr.entityNum != ENTITYNUM_NONE && g_entities[tr.entityNum].takedamage ) {
 		// hurt it if we can
 		G_Damage ( &g_entities[tr.entityNum], self, self->activator, self->movedir, 
 			tr.endpos, self->damage, DAMAGE_NO_KNOCKBACK, MOD_TARGET_LASER);
+		//G_Printf( "laser: entnum = %i, dmg = %i\n", tr.entityNum, self->damage );
 	}
 
 	VectorCopy (tr.endpos, self->s.origin2);
@@ -312,24 +355,44 @@ void target_laser_think (gentity_t *self) {
 
 void target_laser_on (gentity_t *self)
 {
+#if 0
 	if (!self->activator)
 		self->activator = self;
+#endif
+//q2
+	self->spawnflags |= 0x80000001;
+	self->r.svFlags &= ~SVF_NOCLIENT;
+//-q2
 	target_laser_think (self);
 }
 
 void target_laser_off (gentity_t *self)
 {
+#if 0
 	trap_UnlinkEntity( self );
+#endif
+//q2
+	self->spawnflags &= ~1;
+	self->r.svFlags |= SVF_NOCLIENT;
+//-q2
 	self->nextthink = 0;
 }
 
 void target_laser_use (gentity_t *self, gentity_t *other, gentity_t *activator)
 {
 	self->activator = activator;
+#if 0
 	if ( self->nextthink > 0 )
 		target_laser_off (self);
 	else
 		target_laser_on (self);
+#endif
+//q2
+	if ( self->spawnflags & 1 )
+		target_laser_off( self );
+	else
+		target_laser_on( self );
+//-q2
 }
 
 void target_laser_start (gentity_t *self)
@@ -338,6 +401,12 @@ void target_laser_start (gentity_t *self)
 
 	self->s.eType = ET_BEAM;
 
+	// set the beam diameter
+	if ( self->spawnflags & 64 )
+		self->s.frame = 16;
+	else
+		self->s.frame = 4;
+	self->s.modelindex2 = self->spawnflags;		//muff: colors
 	if (self->target) {
 		ent = G_Find (NULL, FOFS(targetname), self->target);
 		if (!ent) {
@@ -382,7 +451,7 @@ void target_teleporter_use( gentity_t *self, gentity_t *other, gentity_t *activa
 		return;
 	}
 
-	TeleportPlayer( activator, dest->s.origin, dest->s.angles, qfalse, qfalse );
+	TeleportPlayer( activator, dest->s.origin, dest->s.angles, qfalse, qfalse, qtrue );
 }
 
 /*QUAKED target_teleporter (1 0 0) (-8 -8 -8) (8 8 8)
@@ -419,6 +488,22 @@ void target_relay_use (gentity_t *self, gentity_t *other, gentity_t *activator) 
 		if ( ent && ent->use ) {
 			ent->use( ent, self, activator );
 		}
+		return;
+	}
+	if ( (self->spawnflags & 8) && activator->player
+		&& activator->player->sess.sessionTeam != TEAM_GREEN ) {
+		return;
+	}
+	if ( (self->spawnflags & 16) && activator->player
+		&& activator->player->sess.sessionTeam != TEAM_YELLOW ) {
+		return;
+	}
+	if ( (self->spawnflags & 32) && activator->player
+		&& activator->player->sess.sessionTeam != TEAM_TEAL ) {
+		return;
+	}
+	if ( (self->spawnflags & 64) && activator->player
+		&& activator->player->sess.sessionTeam != TEAM_PINK ) {
 		return;
 	}
 	G_UseTargets (self, activator);

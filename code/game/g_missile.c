@@ -45,7 +45,7 @@ void G_BounceMissile( gentity_t *ent, trace_t *trace ) {
 
 	// reflect the velocity on the trace plane
 	hitTime = level.previousTime + ( level.time - level.previousTime ) * trace->fraction;
-	BG_EvaluateTrajectoryDelta( &ent->s.pos, hitTime, velocity );
+	BG_EvaluateTrajectoryDelta( &ent->s.pos, hitTime, velocity, g_gravity.value );
 	dot = DotProduct( velocity, trace->plane.normal );
 	VectorMA( velocity, -2*dot, trace->plane.normal, ent->s.pos.trDelta );
 
@@ -76,7 +76,7 @@ void G_ExplodeMissile( gentity_t *ent ) {
 	vec3_t		dir;
 	vec3_t		origin;
 
-	BG_EvaluateTrajectory( &ent->s.pos, level.time, origin );
+	BG_EvaluateTrajectory( &ent->s.pos, level.time, origin, g_gravity.value );
 	SnapVector( origin );
 	G_SetOrigin( ent, origin );
 
@@ -322,7 +322,7 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace ) {
 				g_entities[ent->r.ownerNum].player->accuracy_hits++;
 				hitPlayer = qtrue;
 			}
-			BG_EvaluateTrajectoryDelta( &ent->s.pos, level.time, velocity );
+			BG_EvaluateTrajectoryDelta( &ent->s.pos, level.time, velocity, g_gravity.value );
 			if ( VectorLength( velocity ) == 0 ) {
 				velocity[2] = 1;	// stepped on a grenade
 			}
@@ -459,7 +459,7 @@ void G_RunMissile( gentity_t *ent ) {
 	int			passent;
 
 	// get current position
-	BG_EvaluateTrajectory( &ent->s.pos, level.time, origin );
+	BG_EvaluateTrajectory( &ent->s.pos, level.time, origin, g_gravity.value );
 
 	// if this missile bounced off an invulnerability sphere
 	if ( ent->target_ent ) {
@@ -855,3 +855,37 @@ gentity_t *fire_prox( gentity_t *self, vec3_t start, vec3_t dir ) {
 	return bolt;
 }
 #endif
+
+
+void fire_blaster( gentity_t* self, vec3_t start, vec3_t dir, int damage, int speed ) {	// , int effect, qboolean hyper ) {
+	gentity_t* bolt;
+
+	VectorNormalize( dir );
+
+	bolt = G_Spawn();
+	bolt->classname = "blaster";
+	bolt->nextthink = level.time + 10000;
+	bolt->think = G_FreeEntity;
+	bolt->s.eType = ET_MISSILE;
+	bolt->r.svFlags = SVF_USE_CURRENT_ORIGIN;
+	bolt->r.ownerNum = self->s.number;
+	bolt->parent = self;
+	bolt->damage = damage;
+	bolt->methodOfDeath = MOD_BLASTER;
+	bolt->clipmask = MASK_SHOT;
+	bolt->target_ent = NULL;
+
+	bolt->s.pos.trType = TR_LINEAR;
+	bolt->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;		// move a bit on the very first frame
+	VectorCopy( start, bolt->s.pos.trBase );
+	VectorScale( dir, speed, bolt->s.pos.trDelta );
+	SnapVector( bolt->s.pos.trDelta );			// save net bandwidth
+
+	VectorCopy( start, bolt->r.currentOrigin );
+
+	if ( self->player ) {
+		bolt->s.team = self->player->sess.sessionTeam;
+	} else {
+		bolt->s.team = TEAM_FREE;
+	}
+}

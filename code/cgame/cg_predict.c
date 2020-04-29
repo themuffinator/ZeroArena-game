@@ -132,7 +132,7 @@ static void CG_ClipMoveToEntities ( const vec3_t start, const vec3_t mins,
 		if ( ent->collisionType == CT_SUBMODEL ) {
 			cmodel = trap_CM_InlineModel( ent->modelindex );
 			VectorCopy( cent->lerpAngles, angles );
-			BG_EvaluateTrajectory( &cent->currentState.pos, cg.physicsTime, origin );
+			BG_EvaluateTrajectory( &cent->currentState.pos, cg.physicsTime, origin, cgs.gravity );
 		} else if ( ent->collisionType == CT_CAPSULE ) {
 			cmodel = trap_CM_TempCapsuleModel( ent->mins, ent->maxs, ent->contents );
 			VectorCopy( vec3_origin, angles );
@@ -351,7 +351,7 @@ static void CG_TouchItem( centity_t *cent ) {
 	if ( !cg_predictItems.integer ) {
 		return;
 	}
-	if ( !BG_PlayerTouchesItem( &cg.cur_lc->predictedPlayerState, &cent->currentState, cg.time ) ) {
+	if ( !BG_PlayerTouchesItem( &cg.cur_lc->predictedPlayerState, &cent->currentState, cg.time, cgs.gravity ) ) {
 		return;
 	}
 
@@ -360,7 +360,7 @@ static void CG_TouchItem( centity_t *cent ) {
 		return;
 	}
 
-	if ( !BG_CanItemBeGrabbed( cgs.gameType, &cent->currentState, &cg.cur_lc->predictedPlayerState ) ) {
+	if ( !BG_CanItemBeGrabbed( cgs.gameType, &cent->currentState, &cg.cur_lc->predictedPlayerState, cgs.dmFlags, cgs.tieredArmor ) ) {
 		return;		// can't hold it
 	}
 
@@ -374,16 +374,18 @@ static void CG_TouchItem( centity_t *cent ) {
 			return;
 		}
 	} else if ( GTF(GTF_CTF) ) {
-		if (cg.cur_lc->predictedPlayerState.persistant[PERS_TEAM] == TEAM_RED &&
-			item->giType == IT_TEAM && item->giTag == PW_REDFLAG)
-			return;
-		if (cg.cur_lc->predictedPlayerState.persistant[PERS_TEAM] == TEAM_BLUE &&
-			item->giType == IT_TEAM && item->giTag == PW_BLUEFLAG)
+		if ( item->giType == IT_TEAM && item->giTag == PW_FLAGS_INDEX + cg.cur_lc->predictedPlayerState.persistant[PERS_TEAM] )
 			return;
 	}
 
 	// grab it
 	BG_AddPredictableEventToPlayerstate( EV_ITEM_PICKUP, cent->currentState.modelindex , &cg.cur_lc->predictedPlayerState);
+
+	if ( item->giType == IT_WEAPON ) {
+		if ( (cgs.dmFlags & DF_WEAPONS_STAY) && !(cent->currentState.eFlags & EF_DROPPED_ITEM) )
+			// weapons never removed if weapons stay, unless weapon was dropped
+			return;
+	}
 
 	// remove it from the frame so it won't be drawn
 	cent->currentState.eFlags |= EF_NODRAW;
@@ -524,7 +526,7 @@ void CG_PredictPlayerState( void ) {
 	}
 
 	// non-predicting local movement will grab the latest angles
-	if ( cg_nopredict.integer || cg_synchronousClients.integer ) {
+	if ( cg_noPredict.integer || cg_synchronousClients.integer ) {
 		CG_InterpolatePlayerState( qtrue );
 		return;
 	}
@@ -560,7 +562,7 @@ void CG_PredictPlayerState( void ) {
 	trap_GetUserCmd( cmdNum, &oldestCmd, cg.cur_localPlayerNum );
 	if ( oldestCmd.serverTime > cg.cur_ps->commandTime 
 		&& oldestCmd.serverTime < cg.time ) {	// special check for map_restart
-		if ( cg_showmiss.integer ) {
+		if ( cg_showMiss.integer ) {
 			CG_Printf ("exceeded PACKET_BACKUP on commands\n");
 		}
 		return;
@@ -594,7 +596,7 @@ void CG_PredictPlayerState( void ) {
 	cg_pmove.pmove_fixed = pmove_fixed.integer;// | cg_pmove_fixed.integer;
 	cg_pmove.pmove_msec = pmove_msec.integer;
 
-	cg_pmove.pmove_overbounce = pmove_overbounce.integer;
+	cg_pmove.pmove_overBounce = pmove_overBounce.integer;
 
 	// run cmds
 	moved = qfalse;
@@ -628,7 +630,7 @@ void CG_PredictPlayerState( void ) {
 			if ( cg.thisFrameTeleport ) {
 				// a teleport will not cause an error decay
 				VectorClear( cg.cur_lc->predictedError );
-				if ( cg_showmiss.integer ) {
+				if ( cg_showMiss.integer ) {
 					CG_Printf( "PredictionTeleport\n" );
 				}
 				cg.thisFrameTeleport = qfalse;
@@ -637,7 +639,7 @@ void CG_PredictPlayerState( void ) {
 				CG_AdjustPositionForMover( cg.cur_lc->predictedPlayerState.origin, 
 				cg.cur_lc->predictedPlayerState.groundEntityNum, cg.physicsTime, cg.oldTime, adjusted, cg.cur_lc->predictedPlayerState.viewangles, new_angles);
 
-				if ( cg_showmiss.integer ) {
+				if ( cg_showMiss.integer ) {
 					if (!VectorCompare( oldPlayerState.origin, adjusted )) {
 						CG_Printf("prediction error\n");
 					}
@@ -645,7 +647,7 @@ void CG_PredictPlayerState( void ) {
 				VectorSubtract( oldPlayerState.origin, adjusted, delta );
 				len = VectorLength( delta );
 				if ( len > 0.1 ) {
-					if ( cg_showmiss.integer ) {
+					if ( cg_showMiss.integer ) {
 						CG_Printf("Prediction miss: %f\n", len);
 					}
 					if ( cg_errorDecay.integer ) {
@@ -657,7 +659,7 @@ void CG_PredictPlayerState( void ) {
 						if ( f < 0 ) {
 							f = 0;
 						}
-						if ( f > 0 && cg_showmiss.integer ) {
+						if ( f > 0 && cg_showMiss.integer ) {
 							CG_Printf("Double prediction decay: %f\n", f);
 						}
 						VectorScale( cg.cur_lc->predictedError, f, cg.cur_lc->predictedError );
@@ -678,7 +680,7 @@ void CG_PredictPlayerState( void ) {
 			cg_pmove.cmd.serverTime = ((cg_pmove.cmd.serverTime + pmove_msec.integer-1) / pmove_msec.integer) * pmove_msec.integer;
 		}
 
-		Pmove (&cg_pmove);
+		Pmove( &cg_pmove, cgs.dmFlags );
 
 		moved = qtrue;
 
@@ -689,12 +691,12 @@ void CG_PredictPlayerState( void ) {
 		//CG_CheckChangedPredictableEvents(&cg.cur_lc->predictedPlayerState);
 	}
 
-	if ( cg_showmiss.integer > 1 ) {
+	if ( cg_showMiss.integer > 1 ) {
 		CG_Printf( "[%i : %i] ", cg_pmove.cmd.serverTime, cg.time );
 	}
 
 	if ( !moved ) {
-		if ( cg_showmiss.integer ) {
+		if ( cg_showMiss.integer ) {
 			CG_Printf( "not moved\n" );
 		}
 		return;
@@ -705,7 +707,7 @@ void CG_PredictPlayerState( void ) {
 		cg.cur_lc->predictedPlayerState.groundEntityNum, 
 		cg.physicsTime, cg.time, cg.cur_lc->predictedPlayerState.origin, cg.cur_lc->predictedPlayerState.viewangles,cg.cur_lc->predictedPlayerState.viewangles);
 
-	if ( cg_showmiss.integer ) {
+	if ( cg_showMiss.integer ) {
 		if (cg.cur_lc->predictedPlayerState.eventSequence > oldPlayerState.eventSequence + MAX_PS_EVENTS) {
 			CG_Printf("WARNING: dropped event\n");
 		}
@@ -714,7 +716,7 @@ void CG_PredictPlayerState( void ) {
 	// fire events and other transition triggered things
 	CG_TransitionPlayerState( &cg.cur_lc->predictedPlayerState, &oldPlayerState );
 
-	if ( cg_showmiss.integer ) {
+	if ( cg_showMiss.integer ) {
 		if (cg.cur_lc->eventSequence > cg.cur_lc->predictedPlayerState.eventSequence) {
 			CG_Printf("WARNING: double event\n");
 			cg.cur_lc->eventSequence = cg.cur_lc->predictedPlayerState.eventSequence;

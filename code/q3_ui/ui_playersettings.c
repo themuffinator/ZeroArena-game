@@ -51,7 +51,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define ART_FX_PURPLE		"menu/art/fx_purple"
 #define ART_FX_PINK			"menu/art/fx_pink"
 
-#define NUM_COLOR_EFFECTS 13
+#define NUM_COLOR_EFFECTS 26	//13
 
 #define ID_NAME			10
 #define ID_HANDICAP		11
@@ -60,7 +60,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define ID_MODEL		14
 #define ID_EFFECTS2		15
 
-#define MAX_NAMELENGTH	20
+#define MAX_NAMELENGTH	MAX_NAME_LENGTH	//20
 
 
 typedef struct {
@@ -81,7 +81,8 @@ typedef struct {
 	menubitmap_s		item_null;
 
 	qhandle_t			fxBasePic;
-	qhandle_t			fxPic[NUM_COLOR_EFFECTS];
+	qhandle_t			fxPic;
+	//qhandle_t			fxPic[NUM_COLOR_EFFECTS];
 	uiPlayerInfo_t		playerinfo;
 	int					current_fx;
 	char				playerModel[MAX_QPATH];
@@ -216,21 +217,22 @@ static void PlayerSettings_DrawEffects( void *self ) {
 	}
 
 	if ( item->generic.id == ID_EFFECTS ) {
-		UI_DrawProportionalString( item->generic.x, item->generic.y, "Effects", style, color );
+		UI_DrawProportionalString( item->generic.x, item->generic.y, "Weapon Colors", style, color );
 	}
 
 	xOffset = 128.0f / (NUM_COLOR_EFFECTS + 1);
 
 	CG_DrawPic( item->generic.x + 64, item->generic.y + PROP_HEIGHT + 8, 128, 8, s_playersettings.fxBasePic );
 
-	colorShader = s_playersettings.fxPic[item->curvalue];
-	if ( !colorShader ) {
+	colorShader = s_playersettings.fxPic;	//fxPic[item->curvalue];
+	//if ( !colorShader ) {
+	{
 		vec4_t picColor;
-
-		colorShader = s_playersettings.fxPic[NUM_COLOR_EFFECTS-1]; // white
+		/*
+		colorShader = s_playersettings.fxPic;	// fxPic[NUM_COLOR_EFFECTS - 1]; // white
 		if ( !colorShader )
 			colorShader = uis.whiteShader;
-
+			*/
 		CG_PlayerColorFromIndex( uitogamecode[item->curvalue], picColor );
 		picColor[3] = 1;
 		trap_R_SetColor( picColor );
@@ -601,6 +603,8 @@ void PlayerSettings_Cache( void ) {
 	trap_R_RegisterShaderNoMip( ART_BACK1 );
 
 	s_playersettings.fxBasePic = trap_R_RegisterShaderNoMip( ART_FX_BASE );
+	s_playersettings.fxPic = trap_R_RegisterShaderNoMip( ART_FX_WHITE );
+#if 0
 	s_playersettings.fxPic[0] = trap_R_RegisterShaderNoMip( ART_FX_RED );
 	s_playersettings.fxPic[1] = trap_R_RegisterShaderNoMip( ART_FX_ORANGE );
 	s_playersettings.fxPic[2] = trap_R_RegisterShaderNoMip( ART_FX_YELLOW );
@@ -614,6 +618,7 @@ void PlayerSettings_Cache( void ) {
 	s_playersettings.fxPic[10] = trap_R_RegisterShaderNoMip( ART_FX_CYAN );
 	s_playersettings.fxPic[11] = trap_R_RegisterShaderNoMip( ART_FX_PINK );
 	s_playersettings.fxPic[12] = trap_R_RegisterShaderNoMip( ART_FX_WHITE );
+#endif
 }
 
 

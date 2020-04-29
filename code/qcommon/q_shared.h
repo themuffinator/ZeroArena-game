@@ -335,7 +335,8 @@ extern	vec4_t		colorDkGrey;
 #define Q_COLOR_ESCAPE	'^'
 #define Q_IsColorString(p)	( p && *(p) == Q_COLOR_ESCAPE && *((p)+1) && *((p)+1) != Q_COLOR_ESCAPE )
 
-const /* vec4_t */ float* ColorFromChar(char ccode);
+extern const vec4_t colorTable[];
+extern const float* ColorFromChar(char ccode);
 
 #define COLOR_BLACK		'0'
 #define COLOR_RED		'1'
@@ -345,15 +346,73 @@ const /* vec4_t */ float* ColorFromChar(char ccode);
 #define COLOR_CYAN		'5'
 #define COLOR_MAGENTA	'6'
 #define COLOR_WHITE		'7'
+#define COLOR_GREY		'8'
+#define COLOR_CREAM		'9'
 
-#define S_COLOR_BLACK	"^0"
-#define S_COLOR_RED		"^1"
-#define S_COLOR_GREEN	"^2"
-#define S_COLOR_YELLOW	"^3"
-#define S_COLOR_BLUE	"^4"
-#define S_COLOR_CYAN	"^5"
-#define S_COLOR_MAGENTA	"^6"
-#define S_COLOR_WHITE	"^7"
+#define COL24_RED			'A'
+#define COL24_ORANGE_RED	'B'
+#define COL24_DARK_ORANGE	'C'
+#define COL24_AMBER			'D'
+#define COL24_YELLOW		'E'
+#define COL24_ELEC_LIME		'F'
+#define COL24_CHARTREUSE	'G'
+#define COL24_HARLEQUIN		'H'
+#define COL24_GREEN			'I'
+#define COL24_FREESPEECHGR	'J'
+#define COL24_SPRING_GREEN	'K'
+#define COL24_MED_SPRING_GR	'L'
+#define COL24_AQUA			'M'
+#define COL24_DEEP_SKY_BLUE	'N'
+#define COL24_DODGER_BLUE	'O'
+#define COL24_BLUE2			'P'
+#define COL24_BLUE1			'Q'
+#define COL24_HAN_PURPLE	'R'
+#define COL24_ELEC_INDIGO	'S'
+#define COL24_ELEC_PURPLE	'T'
+#define COL24_ELEC_MAGENTA	'U'
+#define COL24_HOT_MAGENTA	'V'
+#define COL24_DEEP_PINK		'W'
+#define COL24_TORCH_RED		'X'
+#define COL24_WHITE			'Y'
+#define COL24_GREY			'Z'
+
+#define S_COLOR_BLACK		"^0"
+#define S_COLOR_RED			"^1"
+#define S_COLOR_GREEN		"^2"
+#define S_COLOR_YELLOW		"^3"
+#define S_COLOR_BLUE		"^4"
+#define S_COLOR_CYAN		"^5"
+#define S_COLOR_MAGENTA		"^6"
+#define S_COLOR_WHITE		"^7"
+#define S_COLOR_GREY		"^8"
+#define S_COLOR_CREAM		"^9"
+
+#define S_COL24_RED				"^A"
+#define S_COL24_ORANGE_RED		"^B"
+#define S_COL24_DARK_ORANGE		"^C"
+#define S_COL24_AMBER			"^D"
+#define S_COL24_YELLOW			"^E"
+#define S_COL24_ELEC_LIME		"^F"
+#define S_COL24_CHARTREUSE		"^G"
+#define S_COL24_HARLEQUIN		"^H"
+#define S_COL24_GREEN			"^I"
+#define S_COL24_FREESPEECHGR	"^J"
+#define S_COL24_SPRING_GREEN	"^K"
+#define S_COL24_MED_SPRING_GR	"^L"
+#define S_COL24_AQUA			"^M"
+#define S_COL24_DEEP_SKY_BLUE	"^N"
+#define S_COL24_DODGER_BLUE		"^O"
+#define S_COL24_BLUE2			"^P"
+#define S_COL24_BLUE1			"^Q"
+#define S_COL24_HAN_PURPLE		"^R"
+#define S_COL24_ELEC_INDIGO		"^S"
+#define S_COL24_ELEC_PURPLE		"^T"
+#define S_COL24_ELEC_MAGENTA	"^U"
+#define S_COL24_HOT_MAGENTA		"^V"
+#define S_COL24_DEEP_PINK		"^W"
+#define S_COL24_TORCH_RED		"^X"
+#define S_COL24_WHITE			"^Y"
+#define S_COL24_GREY			"^Z"
 
 #define	MAKERGB( v, r, g, b ) v[0]=r;v[1]=g;v[2]=b
 #define	MAKERGBA( v, r, g, b, a ) v[0]=r;v[1]=g;v[2]=b;v[3]=a
@@ -971,35 +1030,38 @@ default values.
 ==========================================================
 */
 
-#define	CVAR_ARCHIVE		0x0001	// set to cause it to be saved to vars.rc
-					// used for system variables, not for player
-					// specific configurations
-#define	CVAR_USERINFO		0x0002	// sent to server on connect or change
-#define	CVAR_SERVERINFO		0x0004	// sent in response to front end requests
-#define	CVAR_SYSTEMINFO		0x0008	// these cvars will be duplicated on all clients
-#define	CVAR_INIT		0x0010	// don't allow change from console at all,
-					// but can be set from the command line
-#define	CVAR_LATCH		0x0020	// will only change when C code next does
-					// a Cvar_Get(), so it can't be changed
-					// without proper initialization.  modified
-					// will be set, even though the value hasn't
-					// changed yet
-#define	CVAR_ROM		0x0040	// display only, cannot be set by user at all
-#define	CVAR_USER_CREATED	0x0080	// created by a set command
-#define	CVAR_TEMP		0x0100	// can be set even when cheats are disabled, but is not archived
-#define CVAR_CHEAT		0x0200	// can not be changed if cheats are disabled
-#define CVAR_NORESTART		0x0400	// do not clear when a cvar_restart is issued
+#define	CVAR_ARCHIVE		0x00000001	// set to cause it to be saved to vars.rc
+										// used for system variables, not for player
+										// specific configurations
+#define	CVAR_USERINFO		0x00000002	// sent to server on connect or change
+#define	CVAR_SERVERINFO		0x00000004	// sent in response to front end requests
+#define	CVAR_SYSTEMINFO		0x00000008	// these cvars will be duplicated on all clients
+#define	CVAR_INIT			0x00000010	// don't allow change from console at all,
+										// but can be set from the command line
+#define	CVAR_LATCH			0x00000020	// will only change when C code next does
+										// a Cvar_Get(), so it can't be changed
+										// without proper initialization.  modified
+										// will be set, even though the value hasn't
+										// changed yet
+#define	CVAR_ROM			0x00000040	// display only, cannot be set by user at all
+#define	CVAR_USER_CREATED	0x00000080	// created by a set command
+#define	CVAR_TEMP			0x00000100	// can be set even when cheats are disabled, but is not archived
+#define CVAR_CHEAT			0x00000200	// can not be changed if cheats are disabled
+#define CVAR_NORESTART		0x00000400	// do not clear when a cvar_restart is issued
 
-#define CVAR_SERVER_CREATED	0x0800	// cvar was created by a server the client connected to.
-#define CVAR_VM_CREATED		0x1000	// cvar was created exclusively in one of the VMs.
-#define CVAR_PROTECTED		0x2000	// prevent modifying this var from VMs or the server
-#define CVAR_USERINFO2		0x4000 // userinfo for second local player
-#define CVAR_USERINFO3		0x8000 // userinfo for third local player
-#define CVAR_USERINFO4		0x10000 // userinfo for fourth local player
-#define CVAR_CUSTOM_RESET	0x20000 // uses a custom game-specific reset string
+#define CVAR_SERVER_CREATED	0x00000800	// cvar was created by a server the client connected to.
+#define CVAR_VM_CREATED		0x00001000	// cvar was created exclusively in one of the VMs.
+#define CVAR_PROTECTED		0x00002000	// prevent modifying this var from VMs or the server
+#define CVAR_USERINFO2		0x00004000	// userinfo for second local player
+#define CVAR_USERINFO3		0x00008000	// userinfo for third local player
+#define CVAR_USERINFO4		0x00010000	// userinfo for fourth local player
+#define CVAR_CUSTOM_RESET	0x00020000	// uses a custom game-specific reset string
+//muff
+#define CVAR_DEV			0x00040000	// can only be changed/listed in developer mode
+//-muff
 // These flags are only returned by the Cvar_Flags() function
-#define CVAR_MODIFIED		0x40000000	// Cvar was modified
-#define CVAR_NONEXISTENT	0x80000000	// Cvar doesn't exist.
+#define CVAR_MODIFIED		0x00080000	// Cvar was modified
+#define CVAR_NONEXISTENT	0x00100000	// Cvar doesn't exist.
 
 #define CVAR_USERINFO_ALL	(CVAR_USERINFO|CVAR_USERINFO2|CVAR_USERINFO3|CVAR_USERINFO4)
 

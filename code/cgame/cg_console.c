@@ -423,14 +423,16 @@ void CG_RunConsole( connstate_t state ) {
 	// scroll towards the destination height
 	if (con.finalFrac < con.displayFrac)
 	{
-		con.displayFrac -= con_scrollSpeed.value*cg.realFrameTime*0.001;
+		if ( !con_scrollSpeed.value ) con.displayFrac = con.finalFrac;
+		else con.displayFrac -= con_scrollSpeed.value * cg.realFrameTime * 0.001;
 		if (con.finalFrac > con.displayFrac)
 			con.displayFrac = con.finalFrac;
 
 	}
 	else if (con.finalFrac > con.displayFrac)
 	{
-		con.displayFrac += con_scrollSpeed.value*cg.realFrameTime*0.001;
+		if ( !con_scrollSpeed.value ) con.displayFrac = con.finalFrac;
+		else con.displayFrac += con_scrollSpeed.value * cg.realFrameTime * 0.001;
 		if (con.finalFrac < con.displayFrac)
 			con.displayFrac = con.finalFrac;
 	}
@@ -697,7 +699,7 @@ void CG_LoadConsoleHistory( void )
 			text_p++;
 			if( numChars > ( strlen( consoleSaveBuffer ) -	( text_p - consoleSaveBuffer ) ) )
 			{
-				Com_DPrintf( S_COLOR_YELLOW "WARNING: probable corrupt history\n" );
+				Com_DPrintf( S_COLOR_YELLOW "WARNING: probable corrupt console history file\n" );
 				break;
 			}
 			Com_Memcpy( tempLine, text_p, numChars );

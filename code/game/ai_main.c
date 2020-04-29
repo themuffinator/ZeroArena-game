@@ -795,7 +795,7 @@ void BotReportStatus(bot_state_t *bs) {
 		return;
 	}
 
-	PlayerName(bs->playernum, netname, sizeof(netname));
+	GetPlayerName(bs->playernum, netname, sizeof(netname));
 
 	Q_strncpyz( leader, Info_ValueForKey(buf, "l"), sizeof(leader) );
 	Q_strncpyz( carrying, Info_ValueForKey(buf, "c"), sizeof(carrying) );
@@ -836,6 +836,42 @@ void Svcmd_BotTeamplayReport_f(void) {
 				BotReportStatus(botstates[i]);
 			}
 		}
+		BotAI_Print( PRT_MESSAGE, S_COLOR_GREEN"GREEN\n" );
+		for ( i = 0; i < level.maxplayers; i++ ) {
+			//
+			if ( !botstates[i] || !botstates[i]->inuse ) continue;
+			//
+			if ( BotTeam( botstates[i] ) == TEAM_GREEN ) {
+				BotReportStatus( botstates[i] );
+			}
+		}
+		BotAI_Print( PRT_MESSAGE, S_COLOR_YELLOW"YELLOW\n" );
+		for ( i = 0; i < level.maxplayers; i++ ) {
+			//
+			if ( !botstates[i] || !botstates[i]->inuse ) continue;
+			//
+			if ( BotTeam( botstates[i] ) == TEAM_YELLOW ) {
+				BotReportStatus( botstates[i] );
+			}
+		}
+		BotAI_Print( PRT_MESSAGE, S_COLOR_CYAN"TEAL\n" );
+		for ( i = 0; i < level.maxplayers; i++ ) {
+			//
+			if ( !botstates[i] || !botstates[i]->inuse ) continue;
+			//
+			if ( BotTeam( botstates[i] ) == TEAM_TEAL ) {
+				BotReportStatus( botstates[i] );
+			}
+		}
+		BotAI_Print( PRT_MESSAGE, S_COLOR_MAGENTA"PINK\n" );
+		for ( i = 0; i < level.maxplayers; i++ ) {
+			//
+			if ( !botstates[i] || !botstates[i]->inuse ) continue;
+			//
+			if ( BotTeam( botstates[i] ) == TEAM_PINK ) {
+				BotReportStatus( botstates[i] );
+			}
+		}
 	}
 	else {
 		for (i = 0; i < level.maxplayers; i++) {
@@ -859,7 +895,7 @@ void BotSetInfoConfigString(bot_state_t *bs) {
 	char *leader, carrying[32], *cs;
 	bot_goal_t goal;
 	//
-	PlayerName(bs->playernum, netname, sizeof(netname));
+	GetPlayerName(bs->playernum, netname, sizeof(netname));
 	if (Q_stricmp(netname, bs->teamleader) == 0) leader = "L";
 	else leader = "";
 
@@ -875,9 +911,9 @@ void BotSetInfoConfigString(bot_state_t *bs) {
 		}
 	}
 	else if (gametype == GT_HARVESTER) {
-		if (BotHarvesterCarryingSkulls(bs)) {
-			if (BotTeam(bs) == TEAM_RED) Com_sprintf(carrying, sizeof(carrying), "%2d", bs->inventory[INVENTORY_REDSKULL]);
-			else Com_sprintf(carrying, sizeof(carrying), "%2d", bs->inventory[INVENTORY_BLUESKULL]);
+		const int skullCarry = BotHarvesterCarryingSkulls( bs );
+		if ( skullCarry ) {
+			Com_sprintf(carrying, sizeof(carrying), "%2d", bs->inventory[skullCarry - FIRST_TEAM + INV_SKULLS_INDEX]);
 		}
 	}
 
@@ -908,7 +944,7 @@ void BotSetInfoConfigString(bot_state_t *bs) {
 		}
 		case LTG_KILL:
 		{
-			PlayerName(bs->teamgoal.entitynum, goalname, sizeof(goalname));
+			GetPlayerName(bs->teamgoal.entitynum, goalname, sizeof(goalname));
 			Com_sprintf(action, sizeof(action), "killing %s", goalname);
 			break;
 		}
@@ -1873,7 +1909,7 @@ int BotAILoadMap( int restart ) {
 	int			i;
 	vmCvar_t	mapname;
 
-	trap_Cvar_Register( &mapname, "mapname", "", CVAR_SERVERINFO | CVAR_ROM );
+	trap_Cvar_Register( &mapname, "mapName", "", CVAR_SERVERINFO | CVAR_ROM );
 	trap_BotLibLoadMap( mapname.string );
 
 	//initialize physics

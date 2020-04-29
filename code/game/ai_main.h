@@ -267,9 +267,12 @@ typedef struct bot_state_s
 	float teamgiveorders_time;						//time to give team orders
 	float lastflagcapture_time;						//last time a flag was captured
 	int numteammates;								//number of team mates
+#if 0
 	int redflagstatus;								//0 = at base, 1 = not at base
 	int blueflagstatus;								//0 = at base, 1 = not at base
 	int neutralflagstatus;							//0 = at base, 1 = our team has flag, 2 = enemy team has flag, 3 = enemy team dropped the flag
+#endif
+	int flagStatus[TEAM_NUM_TEAMS];					//0 = at base, 1 = our team has flag, 2 = enemy team has flag, 3 = enemy team dropped the flag
 	int flagstatuschanged;							//flag status changed
 	int forceorders;								//true if forced to give orders
 	int flagcarrier;								//team mate carrying the enemy flag

@@ -533,7 +533,7 @@ void UI_SPPostgameMenu_f( void ) {
 	postgameMenuInfo.serverId = atoi( Info_ValueForKey( info, "sv_serverid" ) );
 
 	trap_GetConfigString( CS_SERVERINFO, info, sizeof(info) );
-	Q_strncpyz( map, Info_ValueForKey( info, "mapname" ), sizeof(map) );
+	Q_strncpyz( map, Info_ValueForKey( info, "mapName" ), sizeof(map) );
 	arena = UI_GetArenaInfoByMap( map );
 	if ( !arena ) {
 		return;

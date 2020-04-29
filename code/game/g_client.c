@@ -60,6 +60,7 @@ equivalent to info_player_deathmatch
 */
 void SP_info_player_start(gentity_t *ent) {
 	ent->classname = "info_player_deathmatch";
+	ent->spawnflags |= 1;
 	SP_info_player_deathmatch( ent );
 }
 
@@ -311,6 +312,7 @@ SelectInitialSpawnPoint
 
 Try to find a spawn point marked 'initial', otherwise
 use normal spawn selection.
+
 ============
 */
 gentity_t *SelectInitialSpawnPoint( vec3_t origin, vec3_t angles, qboolean isbot ) {
@@ -326,8 +328,10 @@ gentity_t *SelectInitialSpawnPoint( vec3_t origin, vec3_t angles, qboolean isbot
 			continue;
 		}
 		
-		if((spot->spawnflags & 0x01))
-			break;
+		if ( (spot->spawnflags & 0x01) ) {
+			if ( !spot->targetname )		// q2 sp spawn TODO
+				break;
+		}
 	}
 
 	if (!spot || SpotWouldTelefrag(spot))
@@ -490,7 +494,13 @@ void CopyToBodyQueue( gentity_t *ent ) {
 	VectorCopy (ent->s.maxs, body->s.maxs);
 	VectorCopy (ent->r.absmin, body->r.absmin);
 	VectorCopy (ent->r.absmax, body->r.absmax);
-
+#if 0
+//muff: directional gibs
+	VectorCopy( ent->player->damage_from, body->s.angles2 );
+	vectoangles( body->s.angles2, body->s.angles2 );
+	body->s.modelindex2 = ent->player->damage_knockback;
+//-muff
+#endif
 	body->clipmask = CONTENTS_SOLID | CONTENTS_PLAYERCLIP;
 	body->r.ownerNum = ent->s.number;
 
@@ -602,26 +612,56 @@ int TeamLeader( int team ) {
 ================
 PickTeam
 
+Chooses a suitable team to join.
 ================
 */
 team_t PickTeam( int ignorePlayerNum ) {
-	int		counts[TEAM_NUM_TEAMS];
+	int i;
+	team_t tignore = -1;
+	team_t team;
 
-	counts[TEAM_BLUE] = TeamCount( ignorePlayerNum, TEAM_BLUE );
-	counts[TEAM_RED] = TeamCount( ignorePlayerNum, TEAM_RED );
+	if ( ignorePlayerNum >= 0 )
+		tignore = g_entities[ignorePlayerNum].player->sess.sessionTeam;
 
-	if ( counts[TEAM_BLUE] > counts[TEAM_RED] ) {
-		return TEAM_RED;
+	// look for team with fewest players and if score is tied, the lowest score
+	if ( level.smallestTeamCount != level.largestTeamCount ) {
+
+		//G_Printf( "PickTeam fewest players\n" );
+		for ( i = TOTAL_TEAMS; i > 0; i-- ) {
+			team = level.sortedTeams[i];
+			if ( team == tignore ) continue;
+			if ( !IsValidTeam( team ) ) continue;
+			if ( g_teamSize_max.integer > 0 && level.numTeamPlayers[team] >= g_teamSize_max.integer ) continue;
+			if ( level.numTeamPlayers[team] == level.smallestTeamCount ) {
+				if ( IsValidTeam(level.sortedTeams[i-1]) && level.numTeamPlayers[team] > level.numTeamPlayers[level.sortedTeams[i - 1]] )
+					continue;
+				return team;
+			}
+		}
 	}
-	if ( counts[TEAM_RED] > counts[TEAM_BLUE] ) {
-		return TEAM_BLUE;
+	// all teams have same number of players
+	else {
+		// first check for team with lowest score
+		if ( level.teamScores[FIRST_TEAM] != level.teamScores[TEAM_NUM_TEAMS - FIRST_TEAM] ) {
+			//G_Printf( "PickTeam lowest score\n" );
+			for ( i = TOTAL_TEAMS; i > 0; i-- ) {
+				team = level.sortedTeams[i];
+				if ( team == tignore ) continue;
+				if ( !IsValidTeam( team ) ) continue;
+				if ( g_teamSize_max.integer > 0 && level.numTeamPlayers[team] >= g_teamSize_max.integer ) continue;
+				return team;
+			}
+		}
 	}
-	// equal team count, so join the team with the lowest score
-	if ( level.teamScores[TEAM_BLUE] > level.teamScores[TEAM_RED] ) {
-		return TEAM_RED;
+	G_Printf( "PickTeam randomized\n" );
+	// all scores equal, just randomize it
+	while ( 1 ) {
+		team = (int)(rand() & level.teams_max);
+		if ( team != tignore ) return team;
 	}
-	return TEAM_BLUE;
+	return TEAM_RED;
 }
+
 
 /*
 ===========
@@ -767,8 +807,7 @@ void PlayerUserinfoChanged( int playerNum ) {
 
 	if ( player->pers.connected == CON_CONNECTED ) {
 		if ( strcmp( oldname, player->pers.netname ) ) {
-			trap_SendServerCommand( -1, va("print \"%s" S_COLOR_WHITE " renamed to %s\n\"", oldname, 
-				player->pers.netname) );
+			AP( va("print \"%s" S_COLOR_WHITE " renamed to %s\n\"", oldname, PlayerName( player->pers ) ) );
 		}
 	}
 
@@ -848,7 +887,7 @@ void PlayerUserinfoChanged( int playerNum ) {
 PlayerConnect
 
 Called when a player begins connecting to the server.
-Called again for every map change or tournement restart.
+Called again for every map change or tournament restart.
 
 The session information will be valid after exit.
 
@@ -859,7 +898,7 @@ Otherwise, the player will be sent the current gamestate
 and will eventually get to PlayerBegin.
 
 firstTime will be qtrue the very first time a player connects
-to the server machine, but qfalse on map changes and tournement
+to the server machine, but qfalse on map changes and tournament
 restarts.
 ============
 */
@@ -956,13 +995,14 @@ char *PlayerConnect( int playerNum, qboolean firstTime, qboolean isBot, int conn
 	// don't do the "xxx connected" messages if they were caried over from previous level
 	if ( firstTime ) {
 		if ( firstConnectionPlayer ) {
-			trap_SendServerCommand( -1, va("print \"%s" S_COLOR_WHITE " connected\n\"", player->pers.netname) );
+			AP( va("print \"%s connected\n\"", PlayerName( player->pers ) ) );
 		} else {
-			trap_SendServerCommand( -1, va("print \"%s" S_COLOR_WHITE " dropped in\n\"", player->pers.netname) );
+			AP( va("print \"%s dropped in\n\"", PlayerName( player->pers ) ) );
 		}
 	}
 
 	// count current players and rank for scoreboard
+	CountPopulation();
 	CalculateRanks();
 
 	// for statistics
@@ -1029,7 +1069,7 @@ void PlayerBegin( int playerNum ) {
 				continue;
 			}
 
-			trap_SendServerCommand( i, va("print \"%s" S_COLOR_WHITE " entered the game\n\"", player->pers.netname) );
+			trap_SendServerCommand( i, va("print \"%s entered the game\n\"", PlayerName( player->pers ) ) );
 		}
 
 		if ( !g_singlePlayerActive.integer ) {
@@ -1040,6 +1080,7 @@ void PlayerBegin( int playerNum ) {
 	G_LogPrintf( "PlayerBegin: %i\n", playerNum );
 
 	// count current players and rank for scoreboard
+	CountPopulation();
 	CalculateRanks();
 }
 
@@ -1090,7 +1131,7 @@ void PlayerSpawn(gentity_t *ent) {
 	else
 	{
 		// the first spawn should be at a good looking spot
-		if ( player->pers.initialSpawn && player->pers.localClient )
+		if ( player->pers.initialSpawn && player->pers.localClient && GTF(GTF_CAMPAIGN) )
 		{
 			spawnPoint = SelectInitialSpawnPoint(spawn_origin, spawn_angles,
 							     !!(ent->r.svFlags & SVF_BOT));
@@ -1110,7 +1151,7 @@ void PlayerSpawn(gentity_t *ent) {
 
 	// toggle the teleport bit so the client knows to not lerp
 	// and never clear the voted flag
-	flags = ent->player->ps.eFlags & (EF_TELEPORT_BIT | EF_VOTED | EF_TEAMVOTED);
+	flags = ent->player->ps.eFlags & (EF_TELEPORT_BIT | EF_VOTED);
 	flags ^= EF_TELEPORT_BIT;
 
 	// clear everything but the persistant data
@@ -1323,23 +1364,21 @@ qboolean PlayerDisconnect( int playerNum, qboolean force ) {
 
 	G_LogPrintf( "PlayerDisconnect: %i\n", playerNum );
 
-	// if we are playing in tourney mode and losing, give a win to the other player
-	if (GTF(GTF_DUEL)
-		&& !level.intermissiontime
-		&& !level.warmupTime && level.sortedPlayers[1] == playerNum ) {
-		level.players[ level.sortedPlayers[0] ].sess.wins++;
-		PlayerUserinfoChanged( level.sortedPlayers[0] );
+	if ( GTF(GTF_DUEL) ) {
+		// if we are playing in tourney mode and losing, give a win to the other player
+		if ( !level.intermissiontime && !level.warmupTime && level.sortedPlayers[1] == playerNum ) {
+			level.players[level.sortedPlayers[0]].sess.wins++;
+			PlayerUserinfoChanged( level.sortedPlayers[0] );
+		}
+		if ( ent->player->sess.sessionTeam == TEAM_FREE && level.intermissiontime ) {
+
+			trap_Cmd_ExecuteText( EXEC_APPEND, "map_restart 0\n" );
+			level.restarted = qtrue;
+			level.changemap = NULL;
+			level.intermissiontime = 0;
+		}
 	}
 
-	if(GTF(GTF_DUEL) &&
-		ent->player->sess.sessionTeam == TEAM_FREE &&
-		level.intermissiontime ) {
-
-		trap_Cmd_ExecuteText( EXEC_APPEND, "map_restart 0\n" );
-		level.restarted = qtrue;
-		level.changemap = NULL;
-		level.intermissiontime = 0;
-	}
 
 	trap_UnlinkEntity (ent);
 	ent->s.modelindex = 0;
@@ -1351,6 +1390,7 @@ qboolean PlayerDisconnect( int playerNum, qboolean force ) {
 
 	trap_SetConfigstring( CS_PLAYERS + playerNum, "");
 
+	CountPopulation();
 	CalculateRanks();
 
 	if ( ent->r.svFlags & SVF_BOT ) {

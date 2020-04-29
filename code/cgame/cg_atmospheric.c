@@ -54,10 +54,8 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define ATMOSPHERIC_DROPDELAY           1000
 #define ATMOSPHERIC_CUTHEIGHT           800
 
-#define ATMOSPHERIC_RAIN_SPEED      ( 1.1f * DEFAULT_GRAVITY )
 #define ATMOSPHERIC_RAIN_HEIGHT     150
 
-#define ATMOSPHERIC_SNOW_SPEED      ( 0.1f * DEFAULT_GRAVITY )
 #define ATMOSPHERIC_SNOW_HEIGHT     3
 
 typedef enum {
@@ -792,14 +790,14 @@ void CG_EffectParse( const char *effectstr ) {
 				cg_atmFx.ParticleGenerate = &CG_RainParticleGenerate;
 				cg_atmFx.ParticleRender = &CG_RainParticleRender;
 
-				cg_atmFx.baseVec[2] = cg_atmFx.gustVec[2] = -ATMOSPHERIC_RAIN_SPEED;
+				cg_atmFx.baseVec[2] = cg_atmFx.gustVec[2] = -(1.1f * cgs.gravity);
 			} else if ( !Q_stricmp( eqptr, "SNOW" ) ) {
 				atmFXType = ATM_SNOW;
 				cg_atmFx.ParticleCheckVisible = &CG_SnowParticleCheckVisible;
 				cg_atmFx.ParticleGenerate = &CG_SnowParticleGenerate;
 				cg_atmFx.ParticleRender = &CG_SnowParticleRender;
 
-				cg_atmFx.baseVec[2] = cg_atmFx.gustVec[2] = -ATMOSPHERIC_SNOW_SPEED;
+				cg_atmFx.baseVec[2] = cg_atmFx.gustVec[2] = -(0.1f * cgs.gravity);
 			} else {
 				cg_atmFx.numDrops = 0;
 				CG_Printf( "Only effect type 'rain' and 'snow' are supported.\n" );

@@ -45,11 +45,8 @@ MAIN MENU
 #define ID_SETUP				12
 #define ID_DEMOS				13
 #define ID_CINEMATICS			14
-#ifndef MISSIONPACK
-#define ID_TEAMARENA			15
-#endif
-#define ID_MODS					16
-#define ID_EXIT					17
+#define ID_MODS					15
+#define ID_EXIT					16
 
 #define MAIN_BANNER_MODEL				"models/mapobjects/banner/banner5.md3"
 #define MAIN_MENU_VERTICAL_SPACING		34
@@ -63,9 +60,7 @@ typedef struct {
 	menutext_s		setup;
 	menutext_s		demos;
 	menutext_s		cinematics;
-#ifndef MISSIONPACK
-	menutext_s		teamArena;
-#endif
+
 	menutext_s		mods;
 	menutext_s		exit;
 
@@ -131,13 +126,6 @@ void Main_MenuEvent (void* ptr, int event) {
 	case ID_MODS:
 		UI_ModsMenu();
 		break;
-
-#ifndef MISSIONPACK
-	case ID_TEAMARENA:
-		trap_Cvar_Set( "fs_game", BASETA);
-		trap_Cmd_ExecuteText( EXEC_APPEND, "vid_restart;" );
-		break;
-#endif
 
 	case ID_EXIT:
 		UI_ConfirmMenu( "EXIT GAME?", 0, MainMenu_ExitAction );
@@ -244,35 +232,6 @@ static void Main_MenuDraw( void ) {
 }
 
 
-#ifndef MISSIONPACK
-/*
-===============
-UI_TeamArenaExists
-===============
-*/
-static qboolean UI_TeamArenaExists( void ) {
-	int		numdirs;
-	char	dirlist[2048];
-	char	*dirptr;
-  char  *descptr;
-	int		i;
-	int		dirlen;
-
-	numdirs = trap_FS_GetFileList( "$modlist", "", dirlist, sizeof(dirlist) );
-	dirptr  = dirlist;
-	for( i = 0; i < numdirs; i++ ) {
-		dirlen = strlen( dirptr ) + 1;
-    descptr = dirptr + dirlen;
-		if (Q_stricmp(dirptr, BASETA) == 0) {
-			return qtrue;
-		}
-    dirptr += dirlen + strlen(descptr) + 1;
-	}
-	return qfalse;
-}
-#endif
-
-
 /*
 ===============
 UI_MainMenu
@@ -284,9 +243,7 @@ and that local cinematics are killed
 */
 void UI_MainMenu( void ) {
 	int		y;
-#ifndef MISSIONPACK
-	qboolean teamArena = qfalse;
-#endif
+
 	int		style = UI_CENTER | UI_DROPSHADOW;
 
 	CG_KillServer();
@@ -372,22 +329,6 @@ void UI_MainMenu( void ) {
 	s_main.cinematics.color					= text_big_color;
 	s_main.cinematics.style					= style;
 
-#ifndef MISSIONPACK
-	if ( !uis.demoversion && UI_TeamArenaExists() ) {
-		teamArena = qtrue;
-		y += MAIN_MENU_VERTICAL_SPACING;
-		s_main.teamArena.generic.type			= MTYPE_PTEXT;
-		s_main.teamArena.generic.flags			= QMF_CENTER_JUSTIFY|QMF_PULSEIFFOCUS;
-		s_main.teamArena.generic.x				= 320;
-		s_main.teamArena.generic.y				= y;
-		s_main.teamArena.generic.id				= ID_TEAMARENA;
-		s_main.teamArena.generic.callback		= Main_MenuEvent; 
-		s_main.teamArena.string					= "TEAM ARENA";
-		s_main.teamArena.color					= text_big_color;
-		s_main.teamArena.style					= style;
-	}
-#endif
-
 	if ( !uis.demoversion ) {
 		y += MAIN_MENU_VERTICAL_SPACING;
 		s_main.mods.generic.type			= MTYPE_PTEXT;
@@ -417,11 +358,7 @@ void UI_MainMenu( void ) {
 	Menu_AddItem( &s_main.menu,	&s_main.setup );
 	Menu_AddItem( &s_main.menu,	&s_main.demos );
 	Menu_AddItem( &s_main.menu,	&s_main.cinematics );
-#ifndef MISSIONPACK
-	if (teamArena) {
-		Menu_AddItem( &s_main.menu,	&s_main.teamArena );
-	}
-#endif
+
 	if ( !uis.demoversion ) {
 		Menu_AddItem( &s_main.menu,	&s_main.mods );
 	}

@@ -1641,7 +1641,7 @@ bot_moveresult_t BotFinishTravel_WaterJump(bot_movestate_t *ms, aas_reachability
 	//otherwise the bot sometimes keeps jumping?
 	VectorCopy(ms->origin, pnt);
 	pnt[2] -= 32;	//extra for q2dm4 near red armor/mega health
-	if (!(trap_AAS_PointContents(pnt) & (CONTENTS_LAVA|CONTENTS_SLIME|CONTENTS_WATER))) return result;
+	if (!(trap_AAS_PointContents(pnt) & MASK_WATER)) return result;
 	//swim straight to reachability end
 	VectorSubtract(reach->end, ms->origin, dir);
 	dir[0] += crandom() * 10;
@@ -3037,7 +3037,7 @@ bot_moveresult_t BotMoveInGoalArea(bot_movestate_t *ms, bot_goal_t *goal)
 
 #if 0
 	if (bot_developer.integer) {
-		BotAI_Print(PRT_MESSAGE, "%s: moving straight to goal\n", PlayerName(ms->entitynum-1));
+		BotAI_Print(PRT_MESSAGE, "%s: moving straight to goal\n", GetPlayerName(ms->entitynum-1));
 		trap_AAS_ClearShownDebugLines();
 		trap_AAS_DebugLine(ms->origin, goal->origin, LINECOLOR_RED);
 	}
@@ -3230,7 +3230,7 @@ void BotMoveToGoal(bot_moveresult_t *result, int movestate, bot_goal_t *goal, in
 	//if the bot is on the ground, swimming or against a ladder
 	if (ms->moveflags & (MFL_ONGROUND|MFL_SWIMMING|MFL_AGAINSTLADDER))
 	{
-		//BotAI_Print(PRT_MESSAGE, "%s: onground, swimming or against ladder\n", PlayerName(ms->entitynum-1));
+		//BotAI_Print(PRT_MESSAGE, "%s: onground, swimming or against ladder\n", GetPlayerName(ms->entitynum-1));
 		//
 		trap_AAS_ReachabilityFromNum(ms->lastreachnum, &lastreach);
 		//reachability area the bot is in
@@ -3486,7 +3486,7 @@ void BotMoveToGoal(bot_moveresult_t *result, int movestate, bot_goal_t *goal, in
 		//
 		if (ms->lastreachnum)
 		{
-			//BotAI_Print(PRT_MESSAGE, "%s: NOT onground, swimming or against ladder\n", PlayerName(ms->entitynum-1));
+			//BotAI_Print(PRT_MESSAGE, "%s: NOT onground, swimming or against ladder\n", GetPlayerName(ms->entitynum-1));
 			trap_AAS_ReachabilityFromNum(ms->lastreachnum, &reach);
 			result->traveltype = reach.traveltype;
 #if 0

@@ -118,7 +118,7 @@ static void UI_DisplayOptionsMenu_Event( void* ptr, int event ) {
 		break;
 	
 	case ID_SCREENSIZE:
-		trap_Cvar_SetValue( "cg_viewsize", displayOptionsInfo.screensize.curvalue * 10 );
+		trap_Cvar_SetValue( "cg_viewSize", displayOptionsInfo.screensize.curvalue * 10 );
 		break;
 
 	case ID_ANAGLYPH:
@@ -355,7 +355,7 @@ static void UI_DisplayOptionsMenu_Init( void ) {
 	Menu_AddItem( &displayOptionsInfo.menu, ( void * ) &displayOptionsInfo.apply );
 
 	displayOptionsInfo.brightness.curvalue  = trap_Cvar_VariableValue("r_gamma") * 10;
-	displayOptionsInfo.screensize.curvalue  = trap_Cvar_VariableValue( "cg_viewsize")/10;
+	displayOptionsInfo.screensize.curvalue  = trap_Cvar_VariableValue( "cg_viewSize")/10;
 	displayOptionsInfo.anaglyph.curvalue    = trap_Cvar_VariableValue("r_anaglyphMode");
 	if (displayOptionsInfo.anaglyph.curvalue < 0)
 		displayOptionsInfo.anaglyph.curvalue = 0;

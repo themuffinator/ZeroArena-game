@@ -33,10 +33,11 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 #include "cg_local.h"
 #include "../ui/ui_public.h"
+#if 0
 #ifdef MISSIONPACK
 #include "../ui/ui_shared.h"
 #endif
-
+#endif
 
 
 void CG_TargetCommand_f( int localPlayerNum ) {
@@ -63,7 +64,7 @@ Keybinding command
 */
 static void CG_SizeUp_f (void) {
 	// manually clamp here so cvar range warning isn't shown
-	trap_Cvar_SetValue("cg_viewsize", Com_Clamp( 30, 100, (int)(cg_viewsize.integer+10) ) );
+	trap_Cvar_SetValue("cg_viewSize", Com_Clamp( 30, 100, (int)(cg_viewSize.integer+10) ) );
 }
 
 
@@ -76,7 +77,7 @@ Keybinding command
 */
 static void CG_SizeDown_f (void) {
 	// manually clamp here so cvar range warning isn't shown
-	trap_Cvar_SetValue("cg_viewsize", Com_Clamp( 30, 100, (int)(cg_viewsize.integer-10) ) );
+	trap_Cvar_SetValue("cg_viewSize", Com_Clamp( 30, 100, (int)(cg_viewSize.integer-10) ) );
 }
 
 /*
@@ -566,14 +567,14 @@ static void CG_spWin_f( void) {
 	CG_CameraOrbit( 0, 30 );
 	CG_AddBufferedSound(cgs.media.winnerSound);
 	//trap_S_StartLocalSound(cgs.media.winnerSound, CHAN_ANNOUNCER);
-	CG_GlobalCenterPrint("YOU WIN!", SCREEN_HEIGHT/2, 2.0);
+	CG_GlobalCenterPrint("YOU WIN!", SCREEN_HEIGHT/2, 1.0);
 }
 
 static void CG_spLose_f( void) {
 	CG_CameraOrbit( 0, 30 );
 	CG_AddBufferedSound(cgs.media.loserSound);
 	//trap_S_StartLocalSound(cgs.media.loserSound, CHAN_ANNOUNCER);
-	CG_GlobalCenterPrint("YOU LOSE...", SCREEN_HEIGHT/2, 2.0);
+	CG_GlobalCenterPrint("YOU LOSE...", SCREEN_HEIGHT/2, 1.0);
 }
 
 #endif
@@ -1111,74 +1112,38 @@ static void CG_VoteComplete( int localPlayerNum, char *args, int argNum ) {
 	}
 }
 
-/*
-=================
-CG_CallTeamVoteComplete
-=================
-*/
-static void CG_CallTeamVoteComplete( int localPlayerNum, char *args, int argNum ) {
-	int playerNum, team;
-	playerInfo_t *pi;
-
-	if ( !cg.snap ) {
-		return;
-	}
-
-	playerNum = cg.localPlayers[localPlayerNum].playerNum;
-	if ( playerNum == -1 ) {
-		return;
-	}
-
-	pi = &cgs.playerinfo[playerNum];
-	if ( !pi->infoValid ) {
-		return;
-	}
-
-	team = pi->team;
-	if ( team != TEAM_BLUE && team != TEAM_RED ) {
-		return;
-	}
-
-	if ( argNum == 2 ) {
-		trap_Field_CompleteList( "leader\0" );
-	}
-	if ( argNum == 3 && !Q_stricmp( CG_Argv( 1 ), "leader" ) ) {
-		CG_Field_CompletePlayerName( team, qfalse, qfalse );
-	}
-}
-
 static consoleCommand_t	cg_commands[] = {
 	{ "+vstr", CG_VstrDown_f, 0, CG_VstrComplete },
 	{ "-vstr", CG_VstrUp_f, 0, CG_VstrComplete },
-	{ "testgun", CG_TestGun_f, CMD_INGAME, CG_TestModelComplete },
-	{ "testmodel", CG_TestModel_f, CMD_INGAME, CG_TestModelComplete },
-	{ "nextframe", CG_TestModelNextFrame_f, CMD_INGAME },
-	{ "prevframe", CG_TestModelPrevFrame_f, CMD_INGAME },
-	{ "nextskin", CG_TestModelNextSkin_f, CMD_INGAME },
-	{ "prevskin", CG_TestModelPrevSkin_f, CMD_INGAME },
-	{ "sizeup", CG_SizeUp_f, 0 },
-	{ "sizedown", CG_SizeDown_f, 0 },
+	{ "testGun", CG_TestGun_f, CMD_INGAME, CG_TestModelComplete },
+	{ "testModel", CG_TestModel_f, CMD_INGAME, CG_TestModelComplete },
+	{ "nextFrame", CG_TestModelNextFrame_f, CMD_INGAME },
+	{ "previousFrame", CG_TestModelPrevFrame_f, CMD_INGAME },
+	{ "nextSkin", CG_TestModelNextSkin_f, CMD_INGAME },
+	{ "previousSkin", CG_TestModelPrevSkin_f, CMD_INGAME },
+	{ "sizeUp", CG_SizeUp_f, 0 },
+	{ "sizeDown", CG_SizeDown_f, 0 },
 #ifdef MISSIONPACK
 	{ "spWin", CG_spWin_f, CMD_INGAME },
 	{ "spLose", CG_spLose_f, CMD_INGAME },
 #endif
 	{ "startOrbit", CG_StartOrbit_f, CMD_INGAME },
 	//{ "camera", CG_Camera_f, CMD_INGAME },
-	{ "loaddeferred", CG_LoadDeferredPlayers, CMD_INGAME },
+	{ "loadDeferred", CG_LoadDeferredPlayers, CMD_INGAME },
 	{ "generateTracemap", CG_GenerateTracemap, CMD_INGAME },
 	{ "remapShader", CG_RemapShader_f, 0 },
 	{ "play", CG_Play_f, 0, CG_PlayComplete },
 	{ "music", CG_Music_f, 0, CG_MusicComplete },
-	{ "stopmusic", CG_StopMusic_f, 0 },
+	{ "stopMusic", CG_StopMusic_f, 0 },
 	{ "cinematic", CG_Cinematic_f, 0, CG_CinematicComplete },
-	{ "stopcinematic", CG_StopCinematic_f, 0 },
+	{ "stopCinematic", CG_StopCinematic_f, 0 },
 	{ "messageMode", CG_MessageMode_f },
 	{ "messageMode2", CG_MessageMode2_f },
 	{ "messageMode3", CG_MessageMode3_f },
 	{ "messageMode4", CG_MessageMode4_f },
 	{ "clear", Con_ClearConsole_f },
-	{ "toggleconsole", Con_ToggleConsole_f },
-	{ "togglemenu", CG_ToggleMenu_f }
+	{ "toggleConsole", Con_ToggleConsole_f },
+	{ "toggleMenu", CG_ToggleMenu_f }
 };
 
 static int cg_numCommands = ARRAY_LEN( cg_commands );
@@ -1290,10 +1255,9 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "followNext", CG_ForwardToServer_f, CMD_INGAME },
 	{ "followPrevious", CG_ForwardToServer_f, CMD_INGAME },
 	{ "team", CG_ForwardToServer_f, CMD_INGAME, CG_TeamComplete },
+	{ "readyUp", CG_ForwardToServer_f, CMD_INGAME },
 	{ "callVote", CG_ForwardToServer_f, CMD_INGAME, CG_CallVoteComplete },
 	{ "vote", CG_ForwardToServer_f, CMD_INGAME, CG_VoteComplete },
-	{ "callTeamVote", CG_ForwardToServer_f, CMD_INGAME, CG_CallTeamVoteComplete },
-	{ "teamVote", CG_ForwardToServer_f, CMD_INGAME, CG_VoteComplete },
 	{ "setViewPos", CG_ForwardToServer_f, CMD_INGAME },
 	{ "stats", CG_ForwardToServer_f, CMD_INGAME }
 };

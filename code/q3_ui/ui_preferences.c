@@ -70,7 +70,7 @@ enum {
 	ID_BACK
 };
 
-#define	NUM_CROSSHAIRS			10
+#define	NUM_CROSSHAIRS			21
 
 
 typedef struct {
@@ -139,10 +139,10 @@ static void Preferences_SetMenuItems( void ) {
 
 	s_preferences.crosshair.curvalue		= (int)trap_Cvar_VariableValue( "cg_drawCrosshair" ) % NUM_CROSSHAIRS;
 	s_preferences.crosshairhealth.curvalue	= trap_Cvar_VariableValue( "cg_crosshairHealth" ) != 0;
-	s_preferences.viewbob.curvalue			= trap_Cvar_VariableValue( "cg_viewbob" ) != 0;
+	s_preferences.viewbob.curvalue			= trap_Cvar_VariableValue( "cg_viewBobScale" ) != 0;
 	s_preferences.simpleitems.curvalue		= trap_Cvar_VariableValue( "cg_simpleItems" ) != 0;
 	s_preferences.brass.curvalue			= trap_Cvar_VariableValue( "cg_brassTime" ) != 0;
-	s_preferences.wallmarks.curvalue		= trap_Cvar_VariableValue( "cg_marks" ) != 0;
+	s_preferences.wallmarks.curvalue		= trap_Cvar_VariableValue( "cg_impactMarks" ) != 0;
 	s_preferences.identifytarget.curvalue	= trap_Cvar_VariableValue( "cg_drawCrosshairNames" ) != 0;
 	s_preferences.dynamiclights.curvalue	= trap_Cvar_VariableValue( "r_dynamiclight" ) != 0;
 	s_preferences.highqualitysky.curvalue	= trap_Cvar_VariableValue ( "r_fastsky" ) == 0;
@@ -180,7 +180,7 @@ static void Preferences_Event( void* ptr, int notification ) {
 		break;
 
 	case ID_VIEWBOB:
-		trap_Cvar_SetValue( "cg_viewbob", s_preferences.viewbob.curvalue );
+		trap_Cvar_SetValue( "cg_viewBobScale", s_preferences.viewbob.curvalue );
 		break;
 
 	case ID_SIMPLEITEMS:
@@ -199,7 +199,7 @@ static void Preferences_Event( void* ptr, int notification ) {
 		break;
 
 	case ID_WALLMARKS:
-		trap_Cvar_SetValue( "cg_marks", s_preferences.wallmarks.curvalue );
+		trap_Cvar_SetValue( "cg_impactMarks", s_preferences.wallmarks.curvalue );
 		break;
 
 	case ID_DYNAMICLIGHTS:
@@ -543,7 +543,7 @@ void Preferences_Cache( void ) {
 	trap_R_RegisterShaderNoMip( ART_BACK0 );
 	trap_R_RegisterShaderNoMip( ART_BACK1 );
 	for( n = 0; n < NUM_CROSSHAIRS; n++ ) {
-		s_preferences.crosshairShader[n] = trap_R_RegisterShaderNoMip( va("gfx/2d/crosshair%c", 'a' + n ) );
+		s_preferences.crosshairShader[n] = trap_R_RegisterShaderNoMip( va("gfx/2d/ch032_%2i", 'a' + n ) );
 	}
 }
 

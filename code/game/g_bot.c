@@ -331,9 +331,7 @@ void G_AddRandomBot( int team ) {
 	float	skill;
 
 	skill = trap_Cvar_VariableValue( "g_spSkill" );
-	if (team == TEAM_RED) teamstr = "red";
-	else if (team == TEAM_BLUE) teamstr = "blue";
-	else teamstr = "free";
+	teamstr = (team >= FIRST_TEAM) ? (char *)g_teamNamesLower[team] : "free";
 	trap_Cmd_ExecuteText( EXEC_INSERT, va("addBot random %f %s %i\n", skill, teamstr, 0) );
 }
 
@@ -381,7 +379,7 @@ int G_CountHumanPlayers( int team ) {
 		if ( g_entities[i].r.svFlags & SVF_BOT ) {
 			continue;
 		}
-		if ( team >= 0 && cl->sess.sessionTeam != team ) {
+		if ( team >= TEAM_FREE && cl->sess.sessionTeam != team ) {
 			continue;
 		}
 		num++;
@@ -409,7 +407,7 @@ int G_CountBotPlayers( int team ) {
 		if ( !(g_entities[i].r.svFlags & SVF_BOT) ) {
 			continue;
 		}
-		if ( team >= 0 && cl->sess.sessionTeam != team ) {
+		if ( team >= TEAM_FREE && cl->sess.sessionTeam != team ) {
 			continue;
 		}
 		num++;
@@ -438,34 +436,28 @@ void G_CheckMinimumPlayers( void ) {
 	if (minplayers <= 0) return;
 
 	if (gt[g_gameType.integer].gtFlags & GTF_TEAMS) {
-		if (minplayers >= g_maxClients.integer / 2) {
-			minplayers = (g_maxClients.integer / 2) -1;
+		int i;
+		if (minplayers >= g_maxGameClients.integer / 2) {
+			minplayers = (g_maxGameClients.integer / 2) -1;
 		}
 
-		humanplayers = G_CountHumanPlayers( TEAM_RED );
-		botplayers = G_CountBotPlayers(	TEAM_RED );
-		//
-		if (humanplayers + botplayers < minplayers) {
-			G_AddRandomBot( TEAM_RED );
-		} else if (humanplayers + botplayers > minplayers && botplayers) {
-			G_RemoveRandomBot( TEAM_RED );
-		}
-		//
-		humanplayers = G_CountHumanPlayers( TEAM_BLUE );
-		botplayers = G_CountBotPlayers( TEAM_BLUE );
-		//
-		if (humanplayers + botplayers < minplayers) {
-			G_AddRandomBot( TEAM_BLUE );
-		} else if (humanplayers + botplayers > minplayers && botplayers) {
-			G_RemoveRandomBot( TEAM_BLUE );
+		for ( i = FIRST_TEAM; i <= level.teams_max; i++ ) {
+			humanplayers = G_CountHumanPlayers( i );
+			botplayers = G_CountBotPlayers( i );
+			
+			if ( humanplayers + botplayers < minplayers ) {
+				G_AddRandomBot( i );
+			} else if ( humanplayers + botplayers > minplayers && botplayers ) {
+				G_RemoveRandomBot( i );
+			}
 		}
 	}
 	else if (gt[g_gameType.integer].gtFlags & GTF_DUEL) {
-		if (minplayers >= g_maxClients.integer) {
-			minplayers = g_maxClients.integer-1;
+		if (minplayers >= g_maxGameClients.integer) {
+			minplayers = g_maxGameClients.integer-1;
 		}
-		humanplayers = G_CountHumanPlayers( -1 );
-		botplayers = G_CountBotPlayers( -1 );
+		humanplayers = G_CountHumanPlayers( TEAM_SPECTATOR );
+		botplayers = G_CountBotPlayers( TEAM_SPECTATOR );
 		//
 		if (humanplayers + botplayers < minplayers) {
 			G_AddRandomBot( TEAM_FREE );
@@ -473,7 +465,7 @@ void G_CheckMinimumPlayers( void ) {
 			// try to remove spectators first
 			if (!G_RemoveRandomBot( TEAM_SPECTATOR )) {
 				// just remove the bot that is playing
-				G_RemoveRandomBot( -1 );
+				G_RemoveRandomBot( TEAM_SPECTATOR );
 			}
 		}
 	}
@@ -616,7 +608,6 @@ static void G_AddBot( const char *name, float skill, char *team, int delay, char
 	int				value;
 	int				connectionNum;
 	int				playerNum;
-	int				teamNum;
 	char			*botinfo;
 	char			*key;
 	char			*s;
@@ -639,14 +630,9 @@ static void G_AddBot( const char *name, float skill, char *team, int delay, char
 	playerNum = value >> 16;
 
 	// set default team
-	if( !team || !*team ) {
-		if(GTF(GTF_TEAMS)) {
-			if( PickTeam(playerNum) == TEAM_RED) {
-				team = "red";
-			}
-			else {
-				team = "blue";
-			}
+	if ( !team || !*team ) {
+		if (GTF(GTF_TEAMS)) {
+			team = (char*)g_teamNamesLower[PickTeam( playerNum )];
 		}
 		else {
 			team = "free";
@@ -655,17 +641,19 @@ static void G_AddBot( const char *name, float skill, char *team, int delay, char
 
 	// get the botinfo from bots.txt
 	if ( Q_stricmp( name, "random" ) == 0 ) {
-		if ( Q_stricmp( team, "red" ) == 0 || Q_stricmp( team, "r" ) == 0 ) {
-			teamNum = TEAM_RED;
+		int		i, teamNum = TEAM_FREE;
+		for ( i = FIRST_TEAM; i <= level.teams_max; i++ ) {
+			if ( !Q_stricmp( team, g_teamNamesLower[i] ) || !Q_stricmp( team, g_teamNamesLetter[i] ) ) {
+				teamNum = i;
+			}
 		}
-		else if ( Q_stricmp( team, "blue" ) == 0 || Q_stricmp( team, "b" ) == 0 ) {
-			teamNum = TEAM_BLUE;
-		}
-		else if ( !Q_stricmp( team, "spectator" ) || !Q_stricmp( team, "s" ) ) {
-			teamNum = TEAM_SPECTATOR;
-		}
-		else {
-			teamNum = TEAM_FREE;
+
+		if ( teamNum < FIRST_TEAM ) {
+			if ( !Q_stricmp( team, "spectator" ) || !Q_stricmp( team, "s" ) ) {
+				teamNum = TEAM_SPECTATOR;
+			} else {
+				teamNum = TEAM_FREE;
+			}
 		}
 
 		botinfo = G_SelectRandomBotInfo( teamNum );
@@ -834,7 +822,7 @@ void Svcmd_AddBot_f( void ) {
 	// go ahead and load the bot's media immediately
 	if ( level.time - level.startTime > 1000 &&
 		trap_Cvar_VariableIntegerValue( "cl_running" ) ) {
-		trap_SendServerCommand( -1, "loaddeferred\n" );
+		AP( "loadDeferred\n" );
 	}
 }
 
@@ -1228,7 +1216,7 @@ void G_InitBots( qboolean restart ) {
 
 	if( g_gameType.integer == GT_SINGLE_PLAYER ) {
 		trap_GetServerinfo( serverinfo, sizeof(serverinfo) );
-		Q_strncpyz( map, Info_ValueForKey( serverinfo, "mapname" ), sizeof(map) );
+		Q_strncpyz( map, Info_ValueForKey( serverinfo, "mapName" ), sizeof(map) );
 		arenainfo = G_GetArenaInfoByMap( map );
 		if ( !arenainfo ) {
 			return;

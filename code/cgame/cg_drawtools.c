@@ -762,7 +762,7 @@ void CG_TileClear( void ) {
 	int		top, bottom, left, right;
 	float		x, y, w, h;
 
-	if (cg.cur_ps->pm_type == PM_INTERMISSION || cg_viewsize.integer >= 100) {
+	if (cg.cur_ps->pm_type == PM_INTERMISSION || cg_viewSize.integer >= 100) {
 		return;		// full screen rendering
 	}
 
@@ -824,30 +824,15 @@ float *CG_FadeColor( int startMsec, int totalMsec ) {
 }
 
 
-/*
-================
-CG_TeamColor
-================
-*/
-float *CG_TeamColor( int team ) {
-	static vec4_t	red = {1, 0.2f, 0.2f, 1};
-	static vec4_t	blue = {0.2f, 0.2f, 1, 1};
-	static vec4_t	other = {1, 1, 1, 1};
-	static vec4_t	spectator = {0.7f, 0.7f, 0.7f, 1};
-
-	switch ( team ) {
-	case TEAM_RED:
-		return red;
-	case TEAM_BLUE:
-		return blue;
-	case TEAM_SPECTATOR:
-		return spectator;
-	default:
-		return other;
-	}
-}
-
-
+const vec4_t teamColor[TEAM_NUM_TEAMS] = {
+	{0.7f, 0.7f, 0.7f, 1},
+	{1, 0.2f, 0.2f, 1},
+	{0.1f, 0.1f, 1, 1},
+	{0.1f, 1, 0.1f, 1},
+	{0.9f, 0.9f, 0.1f, 1},
+	{0.1f, 0.9f, 0.9f, 1},
+	{0.9f, 0.1f, 0.9f, 1},
+};
 
 /*
 =================
@@ -946,3 +931,108 @@ qboolean GTL(const int gtGoal) {
 	return (qboolean)(gt[cgs.gameType].gtGoal);
 }
 
+
+const char* cg_teamNames[TEAM_NUM_TEAMS] = {
+	"Neutral",
+	"Red",
+	"Blue",
+	"Green",
+	"Yellow",
+	"Teal",
+	"Pink",
+};
+
+const char* cg_teamNamesLower[TEAM_NUM_TEAMS] = {
+	"neutral",
+	"red",
+	"blue",
+	"green",
+	"yellow",
+	"teal",
+	"pink",
+};
+
+const char* cg_teamNamesLetter[TEAM_NUM_TEAMS] = {
+	"n", "r", "b", "g", "y", "t", "p", };
+
+const char* cg_teamShortNames[TEAM_NUM_TEAMS] = {
+	"NL",
+	"RD",
+	"BL",
+	"GN",
+	"YW",
+	"TL",
+	"PK",
+};
+
+const char* teamTextColorString[TEAM_NUM_TEAMS] = {
+	S_COLOR_WHITE,
+	S_COLOR_RED,
+	S_COLOR_BLUE,
+	S_COLOR_GREEN,
+	S_COLOR_YELLOW,
+	S_COLOR_CYAN,
+	S_COLOR_MAGENTA,
+};
+
+const char* CG_TeamName( team_t team ) {
+	if ( team >= FIRST_TEAM ) {
+		return va( "%s%s Team%s", teamTextColorString[team], cg_teamNames[team], S_COLOR_WHITE );
+	}
+	if ( team == TEAM_SPECTATOR ) {
+		return "SPECTATOR";
+	}
+	return "FREE";
+}
+
+
+/*
+==================
+CG_PlayerName
+
+Return colorized name of player with white text escape at end. Easy way to add clan tags in future.
+==================
+*/
+char* CG_PlayerName( playerInfo_t *p, const qboolean clanTag ) {
+	return va( "%s%s", p->name, S_COLOR_WHITE );
+}
+
+
+/*
+==================
+CG_GetIconName
+
+==================
+*/
+#if 0
+char* CG_GetIconName( char* in ) {
+	if ( !cg_highResImages.integer ) return in;
+	{
+		if ( cg_highResImages.integer > 0 ) {
+			char* name = va( "%s_%i", in, (1 << (cg_highResImages.integer + 5)) );
+			return trap_R_RegisterShader_Ext( name, qfalse, qtrue ) ? name : in;
+		} else {
+			char* name = va( "%s%s", in, cg.iconImageSize ? va( "_%i", cg.iconImageSize ) : "" );
+			return trap_R_RegisterShader_Ext( name, qfalse, qtrue ) ? name : in;
+		}
+	}
+}
+
+qhandle_t RegisterSimpleShader( const char* name ) {
+	return trap_R_RegisterShader_Ext( CG_GetIconName( (char*)name ), qfalse, qtrue );
+}
+
+qhandle_t RegisterSimpleShaderFB( const char* in, const char* fallback, const int multiplier ) {
+	if ( !cg_highResImages.integer ) return trap_R_RegisterShader_Ext( fallback, qfalse, qtrue );
+	{
+		if ( cg_highResImages.integer > 0 ) {
+			char* name = va( "%s_%i", in, (1 << (cg_highResImages.integer + 5 + (multiplier - 1))) );
+			//return trap_R_RegisterShader_Ext( CG_GetIconName((char*)name), qfalse, qtrue );
+			return trap_R_RegisterShader_Ext( name, qfalse, qtrue );
+		} else {
+			char* name = va( "%s%s", in, cg.iconImageSize ? va( "_%i", cg.iconImageSize * multiplier ) : "" );
+			return trap_R_RegisterShader_Ext( name, qfalse, qtrue );
+		}
+	}
+}
+#endif

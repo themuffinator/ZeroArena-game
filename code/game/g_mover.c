@@ -397,6 +397,12 @@ qboolean G_MoverPush( gentity_t *pusher, vec3_t move, vec3_t amove, gentity_t **
 		if ( check->s.eType != ET_ITEM && check->s.eType != ET_PLAYER && !check->physicsObject ) {
 			continue;
 		}
+//muff: don't affect noclip or spectators
+		if ( check->s.eType == ET_PLAYER ) {
+			if ( check->player->noClip ) continue;
+			if ( check->player->sess.sessionTeam == TEAM_SPECTATOR ) continue;
+		}
+//-muff
 
 		// if the entity is standing on the pusher, it will definitely be moved
 		if ( check->s.groundEntityNum != pusher->s.number ) {
@@ -470,8 +476,8 @@ void G_MoverTeam( gentity_t *ent ) {
 	pushed_p = pushed;
 	for (part = ent ; part ; part=part->teamchain) {
 		// get current position
-		BG_EvaluateTrajectory( &part->s.pos, level.time, origin );
-		BG_EvaluateTrajectory( &part->s.apos, level.time, angles );
+		BG_EvaluateTrajectory( &part->s.pos, level.time, origin, g_gravity.value );
+		BG_EvaluateTrajectory( &part->s.apos, level.time, angles, g_gravity.value );
 		VectorSubtract( origin, part->r.currentOrigin, move );
 		VectorSubtract( angles, part->r.currentAngles, amove );
 		if ( !G_MoverPush( part, move, amove, &obstacle ) ) {
@@ -484,8 +490,8 @@ void G_MoverTeam( gentity_t *ent ) {
 		for ( part = ent ; part ; part = part->teamchain ) {
 			part->s.pos.trTime += level.time - level.previousTime;
 			part->s.apos.trTime += level.time - level.previousTime;
-			BG_EvaluateTrajectory( &part->s.pos, level.time, part->r.currentOrigin );
-			BG_EvaluateTrajectory( &part->s.apos, level.time, part->r.currentAngles );
+			BG_EvaluateTrajectory( &part->s.pos, level.time, part->r.currentOrigin, g_gravity.value );
+			BG_EvaluateTrajectory( &part->s.apos, level.time, part->r.currentAngles, g_gravity.value );
 			trap_LinkEntity( part );
 		}
 
@@ -613,7 +619,7 @@ void SetMoverState( gentity_t *ent, moverState_t moverState, int time ) {
 		break;
 //-muff
 	}
-	BG_EvaluateTrajectory( &ent->s.pos, level.time, ent->r.currentOrigin );	
+	BG_EvaluateTrajectory( &ent->s.pos, level.time, ent->r.currentOrigin, g_gravity.value );
 	trap_LinkEntity( ent );
 }
 
@@ -694,8 +700,11 @@ void Reached_BinaryMover( gentity_t *ent ) {
 
 		// return to pos1 after a delay
 		ent->think = ReturnToPos1;
-		ent->nextthink = level.time + ent->wait;
-
+		if ( ent->wait == -1 ) {
+			ent->nextthink = 0;
+		} else {
+			ent->nextthink = level.time + ent->wait;
+		}
 		// fire targets
 		if ( !ent->activator ) {
 			ent->activator = ent;
@@ -726,7 +735,11 @@ void Reached_BinaryMover( gentity_t *ent ) {
 
 		// return to apos1 after a delay
 		ent->think = ReturnToApos1;
-		ent->nextthink = level.time + ent->wait;
+		if ( ent->wait == -1 ) {
+			ent->nextthink = 0;
+		} else {
+			ent->nextthink = level.time + ent->wait;
+		}
 
 		// fire targets
 		if ( !ent->activator ) {
@@ -792,7 +805,11 @@ void Use_BinaryMover( gentity_t *ent, gentity_t *other, gentity_t *activator ) {
 
 	// if all the way up, just delay before coming down
 	if ( ent->moverState == MOVER_POS2 ) {
-		ent->nextthink = level.time + ent->wait;
+		if ( ent->wait == -1 ) {
+			ent->nextthink = 0;
+		} else {
+			ent->nextthink = level.time + ent->wait;
+		}
 		return;
 	}
 
@@ -851,7 +868,11 @@ void Use_BinaryMover( gentity_t *ent, gentity_t *other, gentity_t *activator ) {
 
 	// if all the way up, just delay before coming down
 	if ( ent->moverState == ROTATOR_POS2 ) {
-		ent->nextthink = level.time + ent->wait;
+		if ( ent->wait == -1 ) {
+			ent->nextthink = 0;
+		} else {
+			ent->nextthink = level.time + ent->wait;
+		}
 		return;
 	}
 
@@ -920,9 +941,27 @@ void InitMover( gentity_t *ent ) {
 		ent->s.loopSound = G_SoundIndex( sound );
 	}
 
-	if (G_SpawnInt("spawnflags", "", &spawnflags)) {
-		if (g_gameType.integer != GT_SINGLE_PLAYER && spawnflags & SPAWNFLAG_NOT_DEATHMATCH) {
+	if (G_SpawnInt("spawnflags", "0", &spawnflags)) {
+		float skill = 0;
+		if ( (spawnflags & SPAWNFLAG_NOT_DEATHMATCH) && !GTF(GTF_CAMPAIGN)) {
 			G_FreeEntity(ent);
+			return;
+		}
+		if ( (spawnflags & SPAWNFLAG_NOT_COOP) && GTF( GTF_CAMPAIGN ) ) {
+			G_FreeEntity( ent );
+			return;
+		}
+		skill = trap_Cvar_VariableValue( "g_spSkill" );
+		if ( (spawnflags & SPAWNFLAG_NOT_EASY) && GTF( GTF_CAMPAIGN ) && skill < 2 ) {
+			G_FreeEntity( ent );
+			return;
+		}
+		if ( (spawnflags & SPAWNFLAG_NOT_MEDIUM) && GTF( GTF_CAMPAIGN ) && skill >= 2 && skill < 4 ) {
+			G_FreeEntity( ent );
+			return;
+		}
+		if ( (spawnflags & SPAWNFLAG_NOT_HARD) && GTF( GTF_CAMPAIGN ) && skill >= 4 ) {
+			G_FreeEntity( ent );
 			return;
 		}
 	}
@@ -1086,6 +1125,11 @@ void Blocked_Door( gentity_t *ent, gentity_t *other ) {
 		return;
 	}
 
+//muff: don't affect noclip or spectators
+	if ( other->player->noClip ) return;
+	if ( other->player->sess.sessionTeam == TEAM_SPECTATOR ) return;
+//-muff
+
 	if ( ent->damage ) {
 		G_Damage( other, ent, ent, NULL, NULL, ent->damage, 0, MOD_CRUSH );
 	}
@@ -1122,7 +1166,7 @@ static void Touch_DoorTriggerSpectator( gentity_t *ent, gentity_t *other, trace_
 		origin[axis] = doorMax + 10;
 	}
 
-	TeleportPlayer(other, origin, tv(10000000.0, 0, 0), qfalse, qtrue);
+	TeleportPlayer(other, origin, tv(10000000.0, 0, 0), qfalse, qtrue, qfalse );
 }
 
 /*
@@ -1245,11 +1289,16 @@ void SP_func_door (gentity_t *ent) {
 	// default speed of 400
 	if (!ent->speed)
 		ent->speed = 400;
+	if ( GTF( GTF_CAMPAIGN ) )
+		ent->speed *= 0.5;
 
 	// default wait of 2 seconds
-	if (!ent->wait)
-		ent->wait = 2;
-	ent->wait *= 1000;
+	if ( ent->wait == -1 )
+		ent->wait = GTF( GTF_CAMPAIGN ) ? -1 : 240;
+	else if ( !ent->wait ) {
+		ent->wait = GTF( GTF_CAMPAIGN ) ? 3 : 2;
+		ent->wait *= 1000;
+	} else ent->wait *= 1000;
 
 	// default lip of 8 units
 	G_SpawnFloat( "lip", "8", &lip );
@@ -1342,9 +1391,12 @@ void SP_func_door_rotating( gentity_t *ent ) {
 	}
 
 	// default of 3 seconds
-	if ( !ent->wait )
-		ent->wait = 3;
-	ent->wait *= 1000;
+	if ( ent->wait == -1 )
+		ent->wait = GTF( GTF_CAMPAIGN ) ? -1 : 240;
+	else if ( !ent->wait ) {
+		ent->wait = GTF( GTF_CAMPAIGN ) ? 3 : 2;
+		ent->wait *= 1000;
+	} else ent->wait *= 1000;
 
 	if ( !ent->damage )
 		ent->damage = 2;
@@ -1524,7 +1576,7 @@ void SP_func_plat (gentity_t *ent) {
 	G_SpawnFloat( "wait", "1", &ent->wait );
 	G_SpawnFloat( "lip", "8", &lip );
 
-	ent->wait = 1000;
+	ent->wait *= 1000;
 
 	// create second position
 	G_SetBrushModel( ent, ent->model );
@@ -1552,6 +1604,62 @@ void SP_func_plat (gentity_t *ent) {
 	if ( !ent->targetname ) {
 		SpawnPlatTrigger(ent);
 	}
+}
+
+
+/*QUAKED func_water (0 .5 .8) ? START_OPEN
+func_water is a moveable water brush.  It must be targeted to operate.  Use a non-water texture at your own risk.
+
+START_OPEN causes the water to move to its destination when spawned and operate in reverse.
+
+"angle"		determines the opening direction (up or down only)
+"speed"		movement speed (25 default)
+"wait"		wait before returning (-1 default, -1 = TOGGLE)
+"lip"		lip remaining at end of move (0 default)
+"sounds"	(yes, these need to be changed)
+0)	no sound
+1)	water
+2)	lava
+*/
+void SP_func_water( gentity_t* ent ) {
+	float		lip, height;
+
+	ent->sound1to2 = ent->sound2to1 = G_SoundIndex( "sound/world/mov_watr.wav" );
+	ent->soundPos1 = ent->soundPos2 = G_SoundIndex( "sound/world/stp_watr.wav" );
+
+	VectorClear( ent->s.angles );
+
+	G_SpawnFloat( "speed", "25", &ent->speed );
+	G_SpawnFloat( "wait", "-1", &ent->wait );
+	G_SpawnFloat( "lip", "0", &lip );
+
+	ent->wait *= 1000;
+
+	// create second position
+	G_SetBrushModel( ent, ent->model );
+
+	ent->s.contents = CONTENTS_WATER;
+
+	if ( !G_SpawnFloat( "height", "0", &height ) ) {
+		height = (ent->s.maxs[2] - ent->s.mins[2]) - lip;
+	}
+
+	// pos1 is the rest (bottom) position, pos2 is the top
+	VectorCopy( ent->s.origin, ent->pos2 );
+	VectorCopy( ent->pos2, ent->pos1 );
+
+	// if it starts open, switch the positions
+	if ( ent->spawnflags & DOOR_START_OPEN ) {
+		VectorCopy( ent->pos2, ent->s.origin );
+		VectorCopy( ent->pos1, ent->pos2 );
+		VectorCopy( ent->s.origin, ent->pos1 );
+	}
+
+	ent->pos1[2] -= height;
+
+	InitMover( ent );
+
+	ent->parent = ent;	// so it can be treated as a door
 }
 
 
@@ -1605,10 +1713,13 @@ void SP_func_button( gentity_t *ent ) {
 		ent->speed = 40;
 	}
 
-	if ( !ent->wait ) {
-		ent->wait = 1;
-	}
-	ent->wait *= 1000;
+	// default wait of 2 seconds
+	if ( ent->wait == -1 )
+		ent->wait = GTF( GTF_CAMPAIGN ) ? -1 : 240;
+	else if ( !ent->wait ) {
+		ent->wait = GTF( GTF_CAMPAIGN ) ? 3 : 2;
+		ent->wait *= 1000;
+	} else ent->wait *= 1000;
 
 	// first position
 	VectorCopy( ent->s.origin, ent->pos1 );

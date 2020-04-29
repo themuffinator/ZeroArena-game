@@ -81,7 +81,7 @@ void BotPrintTeamGoal(bot_state_t *bs) {
 		return;
 	}
 
-	PlayerName(bs->playernum, netname, sizeof(netname));
+	GetPlayerName(bs->playernum, netname, sizeof(netname));
 	t = bs->teamgoal_time - FloatTime();
 	switch(bs->ltgtype) {
 		case LTG_TEAMHELP:
@@ -251,11 +251,11 @@ int FindPlayerByName(char *name) {
 	char buf[MAX_INFO_STRING];
 
 	for (i = 0; i < level.maxplayers; i++) {
-		PlayerName(i, buf, sizeof(buf));
+		GetPlayerName(i, buf, sizeof(buf));
 		if (!Q_stricmp(buf, name)) return i;
 	}
 	for (i = 0; i < level.maxplayers; i++) {
-		PlayerName(i, buf, sizeof(buf));
+		GetPlayerName(i, buf, sizeof(buf));
 		if (stristr(buf, name)) return i;
 	}
 	return -1;
@@ -272,12 +272,12 @@ int FindEnemyByName(bot_state_t *bs, char *name) {
 
 	for (i = 0; i < level.maxplayers; i++) {
 		if (BotSameTeam(bs, i)) continue;
-		PlayerName(i, buf, sizeof(buf));
+		GetPlayerName(i, buf, sizeof(buf));
 		if (!Q_stricmp(buf, name)) return i;
 	}
 	for (i = 0; i < level.maxplayers; i++) {
 		if (BotSameTeam(bs, i)) continue;
-		PlayerName(i, buf, sizeof(buf));
+		GetPlayerName(i, buf, sizeof(buf));
 		if (stristr(buf, name)) return i;
 	}
 	return -1;
@@ -402,7 +402,7 @@ int BotAddressedToBot(bot_state_t *bs, bot_match_t *match) {
 	if (match->subtype & ST_ADDRESSED) {
 		BotMatchVariable(match, ADDRESSEE, addressedto, sizeof(addressedto));
 		//the name of this bot
-		PlayerName(bs->playernum, botname, 128);
+		GetPlayerName(bs->playernum, botname, 128);
 		//
 		while(BotFindMatch(addressedto, &addresseematch, MTCONTEXT_ADDRESSEE)) {
 			if (addresseematch.type == MSG_EVERYONE) {
@@ -821,18 +821,27 @@ BotMatch_GetFlag
 void BotMatch_GetFlag(bot_state_t *bs, bot_match_t *match) {
 	char netname[MAX_MESSAGE_SIZE];
 	int playernum;
+	int i;
+	qboolean flagCheck;
 
 	if (gt[gametype].gtFlags & GTF_CTF) {
-		if (!ctf_redflag.areanum || !ctf_blueflag.areanum)
-			return;
+		flagCheck = qtrue;
+		for ( i = FIRST_TEAM; i <= level.teams_max; i++ ) {
+			if ( !ctf_flag[i].areanum )
+				flagCheck = qfalse;
+		}
+		if ( !flagCheck ) return;
 	}
 	else if (gametype == GT_1FCTF) {
-		if (!ctf_neutralflag.areanum || !ctf_redflag.areanum || !ctf_blueflag.areanum)
-			return;
+		flagCheck = qtrue;
+		for ( i = 0; i <= level.teams_max; i++ ) {
+			if ( !ctf_flag[i].areanum )
+				flagCheck = qfalse;
+		}
+		if ( !flagCheck ) return;
 	}
-	else {
-		return;
-	}
+	else return;
+
 	//if not addressed to this bot
 	if (!BotAddressedToBot(bs, match)) return;
 	//
@@ -874,7 +883,7 @@ void BotMatch_AttackEnemyBase(bot_state_t *bs, bot_match_t *match) {
 		BotMatch_GetFlag(bs, match);
 	}
 	else if (gametype == GT_1FCTF || gametype == GT_OVERLOAD || gametype == GT_HARVESTER) {
-		if (!redobelisk.areanum || !blueobelisk.areanum)
+		if (!team_obelisk[TEAM_RED].areanum || !team_obelisk[TEAM_BLUE].areanum)
 			return;
 	}
 	else {
@@ -915,7 +924,7 @@ void BotMatch_Harvest(bot_state_t *bs, bot_match_t *match) {
 	int playernum;
 
 	if (gametype == GT_HARVESTER) {
-		if (!neutralobelisk.areanum || !redobelisk.areanum || !blueobelisk.areanum)
+		if (!team_obelisk[TEAM_FREE].areanum || !team_obelisk[TEAM_RED].areanum || !team_obelisk[TEAM_BLUE].areanum)
 			return;
 	}
 	else {
@@ -954,14 +963,24 @@ BotMatch_RushBase
 void BotMatch_RushBase(bot_state_t *bs, bot_match_t *match) {
 	char netname[MAX_MESSAGE_SIZE];
 	int playernum;
+	int i;
+	qboolean flagCheck = qtrue;
 
 	if (gt[gametype].gtFlags & GTF_CTF) {
-		if (!ctf_redflag.areanum || !ctf_blueflag.areanum)
-			return;
+		flagCheck = qtrue;
+		for ( i = 0; i <= level.teams_max; i++ ) {
+			if ( !ctf_flag[i].areanum )
+				flagCheck = qfalse;
+		}
+		if ( !flagCheck ) return;
 	}
 	else if (gametype == GT_1FCTF || gametype == GT_HARVESTER) {
-		if (!redobelisk.areanum || !blueobelisk.areanum)
-			return;
+		flagCheck = qtrue;
+		for ( i = 0; i <= level.teams_max; i++ ) {
+			if ( !team_obelisk[i].areanum )
+				flagCheck = qfalse;
+		}
+		if ( !flagCheck ) return;
 	}
 	else {
 		return;
@@ -998,7 +1017,7 @@ void BotMatch_TaskPreference(bot_state_t *bs, bot_match_t *match) {
 	char teammatename[MAX_MESSAGE_SIZE];
 	int teammate, preference;
 
-	PlayerName(bs->playernum, netname, sizeof(netname));
+	GetPlayerName(bs->playernum, netname, sizeof(netname));
 	if (Q_stricmp(netname, bs->teamleader) != 0) return;
 
 	BotMatchVariable(match, NETNAME, teammatename, sizeof(teammatename));
@@ -1286,7 +1305,7 @@ void BotMatch_StartTeamLeaderShip(bot_state_t *bs, bot_match_t *match) {
 		//get the team mate that will be the team leader
 		BotMatchVariable(match, TEAMMATE, teammate, sizeof(teammate));
 		playernum = FindPlayerByName(teammate);
-		if (playernum >= 0) PlayerName(playernum, bs->teamleader, sizeof(bs->teamleader));
+		if (playernum >= 0) GetPlayerName(playernum, bs->teamleader, sizeof(bs->teamleader));
 	}
 }
 
@@ -1313,7 +1332,7 @@ void BotMatch_StopTeamLeaderShip(bot_state_t *bs, bot_match_t *match) {
 		playernum = FindPlayerByName(teammate);
 	} //end else
 	if (playernum >= 0) {
-		if (!Q_stricmp(bs->teamleader, PlayerName(playernum, netname, sizeof(netname)))) {
+		if (!Q_stricmp(bs->teamleader, GetPlayerName(playernum, netname, sizeof(netname)))) {
 			bs->teamleader[0] = '\0';
 			notleader[playernum] = qtrue;
 		}
@@ -1330,7 +1349,7 @@ void BotMatch_WhoIsTeamLeader(bot_state_t *bs, bot_match_t *match) {
 
 	if (!TeamPlayIsOn()) return;
 
-	PlayerName(bs->playernum, netname, sizeof(netname));
+	GetPlayerName(bs->playernum, netname, sizeof(netname));
 	//if this bot IS the team leader
 	if (!Q_stricmp(netname, bs->teamleader)) {
 		EA_SayTeam(bs->playernum, "I'm the team leader\n");
@@ -1377,7 +1396,7 @@ void BotMatch_WhatAreYouDoing(bot_state_t *bs, bot_match_t *match) {
 		}
 		case LTG_KILL:
 		{
-			PlayerName(bs->teamgoal.entitynum, netname, sizeof(netname));
+			GetPlayerName(bs->teamgoal.entitynum, netname, sizeof(netname));
 			BotAI_BotInitialChat(bs, "killing", netname, NULL);
 			break;
 		}
@@ -1437,7 +1456,7 @@ BotMatch_WhatIsMyCommand
 void BotMatch_WhatIsMyCommand(bot_state_t *bs, bot_match_t *match) {
 	char netname[MAX_NETNAME];
 
-	PlayerName(bs->playernum, netname, sizeof(netname));
+	GetPlayerName(bs->playernum, netname, sizeof(netname));
 	if (Q_stricmp(netname, bs->teamleader) != 0) return;
 	bs->forceorders = qtrue;
 }
@@ -1538,13 +1557,13 @@ void BotMatch_WhereAreYou(bot_state_t *bs, bot_match_t *match) {
 		if (gt[gametype].gtFlags & GTF_TEAMBASES) {
 
 			if (gametype == GT_OVERLOAD || gametype == GT_HARVESTER) {
-				redtt = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, redobelisk.areanum, TFL_DEFAULT);
-				bluett = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, blueobelisk.areanum, TFL_DEFAULT);
+				redtt = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, team_obelisk[TEAM_RED].areanum, TFL_DEFAULT);
+				bluett = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, team_obelisk[TEAM_BLUE].areanum, TFL_DEFAULT);
 			}
 			else
 			{
-				redtt = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, ctf_redflag.areanum, TFL_DEFAULT);
-				bluett = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, ctf_blueflag.areanum, TFL_DEFAULT);
+				redtt = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, ctf_flag[TEAM_RED].areanum, TFL_DEFAULT);
+				bluett = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, ctf_flag[TEAM_BLUE].areanum, TFL_DEFAULT);
 			}
 
 			// unpatched q3 used 'ctflocation', some games still use it
@@ -1691,31 +1710,56 @@ void BotMatch_CTF(bot_state_t *bs, bot_match_t *match) {
 		BotMatchVariable(match, FLAG, flag, sizeof(flag));
 		if (match->subtype & ST_GOTFLAG) {
 			if (!Q_stricmp(flag, "red")) {
-				bs->redflagstatus = 1;
+				bs->flagStatus[TEAM_RED] = 1;
 				if (BotTeam(bs) == TEAM_BLUE) {
 					BotMatchVariable(match, NETNAME, netname, sizeof(netname));
 					bs->flagcarrier = PlayerFromName(netname);
 				}
-			}
-			else {
-				bs->blueflagstatus = 1;
-				if (BotTeam(bs) == TEAM_RED) {
+			} else if ( !Q_stricmp( flag, "blue" ) ) {
+				bs->flagStatus[TEAM_BLUE] = 1;
+				if (BotTeam(bs) != TEAM_BLUE) {
 					BotMatchVariable(match, NETNAME, netname, sizeof(netname));
 					bs->flagcarrier = PlayerFromName(netname);
+				}
+			} else if ( !Q_stricmp( flag, "green" ) ) {
+				bs->flagStatus[TEAM_GREEN] = 1;
+				if ( BotTeam( bs ) != TEAM_GREEN ) {
+					BotMatchVariable( match, NETNAME, netname, sizeof( netname ) );
+					bs->flagcarrier = PlayerFromName( netname );
+				}
+			} else if ( !Q_stricmp( flag, "yellow" ) ) {
+				bs->flagStatus[TEAM_YELLOW] = 1;
+				if ( BotTeam( bs ) != TEAM_YELLOW ) {
+					BotMatchVariable( match, NETNAME, netname, sizeof( netname ) );
+					bs->flagcarrier = PlayerFromName( netname );
+				}
+			} else if ( !Q_stricmp( flag, "teal" ) ) {
+				bs->flagStatus[TEAM_TEAL] = 1;
+				if ( BotTeam( bs ) != TEAM_TEAL ) {
+					BotMatchVariable( match, NETNAME, netname, sizeof( netname ) );
+					bs->flagcarrier = PlayerFromName( netname );
+				}
+			} else if ( !Q_stricmp( flag, "pink" ) ) {
+				bs->flagStatus[TEAM_PINK] = 1;
+				if ( BotTeam( bs ) != TEAM_PINK ) {
+					BotMatchVariable( match, NETNAME, netname, sizeof( netname ) );
+					bs->flagcarrier = PlayerFromName( netname );
 				}
 			}
 			bs->flagstatuschanged = 1;
 			bs->lastflagcapture_time = FloatTime();
 		}
 		else if (match->subtype & ST_CAPTUREDFLAG) {
-			bs->redflagstatus = 0;
-			bs->blueflagstatus = 0;
+			int i;
+			for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ )
+				bs->flagStatus[0] = 0;
 			bs->flagcarrier = 0;
 			bs->flagstatuschanged = 1;
 		}
 		else if (match->subtype & ST_RETURNEDFLAG) {
-			if (!Q_stricmp(flag, "red")) bs->redflagstatus = 0;
-			else bs->blueflagstatus = 0;
+			int i;
+			for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ )
+				if ( !Q_stricmp( flag, g_teamNamesLower[i] ) ) bs->flagStatus[i] = 0;
 			bs->flagstatuschanged = 1;
 		}
 	}

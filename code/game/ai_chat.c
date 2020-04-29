@@ -248,7 +248,7 @@ char *BotMapTitle(void) {
 
 	trap_GetServerinfo(info, sizeof(info));
 
-	strncpy(mapname, Info_ValueForKey( info, "mapname" ), sizeof(mapname)-1);
+	strncpy(mapname, Info_ValueForKey( info, "mapName" ), sizeof(mapname)-1);
 	mapname[sizeof(mapname)-1] = '\0';
 
 	return mapname;
@@ -809,7 +809,7 @@ int BotChat_HitTalking(bot_state_t *bs) {
 	}
 	if (!BotValidChatPosition(bs)) return qfalse;
 	//
-	PlayerName(g_entities[bs->playernum].player->lasthurt_player, name, sizeof(name));
+	GetPlayerName(g_entities[bs->playernum].player->lasthurt_player, name, sizeof(name));
 	weap = BotWeaponNameForMeansOfDeath(g_entities[bs->playernum].player->lasthurt_mod);
 	//
 	BotAI_BotInitialChat(bs, "hit_talking", name, weap, NULL);
@@ -854,7 +854,7 @@ int BotChat_HitNoDeath(bot_state_t *bs) {
 	BotEntityInfo(bs->enemy, &entinfo);
 	if (EntityIsShooting(&entinfo)) return qfalse;
 	//
-	PlayerName(lasthurt_player, name, sizeof(name));
+	GetPlayerName(lasthurt_player, name, sizeof(name));
 	weap = BotWeaponNameForMeansOfDeath(g_entities[bs->playernum].player->lasthurt_mod);
 	//
 	BotAI_BotInitialChat(bs, "hit_nodeath", name, weap, NULL);
@@ -892,7 +892,7 @@ int BotChat_HitNoKill(bot_state_t *bs) {
 	BotEntityInfo(bs->enemy, &entinfo);
 	if (EntityIsShooting(&entinfo)) return qfalse;
 	//
-	PlayerName(bs->enemy, name, sizeof(name));
+	GetPlayerName(bs->enemy, name, sizeof(name));
 	weap = BotWeaponNameForMeansOfDeath(g_entities[bs->enemy].player->lasthurt_mod);
 	//
 	BotAI_BotInitialChat(bs, "hit_nokill", name, weap, NULL);
@@ -1182,7 +1182,7 @@ void BotChatTest(bot_state_t *bs) {
 		BotAI_BotInitialChat(bs, "enemy_suicide", name, NULL);
 		BotEnterChat(bs->cs, 0, CHAT_ALL);
 	}
-	PlayerName(g_entities[bs->playernum].player->lasthurt_player, name, sizeof(name));
+	GetPlayerName(g_entities[bs->playernum].player->lasthurt_player, name, sizeof(name));
 	weap = BotWeaponNameForMeansOfDeath(g_entities[bs->playernum].player->lasthurt_player);
 	num = BotNumInitialChats(bs->cs, "hit_talking");
 	for (i = 0; i < num; i++)

@@ -56,18 +56,18 @@ vec4_t		colorMdGrey	= {0.5, 0.5, 0.5, 1};
 vec4_t		colorDkGrey	= {0.25, 0.25, 0.25, 1};
 
 // color table from CNQ3
-static const vec4_t colorTable[] =
+const vec4_t colorTable[] =
 {
-	{ 0.26795f, 0.26795f, 0.26795f, 1 },	// grey it up some
+	{ 0, 0, 0, 1 },
 	{ 1, 0, 0, 1 },
 	{ 0, 1, 0, 1 },
 	{ 1, 1, 0, 1 },
 	{ 0.2f, 0.2f, 1, 1 },
-	{ 0, 1, 1, 1 }, // id got pink and cyan backwards
+	{ 0, 1, 1, 1 },
 	{ 1, 0, 1, 1 },
 	{ 1, 1, 1, 1 },
-	{1.00000f, 0.50000f, 0.00000f, 1.00000f},	// 8
-	{0.60000f, 0.60000f, 1.00000f, 1.00000f},	// 9
+	{0.26795f, 0.26795f, 0.26795f, 1},	// grey
+	{0.854f, 0.850f, 0.466f, 1.00000f},	// cream
 
 	// CPMA's alphabet rainbow
 	{1.00000f, 0.00000f, 0.00000f, 1.00000f},	// a
@@ -94,18 +94,19 @@ static const vec4_t colorTable[] =
 	{1.00000f, 0.00000f, 0.73205f, 1.00000f},	// v
 	{1.00000f, 0.00000f, 0.50000f, 1.00000f},	// w
 	{1.00000f, 0.00000f, 0.26795f, 1.00000f},	// x
-	{ 1, 1, 1, 1 }, // y, white, duped so all colors can be expressed with this palette
+	{ 1, 1, 1, 1 },								// y, ZA		white
+	{ 0.466f, 0.466f, 0.466f, 1 },				// z, ZA		med grey
 };
 
-const /* vec4_t */ float* ColorFromChar(char ccode)
+const float* ColorFromChar(char ccode)
 {
 	if (ccode >= '0' && ccode <= '9') {
 		ccode -= '0';
 	}
-	else if (ccode >= 'a' && ccode <= 'y') {
+	else if (ccode >= 'a' && ccode <= 'z') {
 		ccode -= 'a' - 10;
 	}
-	else if (ccode >= 'A' && ccode <= 'Y') {
+	else if (ccode >= 'A' && ccode <= 'Z') {
 		ccode -= 'A' - 10;
 	}
 	else {

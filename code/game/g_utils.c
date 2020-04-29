@@ -33,9 +33,9 @@ Suite 120, Rockville, Maryland 20850 USA.
 #include "g_local.h"
 
 typedef struct {
-  char oldShader[MAX_QPATH];
-  char newShader[MAX_QPATH];
-  float timeOffset;
+	char oldShader[MAX_QPATH];
+	char newShader[MAX_QPATH];
+	float timeOffset;
 } shaderRemap_t;
 
 #define MAX_SHADER_REMAPS 128
@@ -43,34 +43,34 @@ typedef struct {
 int remapCount = 0;
 shaderRemap_t remappedShaders[MAX_SHADER_REMAPS];
 
-void AddRemap(const char *oldShader, const char *newShader, float timeOffset) {
+void AddRemap( const char* oldShader, const char* newShader, float timeOffset ) {
 	int i;
 
-	for (i = 0; i < remapCount; i++) {
-		if (Q_stricmp(oldShader, remappedShaders[i].oldShader) == 0) {
+	for ( i = 0; i < remapCount; i++ ) {
+		if ( Q_stricmp( oldShader, remappedShaders[i].oldShader ) == 0 ) {
 			// found it, just update this one
-			strcpy(remappedShaders[i].newShader,newShader);
+			strcpy( remappedShaders[i].newShader, newShader );
 			remappedShaders[i].timeOffset = timeOffset;
 			return;
 		}
 	}
-	if (remapCount < MAX_SHADER_REMAPS) {
-		strcpy(remappedShaders[remapCount].newShader,newShader);
-		strcpy(remappedShaders[remapCount].oldShader,oldShader);
+	if ( remapCount < MAX_SHADER_REMAPS ) {
+		strcpy( remappedShaders[remapCount].newShader, newShader );
+		strcpy( remappedShaders[remapCount].oldShader, oldShader );
 		remappedShaders[remapCount].timeOffset = timeOffset;
 		remapCount++;
 	}
 }
 
-const char *BuildShaderStateConfig(void) {
-	static char	buff[MAX_STRING_CHARS*4];
+const char* BuildShaderStateConfig( void ) {
+	static char	buff[MAX_STRING_CHARS * 4];
 	char out[(MAX_QPATH * 2) + 5];
 	int i;
-  
-	memset(buff, 0, MAX_STRING_CHARS);
-	for (i = 0; i < remapCount; i++) {
-		Com_sprintf(out, (MAX_QPATH * 2) + 5, "%s=%s:%5.2f@", remappedShaders[i].oldShader, remappedShaders[i].newShader, remappedShaders[i].timeOffset);
-		Q_strcat( buff, sizeof( buff ), out);
+
+	memset( buff, 0, MAX_STRING_CHARS );
+	for ( i = 0; i < remapCount; i++ ) {
+		Com_sprintf( out, (MAX_QPATH * 2) + 5, "%s=%s:%5.2f@", remappedShaders[i].oldShader, remappedShaders[i].newShader, remappedShaders[i].timeOffset );
+		Q_strcat( buff, sizeof( buff ), out );
 	}
 	return buff;
 }
@@ -89,7 +89,7 @@ G_FindConfigstringIndex
 
 ================
 */
-int G_FindConfigstringIndex( char *name, int start, int max, qboolean create ) {
+int G_FindConfigstringIndex( char* name, int start, int max, qboolean create ) {
 	int		i;
 	char	s[MAX_STRING_CHARS];
 
@@ -97,7 +97,7 @@ int G_FindConfigstringIndex( char *name, int start, int max, qboolean create ) {
 		return 0;
 	}
 
-	for ( i=1 ; i<max ; i++ ) {
+	for ( i = 1; i < max; i++ ) {
 		trap_GetConfigstring( start + i, s, sizeof( s ) );
 		if ( !s[0] ) {
 			break;
@@ -121,12 +121,12 @@ int G_FindConfigstringIndex( char *name, int start, int max, qboolean create ) {
 }
 
 
-int G_ModelIndex( char *name ) {
-	return G_FindConfigstringIndex (name, CS_MODELS, MAX_MODELS, qtrue);
+int G_ModelIndex( char* name ) {
+	return G_FindConfigstringIndex( name, CS_MODELS, MAX_MODELS, qtrue );
 }
 
-int G_SoundIndex( char *name ) {
-	return G_FindConfigstringIndex (name, CS_SOUNDS, MAX_SOUNDS, qtrue);
+int G_SoundIndex( char* name ) {
+	return G_FindConfigstringIndex( name, CS_SOUNDS, MAX_SOUNDS, qtrue );
 }
 
 //=====================================================================
@@ -141,7 +141,7 @@ Broadcasts a command to only a specific plsyer.
 ZTM: NOTE: Function name kept to reduce source code changes.
 ================
 */
-void trap_SendServerCommand( int playerNum, char *cmd ) {
+void trap_SendServerCommand( int playerNum, char* cmd ) {
 	if ( playerNum == -1 ) {
 		trap_SendServerCommandEx( -1, -1, cmd );
 	} else {
@@ -157,11 +157,11 @@ G_TeamCommand
 Broadcasts a command to only a specific team
 ================
 */
-void G_TeamCommand( team_t team, char *cmd ) {
-	gconnection_t	*connection;
+void G_TeamCommand( team_t team, char* cmd ) {
+	gconnection_t* connection;
 	int				i, j, playerNum;
 
-	for ( i = 0 ; i < level.maxconnections ; i++ ) {
+	for ( i = 0; i < level.maxconnections; i++ ) {
 		connection = &level.connections[i];
 
 		for ( j = 0; j < MAX_SPLITVIEW; j++ ) {
@@ -180,7 +180,7 @@ void G_TeamCommand( team_t team, char *cmd ) {
 
 		// Include team when there are multiple local players
 		if ( connection->numLocalPlayers > 1 && j < MAX_SPLITVIEW ) {
-			trap_SendServerCommandEx( i, -1, va( "[%s] %s", TeamName( team ), cmd ) );
+			trap_SendServerCommandEx( i, -1, va( "[%s] %s", G_PlayerTeamName( team ), cmd ) );
 		}
 	}
 }
@@ -198,23 +198,21 @@ NULL will be returned if the end of the list is reached.
 
 =============
 */
-gentity_t *G_Find (gentity_t *from, int fieldofs, const char *match)
-{
-	char	*s;
+gentity_t* G_Find( gentity_t* from, int fieldofs, const char* match ) {
+	char* s;
 
-	if (!from)
+	if ( !from )
 		from = g_entities;
 	else
 		from++;
 
-	for ( ; from < &g_entities[level.num_entities] ; from++)
-	{
-		if (!from->inuse)
+	for ( ; from < &g_entities[level.num_entities]; from++ ) {
+		if ( !from->inuse )
 			continue;
-		s = *(char **) ((byte *)from + fieldofs);
-		if (!s)
+		s = *(char**)((byte*)from + fieldofs);
+		if ( !s )
 			continue;
-		if (!Q_stricmp (s, match))
+		if ( !Q_stricmp( s, match ) )
 			return from;
 	}
 
@@ -231,37 +229,39 @@ Selects a random entity from among the targets
 */
 #define MAXCHOICES	32
 
-gentity_t *G_PickTarget (char *targetname)
-{
-	gentity_t	*ent = NULL;
+gentity_t* G_PickTarget( char* targetname ) {
+	gentity_t* ent = NULL;
 	int		num_choices = 0;
-	gentity_t	*choice[MAXCHOICES];
+	gentity_t* choice[MAXCHOICES];
 
-	if (!targetname)
-	{
-		G_Printf("G_PickTarget called with NULL targetname\n");
+	if ( !targetname ) {
+		G_Printf( "G_PickTarget called with NULL targetname\n" );
 		return NULL;
 	}
 
-	while(1)
-	{
-		ent = G_Find (ent, FOFS(targetname), targetname);
-		if (!ent)
+	while ( 1 ) {
+		ent = G_Find( ent, FOFS( targetname ), targetname );
+		if ( !ent )
 			break;
 		choice[num_choices++] = ent;
-		if (num_choices == MAXCHOICES)
+		if ( num_choices == MAXCHOICES )
 			break;
 	}
 
-	if (!num_choices)
-	{
-		G_Printf("G_PickTarget: target %s not found\n", targetname);
+	if ( !num_choices ) {
+		G_Printf( "G_PickTarget: target %s not found\n", targetname );
 		return NULL;
 	}
 
 	return choice[rand() % num_choices];
 }
 
+//q2
+void Think_Delay( gentity_t* ent ) {
+	G_UseTargets( ent, ent->activator );
+	G_FreeEntity( ent );
+}
+//-q2
 
 /*
 ==============================
@@ -274,17 +274,62 @@ match (string)self.target and call their .use function
 
 ==============================
 */
-void G_UseTargets( gentity_t *ent, gentity_t *activator ) {
-	gentity_t		*t;
-	
+void G_UseTargets( gentity_t* ent, gentity_t* activator ) {
+	gentity_t* t;
+
 	if ( !ent ) {
 		return;
 	}
 
-	if (ent->targetShaderName && ent->targetShaderNewName) {
+//q2
+	//
+	// check for a delay
+	//
+	if ( ent->delay ) {
+		// create a temp object to fire at a later time
+		t = G_Spawn();
+		t->classname = "DelayedUse";
+		t->nextthink = level.time + (ent->delay * 1000);
+		t->think = Think_Delay;
+		t->activator = activator;
+		if ( !activator )
+			G_Printf( "Think_Delay with no activator\n" );
+		t->message = ent->message;
+		t->target = ent->target;
+		//t->killtarget = ent->killtarget;
+		return;
+	}
+
+	//
+	// print the message
+	//
+	if ( (ent->message) && !(activator->r.svFlags & SVF_BOT) ) {
+		trap_SendServerCommand( activator - g_entities, va( "cp \"%s\"", ent->message ) );
+		if ( ent->noise_index )
+			G_Sound( activator, CHAN_AUTO, ent->noise_index );	// , 1, ATTN_NORM, 0 );
+		else
+			G_Sound( activator, CHAN_AUTO, G_SoundIndex( "sound/misc/talk1.wav" ) );	// , 1, ATTN_NORM, 0 );
+	}
+
+	//
+	// kill killtargets
+	//
+	if ( ent->killtarget ) {
+		t = NULL;
+		while ( (t = G_Find( t, FOFS( targetname ), ent->killtarget )) ) {
+			G_FreeEntity( t );
+			if ( !ent->inuse ) {
+				G_Printf( "entity was removed while using killtargets\n" );
+				return;
+			}
+		}
+	}
+//-q2
+	
+	if ( ent->targetShaderName && ent->targetShaderNewName ) {
 		float f = level.time * 0.001;
-		AddRemap(ent->targetShaderName, ent->targetShaderNewName, f);
-		trap_SetConfigstring(CS_SHADERSTATE, BuildShaderStateConfig());
+		AddRemap( ent->targetShaderName, ent->targetShaderNewName, f );
+		trap_SetConfigstring( CS_SHADERSTATE, BuildShaderStateConfig() );
 	}
 
 	if ( !ent->target ) {
@@ -292,16 +337,16 @@ void G_UseTargets( gentity_t *ent, gentity_t *activator ) {
 	}
 
 	t = NULL;
-	while ( (t = G_Find (t, FOFS(targetname), ent->target)) != NULL ) {
+	while ( (t = G_Find( t, FOFS( targetname ), ent->target )) != NULL ) {
 		if ( t == ent ) {
-			G_Printf ("WARNING: Entity used itself.\n");
+			G_Printf( "WARNING: Entity used itself.\n" );
 		} else {
 			if ( t->use ) {
-				t->use (t, ent, activator);
+				t->use( t, ent, activator );
 			}
 		}
 		if ( !ent->inuse ) {
-			G_Printf("entity was removed while using targets\n");
+			G_Printf( "entity was removed while using targets\n" );
 			return;
 		}
 	}
@@ -316,15 +361,15 @@ This is just a convenience function
 for making temporary vectors for function calls
 =============
 */
-float	*tv( float x, float y, float z ) {
+float* tv( float x, float y, float z ) {
 	static	int		index;
 	static	vec3_t	vecs[8];
-	float	*v;
+	float* v;
 
 	// use an array so that multiple tempvectors won't collide
 	// for a while
 	v = vecs[index];
-	index = (index + 1)&7;
+	index = (index + 1) & 7;
 
 	v[0] = x;
 	v[1] = y;
@@ -342,16 +387,16 @@ This is just a convenience function
 for printing vectors
 =============
 */
-char	*vtos( const vec3_t v ) {
+char* vtos( const vec3_t v ) {
 	static	int		index;
 	static	char	str[8][32];
-	char	*s;
+	char* s;
 
 	// use an array so that multiple vtos won't collide
 	s = str[index];
-	index = (index + 1)&7;
+	index = (index + 1) & 7;
 
-	Com_sprintf (s, 32, "(%i %i %i)", (int)v[0], (int)v[1], (int)v[2]);
+	Com_sprintf( s, 32, "(%i %i %i)", (int)v[0], (int)v[1], (int)v[2] );
 
 	return s;
 }
@@ -362,14 +407,14 @@ char	*vtos( const vec3_t v ) {
 G_SetBrushModel
 ================
 */
-void G_SetBrushModel( gentity_t *ent, const char *name ) {
+void G_SetBrushModel( gentity_t* ent, const char* name ) {
 	vec3_t			mins, maxs;
 
-	if (!name) {
+	if ( !name ) {
 		G_Error( "G_SetBrushModel: NULL" );
 	}
 
-	if (name[0] != '*') {
+	if ( name[0] != '*' ) {
 		G_Error( "G_SetBrushModel: %s isn't a brush model", name );
 	}
 
@@ -377,8 +422,8 @@ void G_SetBrushModel( gentity_t *ent, const char *name ) {
 	ent->s.modelindex = atoi( name + 1 );
 
 	trap_GetBrushBounds( ent->s.modelindex, mins, maxs );
-	VectorCopy (mins, ent->s.mins);
-	VectorCopy (maxs, ent->s.maxs);
+	VectorCopy( mins, ent->s.mins );
+	VectorCopy( maxs, ent->s.maxs );
 	ent->s.collisionType = CT_SUBMODEL;
 
 	ent->s.contents = -1;		// we don't know exactly what is in the brushes
@@ -398,17 +443,17 @@ instead of an orientation.
 ===============
 */
 void G_SetMovedir( vec3_t angles, vec3_t movedir ) {
-	static vec3_t VEC_UP		= {0, -1, 0};
-	static vec3_t MOVEDIR_UP	= {0, 0, 1};
-	static vec3_t VEC_DOWN		= {0, -2, 0};
-	static vec3_t MOVEDIR_DOWN	= {0, 0, -1};
+	static vec3_t VEC_UP = { 0, -1, 0 };
+	static vec3_t MOVEDIR_UP = { 0, 0, 1 };
+	static vec3_t VEC_DOWN = { 0, -2, 0 };
+	static vec3_t MOVEDIR_DOWN = { 0, 0, -1 };
 
-	if ( VectorCompare (angles, VEC_UP) ) {
-		VectorCopy (MOVEDIR_UP, movedir);
-	} else if ( VectorCompare (angles, VEC_DOWN) ) {
-		VectorCopy (MOVEDIR_DOWN, movedir);
+	if ( VectorCompare( angles, VEC_UP ) ) {
+		VectorCopy( MOVEDIR_UP, movedir );
+	} else if ( VectorCompare( angles, VEC_DOWN ) ) {
+		VectorCopy( MOVEDIR_DOWN, movedir );
 	} else {
-		AngleVectors (angles, movedir, NULL, NULL);
+		AngleVectors( angles, movedir, NULL, NULL );
 	}
 	VectorClear( angles );
 }
@@ -416,18 +461,18 @@ void G_SetMovedir( vec3_t angles, vec3_t movedir ) {
 
 float vectoyaw( const vec3_t vec ) {
 	float	yaw;
-	
-	if (vec[YAW] == 0 && vec[PITCH] == 0) {
+
+	if ( vec[YAW] == 0 && vec[PITCH] == 0 ) {
 		yaw = 0;
 	} else {
-		if (vec[PITCH]) {
-			yaw = ( atan2( vec[YAW], vec[PITCH]) * 180 / M_PI );
-		} else if (vec[YAW] > 0) {
+		if ( vec[PITCH] ) {
+			yaw = (atan2( vec[YAW], vec[PITCH] ) * 180 / M_PI);
+		} else if ( vec[YAW] > 0 ) {
 			yaw = 90;
 		} else {
 			yaw = 270;
 		}
-		if (yaw < 0) {
+		if ( yaw < 0 ) {
 			yaw += 360;
 		}
 	}
@@ -436,7 +481,7 @@ float vectoyaw( const vec3_t vec ) {
 }
 
 
-void G_InitGentity( gentity_t *e ) {
+void G_InitGentity( gentity_t* e ) {
 	e->inuse = qtrue;
 	e->classname = "noclass";
 	e->s.number = e - g_entities;
@@ -458,16 +503,16 @@ instead of being removed and recreated, which can cause interpolated
 angles and bad trails.
 =================
 */
-gentity_t *G_Spawn( void ) {
+gentity_t* G_Spawn( void ) {
 	int			i, force;
-	gentity_t	*e;
+	gentity_t* e;
 
 	e = NULL;	// shut up warning
-	for ( force = 0 ; force < 2 ; force++ ) {
+	for ( force = 0; force < 2; force++ ) {
 		// if we go through all entities and can't find one to free,
 		// override the normal minimum times before use
 		e = &g_entities[MAX_CLIENTS];
-		for ( i = MAX_CLIENTS ; i<level.num_entities ; i++, e++) {
+		for ( i = MAX_CLIENTS; i < level.num_entities; i++, e++ ) {
 			if ( e->inuse ) {
 				continue;
 			}
@@ -487,17 +532,17 @@ gentity_t *G_Spawn( void ) {
 		}
 	}
 	if ( level.num_entities == ENTITYNUM_MAX_NORMAL ) {
-		for (i = 0; i < MAX_GENTITIES; i++) {
-			G_Printf("%4i: %s\n", i, g_entities[i].classname);
+		for ( i = 0; i < MAX_GENTITIES; i++ ) {
+			G_Printf( "%4i: %s\n", i, g_entities[i].classname );
 		}
 		G_Error( "G_Spawn: no free entities" );
 	}
-	
+
 	// open up a new slot
 	level.num_entities++;
 
 	// let the server system know that there are more entities
-	trap_LocateGameData( level.gentities, level.num_entities, sizeof( gentity_t ), 
+	trap_LocateGameData( level.gentities, level.num_entities, sizeof( gentity_t ),
 		&level.players[0].ps, sizeof( level.players[0] ) );
 
 	G_InitGentity( e );
@@ -511,7 +556,7 @@ G_EntitiesFree
 */
 qboolean G_EntitiesFree( void ) {
 	int			i;
-	gentity_t	*e;
+	gentity_t* e;
 
 	if ( level.num_entities < ENTITYNUM_MAX_NORMAL ) {
 		// can open a new slot if needed
@@ -519,7 +564,7 @@ qboolean G_EntitiesFree( void ) {
 	}
 
 	e = &g_entities[MAX_CLIENTS];
-	for ( i = MAX_CLIENTS; i < level.num_entities; i++, e++) {
+	for ( i = MAX_CLIENTS; i < level.num_entities; i++, e++ ) {
 		if ( e->inuse ) {
 			continue;
 		}
@@ -537,14 +582,14 @@ G_FreeEntity
 Marks the entity as free
 =================
 */
-void G_FreeEntity( gentity_t *ed ) {
-	trap_UnlinkEntity (ed);		// unlink from world
+void G_FreeEntity( gentity_t* ed ) {
+	trap_UnlinkEntity( ed );		// unlink from world
 
 	if ( ed->neverFree ) {
 		return;
 	}
 
-	memset (ed, 0, sizeof(*ed));
+	memset( ed, 0, sizeof( *ed ) );
 	ed->classname = "freed";
 	ed->freetime = level.time;
 	ed->inuse = qfalse;
@@ -559,8 +604,8 @@ The origin will be snapped to save net bandwidth, so care
 must be taken if the origin is right on a surface (snap towards start vector first)
 =================
 */
-gentity_t *G_TempEntity( vec3_t origin, int event ) {
-	gentity_t		*e;
+gentity_t* G_TempEntity( vec3_t origin, int event ) {
+	gentity_t* e;
 	vec3_t		snapped;
 
 	e = G_Spawn();
@@ -597,25 +642,25 @@ Kills all entities that would touch the proposed new positioning
 of ent.  Ent should be unlinked before calling this!
 =================
 */
-void G_KillBox (gentity_t *ent) {
+void G_KillBox( gentity_t* ent ) {
 	int			i, num;
 	int			touch[MAX_GENTITIES];
-	gentity_t	*hit;
+	gentity_t* hit;
 	vec3_t		mins, maxs;
 
 	VectorAdd( ent->player->ps.origin, ent->s.mins, mins );
 	VectorAdd( ent->player->ps.origin, ent->s.maxs, maxs );
 	num = trap_EntitiesInBox( mins, maxs, touch, MAX_GENTITIES );
 
-	for (i=0 ; i<num ; i++) {
+	for ( i = 0; i < num; i++ ) {
 		hit = &g_entities[touch[i]];
 		if ( !hit->player ) {
 			continue;
 		}
 
 		// nail it
-		G_Damage ( hit, ent, ent, NULL, NULL,
-			100000, DAMAGE_NO_PROTECTION, MOD_TELEFRAG);
+		G_Damage( hit, ent, ent, NULL, NULL,
+			100000, DAMAGE_NO_PROTECTION, MOD_TELEFRAG );
 	}
 
 }
@@ -631,7 +676,7 @@ client side: jumppads and item pickups
 Adds an event+parm and twiddles the event counter
 ===============
 */
-void G_AddPredictableEvent( gentity_t *ent, int event, int eventParm ) {
+void G_AddPredictableEvent( gentity_t* ent, int event, int eventParm ) {
 	if ( !ent->player ) {
 		return;
 	}
@@ -646,7 +691,7 @@ G_AddEvent
 Adds an event+parm and twiddles the event counter
 ===============
 */
-void G_AddEvent( gentity_t *ent, int event, int eventParm ) {
+void G_AddEvent( gentity_t* ent, int event, int eventParm ) {
 	int		bits;
 
 	if ( !event ) {
@@ -657,12 +702,12 @@ void G_AddEvent( gentity_t *ent, int event, int eventParm ) {
 	// players need to add the event in playerState_t instead of entityState_t
 	if ( ent->player ) {
 		bits = ent->player->ps.externalEvent & EV_EVENT_BITS;
-		bits = ( bits + EV_EVENT_BIT1 ) & EV_EVENT_BITS;
+		bits = (bits + EV_EVENT_BIT1) & EV_EVENT_BITS;
 		ent->player->ps.externalEvent = event | bits;
 		ent->player->ps.externalEventParm = eventParm;
 	} else {
 		bits = ent->s.event & EV_EVENT_BITS;
-		bits = ( bits + EV_EVENT_BIT1 ) & EV_EVENT_BITS;
+		bits = (bits + EV_EVENT_BIT1) & EV_EVENT_BITS;
 		ent->s.event = event | bits;
 		ent->s.eventParm = eventParm;
 	}
@@ -675,8 +720,8 @@ void G_AddEvent( gentity_t *ent, int event, int eventParm ) {
 G_Sound
 =============
 */
-void G_Sound( gentity_t *ent, int channel, int soundIndex ) {
-	gentity_t	*te;
+void G_Sound( gentity_t* ent, int channel, int soundIndex ) {
+	gentity_t* te;
 
 	te = G_TempEntity( ent->r.currentOrigin, EV_GENERAL_SOUND );
 	te->s.eventParm = soundIndex;
@@ -693,7 +738,7 @@ G_SetOrigin
 Sets the pos trajectory for a fixed position
 ================
 */
-void G_SetOrigin( gentity_t *ent, vec3_t origin ) {
+void G_SetOrigin( gentity_t* ent, vec3_t origin ) {
 	VectorCopy( origin, ent->s.pos.trBase );
 	ent->s.pos.trType = TR_STATIONARY;
 	ent->s.pos.trTime = 0;
@@ -711,38 +756,178 @@ DebugLine
   with r_debugSurface set to 2
 ================
 */
-int DebugLine(vec3_t start, vec3_t end, int color) {
-	vec3_t points[4], dir, cross, up = {0, 0, 1};
+int DebugLine( vec3_t start, vec3_t end, int color ) {
+	vec3_t points[4], dir, cross, up = { 0, 0, 1 };
 	float dot;
 
-	VectorCopy(start, points[0]);
-	VectorCopy(start, points[1]);
+	VectorCopy( start, points[0] );
+	VectorCopy( start, points[1] );
 	//points[1][2] -= 2;
-	VectorCopy(end, points[2]);
+	VectorCopy( end, points[2] );
 	//points[2][2] -= 2;
-	VectorCopy(end, points[3]);
+	VectorCopy( end, points[3] );
 
 
-	VectorSubtract(end, start, dir);
-	VectorNormalize(dir);
-	dot = DotProduct(dir, up);
-	if (dot > 0.99 || dot < -0.99) VectorSet(cross, 1, 0, 0);
-	else CrossProduct(dir, up, cross);
+	VectorSubtract( end, start, dir );
+	VectorNormalize( dir );
+	dot = DotProduct( dir, up );
+	if ( dot > 0.99 || dot < -0.99 ) VectorSet( cross, 1, 0, 0 );
+	else CrossProduct( dir, up, cross );
 
-	VectorNormalize(cross);
+	VectorNormalize( cross );
 
-	VectorMA(points[0], 2, cross, points[0]);
-	VectorMA(points[1], -2, cross, points[1]);
-	VectorMA(points[2], -2, cross, points[2]);
-	VectorMA(points[3], 2, cross, points[3]);
+	VectorMA( points[0], 2, cross, points[0] );
+	VectorMA( points[1], -2, cross, points[1] );
+	VectorMA( points[2], -2, cross, points[2] );
+	VectorMA( points[3], 2, cross, points[3] );
 
-	return trap_DebugPolygonCreate(color, 4, points);
+	return trap_DebugPolygonCreate( color, 4, points );
 }
 
-qboolean GTF(const int gtFlags) {
+qboolean GTF( const int gtFlags ) {
 	return (gt[g_gameType.integer].gtFlags & (gtFlags));
 }
 
-qboolean GTL(const int gtGoal) {
+qboolean GTL( const int gtGoal ) {
 	return (qboolean)(gt[g_gameType.integer].gtGoal == gtGoal);
+}
+
+
+char* g_teamNames[] = {
+	"Neutral",
+	"Red",
+	"Blue",
+	"Green",
+	"Yellow",
+	"Teal",
+	"Pink",
+};
+
+char* g_teamNamesLower[] = {
+	"neutral",
+	"red",
+	"blue",
+	"green",
+	"yellow",
+	"teal",
+	"pink",
+};
+
+char* g_teamNamesLetter[] = {
+	"n", "r", "b", "g", "y", "t", "p", };
+
+char* g_teamShortNames[] = {
+	"NL",
+	"RD",
+	"BL",
+	"GN",
+	"YW",
+	"TL",
+	"PK",
+};
+
+char* teamTextColorString[] = {
+	S_COLOR_WHITE,
+	S_COLOR_RED,
+	S_COLOR_BLUE,
+	S_COLOR_GREEN,
+	S_COLOR_YELLOW,
+	S_COLOR_CYAN,
+	S_COLOR_MAGENTA,
+};
+
+char* G_TeamName( team_t team ) {
+
+	if ( IsValidTeam( team ) ) {
+#if 0
+		char msg[1024];
+		Com_sprintf( msg, sizeof( msg ), "%s%s Team%s", teamTextColorString[team], g_teamNames[team], S_COLOR_WHITE );
+		if ( msg[0] )
+			return va( "%s", msg );
+#endif
+		//return va( "%s%s Team", teamTextColorString[team], g_teamNames[team] );	// , (char*)S_COLOR_WHITE );
+		//return va( "%s Team", g_teamNames[team] );	// , (char*)S_COLOR_WHITE );
+		//return ( va( "%s Team", g_teamNames[team], S_COLOR_WHITE ) );
+	}
+
+	if ( team == TEAM_SPECTATOR ) {
+		return "SPECTATOR";
+	}
+	return "FREE";
+}
+
+
+char* G_PlayerTeamName( team_t team ) {
+
+#if 0
+	char* playerTeamName[] = {
+		"Neutral",
+		"Red",
+		"Blue",
+		"Green",
+		"Yellow",
+		"Teal",
+		"Pink",
+	};
+
+	if ( IsValidTeam( team ) ) {
+		return va( "%s Team", playerTeamName[team] );
+	}
+	if ( team == TEAM_SPECTATOR ) {
+		return "SPECTATOR";
+	}
+	return "FREE";
+#endif
+
+	switch ( team ) {
+	case TEAM_RED: return (S_COLOR_RED "Red Team" S_COLOR_WHITE);
+	case TEAM_BLUE: return (S_COLOR_BLUE "Blue Team" S_COLOR_WHITE);
+	case TEAM_GREEN: return (S_COLOR_GREEN "Green Team" S_COLOR_WHITE);
+	case TEAM_YELLOW: return (S_COLOR_YELLOW "Yellow Team" S_COLOR_WHITE);
+	case TEAM_TEAL: return (S_COLOR_CYAN "Teal Team" S_COLOR_WHITE);
+	case TEAM_PINK: return (S_COLOR_MAGENTA "Pink Team" S_COLOR_WHITE);
+	default: return "No Team";
+	}
+
+}
+
+
+/*
+==================
+IsValidTeam
+
+Checks team index is valid
+==================
+*/
+qboolean IsValidTeam( const team_t team ) {
+	if ( team < FIRST_TEAM ) return qfalse;
+	//if ( team >= TEAM_NUM_TEAMS ) return qfalse;
+	if ( team > level.teams_max ) return qfalse;
+	return qtrue;
+}
+
+
+/*
+==================
+IsAllowedTeam
+
+//multiteam TODO
+Check teams that have been disabled/have left
+==================
+*/
+qboolean IsAllowedTeam( const team_t team ) {
+
+	return qtrue;
+}
+
+
+/*
+==================
+PlayerName
+
+Return colorized name of player with white text escape at end. Easy way to add clan tags in future.
+==================
+*/
+char* PlayerName( playerPersistant_t p ) {
+	return va( "%s%s", p.netname, S_COLOR_WHITE );
 }

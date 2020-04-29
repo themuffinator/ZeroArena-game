@@ -75,18 +75,16 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 // Prototypes
 
-int OtherTeam(int team);
-const char *TeamName(int team);
-const char *TeamColorString(int team);
-void AddTeamScore(vec3_t origin, int team, int score);
+int OtherTeam(team_t team);		//multiteam TODO remove
+void AddTeamScore(vec3_t origin, team_t team, int score);
 
 void Team_DroppedFlagThink(gentity_t *ent);
 void Team_FragBonuses(gentity_t *targ, gentity_t *inflictor, gentity_t *attacker);
 void Team_CheckHurtCarrier(gentity_t *targ, gentity_t *attacker);
 void Team_InitGame(void);
-void Team_ReturnFlag(int team);
+void Team_ReturnFlag(team_t team);
 void Team_FreeEntity(gentity_t *ent);
-gentity_t *SelectTeamBaseSpawnPoint ( team_t team, int teamstate, vec3_t origin, vec3_t angles, qboolean isbot );
+gentity_t* SelectTeamBaseSpawnPoint( team_t team, int teamState, vec3_t origin, vec3_t angles, qboolean isBot );
 gentity_t *Team_GetLocation(gentity_t *ent);
 qboolean Team_GetLocationMsg(gentity_t *ent, char *loc, int loclen);
 void TeamplayInfoMessage( gentity_t *ent );

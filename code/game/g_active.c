@@ -290,7 +290,7 @@ void	G_TouchTriggers( gentity_t *ent ) {
 		// use separate code for determining if an item is picked up
 		// so you don't have to actually contact its bounding box
 		if ( hit->s.eType == ET_ITEM ) {
-			if ( !BG_PlayerTouchesItem( &ent->player->ps, &hit->s, level.time ) ) {
+			if ( !BG_PlayerTouchesItem( &ent->player->ps, &hit->s, level.time, g_gravity.value ) ) {
 				continue;
 			}
 		} else {
@@ -353,7 +353,7 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd ) {
 		pm.pointcontents = trap_PointContents;
 
 		// perform a pmove
-		Pmove (&pm);
+		Pmove( &pm, g_dmFlags.integer );
 		// save results of pmove
 		VectorCopy( player->ps.origin, ent->s.origin );
 
@@ -455,7 +455,7 @@ void PlayerTimerActions( gentity_t *ent, int msec ) {
 		}
 
 		// count down armor when over max
-		if ( player->ps.stats[STAT_ARMOR] > player->ps.stats[STAT_MAX_HEALTH] ) {
+		if ( !g_armorTiered.integer && (player->ps.stats[STAT_ARMOR] > player->ps.stats[STAT_MAX_HEALTH]) ) {
 			player->ps.stats[STAT_ARMOR]--;
 		}
 	}
@@ -592,7 +592,7 @@ void PlayerEvents( gentity_t *ent, int oldEventSequence ) {
 			case HI_TELEPORTER:
 				TossPlayerGametypeItems( ent );
 				SelectSpawnPoint( ent->player->ps.origin, origin, angles, qfalse );
-				TeleportPlayer( ent, origin, angles, qtrue, qfalse );
+				TeleportPlayer( ent, origin, angles, qtrue, qfalse, qtrue );
 				break;
 
 			case HI_MEDKIT:
@@ -910,7 +910,7 @@ void PlayerThink_real( gentity_t *ent ) {
 	pm.pmove_fixed = pmove_fixed.integer | player->pers.pmoveFixed;
 	pm.pmove_msec = pmove_msec.integer;
 
-	pm.pmove_overbounce = pmove_overbounce.integer;
+	pm.pmove_overBounce = pmove_overBounce.integer;
 
 	VectorCopy( player->ps.origin, player->oldOrigin );
 
@@ -929,7 +929,7 @@ void PlayerThink_real( gentity_t *ent ) {
 	}
 #endif
 
-	Pmove (&pm);
+	Pmove( &pm, g_dmFlags.integer );
 
 	// save results of pmove
 	if ( ent->player->ps.eventSequence != oldEventSequence ) {
@@ -1060,7 +1060,7 @@ void SpectatorPlayerEndFrame( gentity_t *ent ) {
 		if ( playerNum >= 0 ) {
 			cl = &level.players[ playerNum ];
 			if ( cl->pers.connected == CON_CONNECTED && cl->sess.sessionTeam != TEAM_SPECTATOR ) {
-				flags = (cl->ps.eFlags & ~(EF_VOTED | EF_TEAMVOTED)) | (ent->player->ps.eFlags & (EF_VOTED | EF_TEAMVOTED));
+				flags = (cl->ps.eFlags & ~EF_VOTED) | (ent->player->ps.eFlags & EF_VOTED);
 				ent->player->ps = cl->ps;
 				ent->player->ps.pm_flags |= PMF_FOLLOW;
 				ent->player->ps.eFlags = flags;

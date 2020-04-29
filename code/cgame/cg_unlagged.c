@@ -91,8 +91,8 @@ void CG_PredictWeaponEffects( centity_t *cent ) {
 						vec3_t origin1, origin2;
 
 						// figure the two origins used for interpolation
-						BG_EvaluateTrajectory( &c->currentState.pos, cg.snap->serverTime, origin1 );
-						BG_EvaluateTrajectory( &c->nextState.pos, cg.nextSnap->serverTime, origin2 );
+						BG_EvaluateTrajectory( &c->currentState.pos, cg.snap->serverTime, origin1, cgs.gravity );
+						BG_EvaluateTrajectory( &c->nextState.pos, cg.nextSnap->serverTime, origin2, cgs.gravity );
 
 						// print some debugging stuff exactly like what the server does
 
@@ -115,8 +115,8 @@ void CG_PredictWeaponEffects( centity_t *cent ) {
 						c->currentState.pos.trTime = cg.snap->serverTime;
 						c->currentState.pos.trDuration = 1000 / sv_fps.integer;
 
-						BG_EvaluateTrajectory( &c->currentState.pos, cg.snap->serverTime, origin1 );
-						BG_EvaluateTrajectory( &c->currentState.pos, cg.snap->serverTime + 1000 / sv_fps.integer, origin2 );
+						BG_EvaluateTrajectory( &c->currentState.pos, cg.snap->serverTime, origin1, cgs.gravity );
+						BG_EvaluateTrajectory( &c->currentState.pos, cg.snap->serverTime + 1000 / sv_fps.integer, origin2, cgs.gravity );
 
 						// print some debugging stuff exactly like what the server does
 

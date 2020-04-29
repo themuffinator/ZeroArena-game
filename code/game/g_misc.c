@@ -97,14 +97,14 @@ TELEPORTERS
 =================================================================================
 */
 
-void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles, const qboolean freezeVelocity, const qboolean saveAngles) {
+void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles, const qboolean freezeVelocity, const qboolean saveAngles, const qboolean effect ) {
 	gentity_t	*tent;
 	qboolean noAngles;
 
 	noAngles = (angles[0] > 999999.0);
 	// use temp events at source and destination to prevent the effect
 	// from getting dropped by a second player event
-	if ( player->player->sess.sessionTeam != TEAM_SPECTATOR ) {
+	if ( effect && player->player->sess.sessionTeam != TEAM_SPECTATOR ) {
 		tent = G_TempEntity( player->player->ps.origin, EV_PLAYER_TELEPORT_OUT );
 		tent->s.playerNum = player->s.playerNum;
 
@@ -185,7 +185,7 @@ void teleporter_touch(gentity_t* self, gentity_t* other, trace_t* trace)
 	other->player->ps.pm_flags |= PMF_TIME_KNOCKBACK;	// PMF_TIME_TELEPORT;
 
 	G_Printf("Teleport player\n");
-	TeleportPlayer(other, dest->s.origin, dest->s.angles, qtrue, qfalse);
+	TeleportPlayer(other, dest->s.origin, dest->s.angles, qtrue, qfalse, qtrue );
 }
 
 void SP_misc_teleporter(gentity_t* ent)
@@ -198,6 +198,7 @@ void SP_misc_teleporter(gentity_t* ent)
 		G_FreeEntity(ent);
 		return;
 	}
+	G_Printf( "misc_teleporter start\n" );
 
 	ent->s.loopSound = G_SoundIndex("sound/world/amb10.wav");
 
@@ -205,7 +206,8 @@ void SP_misc_teleporter(gentity_t* ent)
 	ent->s.modelindex = G_ModelIndex("models/objects/dmspot/dmspot.md3");
 	VectorSet(ent->s.mins, -32, -32, -24);
 	VectorSet(ent->s.maxs, 32, 32, -16);
-	ent->s.collisionType = CT_SUBMODEL;
+	ent->clipmask = CONTENTS_SOLID;
+	ent->s.collisionType = CT_AABB;
 	trap_LinkEntity(ent);
 	
 	trig = G_Spawn();
@@ -213,6 +215,7 @@ void SP_misc_teleporter(gentity_t* ent)
 	trig->touch = teleporter_touch;
 	ent->s.collisionType = CT_SUBMODEL;
 	trig->s.contents = CONTENTS_TRIGGER;
+	trig->s.eType = ET_TELEPORT_TRIGGER;
 	trig->r.svFlags = SVF_NOCLIENT;
 	trig->target = ent->target;
 	trig->parent = ent;
@@ -221,6 +224,7 @@ void SP_misc_teleporter(gentity_t* ent)
 	VectorSet(trig->s.mins, -8, -8, 8);
 	VectorSet(trig->s.maxs, 8, 8, 24);
 	trap_LinkEntity(trig);
+	G_Printf( "misc_teleporter end\n" );
 }
 
 
@@ -805,13 +809,13 @@ static void PortalTouch( gentity_t *self, gentity_t *other, trace_t *trace) {
 	// if there is not one, die!
 	if( !destination ) {
 		if( self->pos1[0] || self->pos1[1] || self->pos1[2] ) {
-			TeleportPlayer( other, self->pos1, self->s.angles, qfalse, qfalse );
+			TeleportPlayer( other, self->pos1, self->s.angles, qfalse, qfalse, qtrue );
 		}
 		G_Damage( other, other, other, NULL, NULL, 100000, DAMAGE_NO_PROTECTION, MOD_TELEFRAG );
 		return;
 	}
 
-	TeleportPlayer( other, destination->s.pos.trBase, destination->s.angles, qfalse, qfalse );
+	TeleportPlayer( other, destination->s.pos.trBase, destination->s.angles, qfalse, qfalse, qtrue );
 }
 
 

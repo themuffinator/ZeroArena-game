@@ -67,7 +67,7 @@ void CG_BubbleTrail( vec3_t start, vec3_t end, float spacing ) {
 
 		le = CG_AllocLocalEntity();
 		le->leFlags = LEF_PUFF_DONT_SCALE;
-		if ( cg_oldBubbles.integer ) {
+		if ( cg_bubblesTrailStyle.integer ) {
 			le->leType = LE_MOVE_SCALE_FADE;
 			le->endTime = cg.time + 1000 + random() * 250;
 		} else {
@@ -82,7 +82,7 @@ void CG_BubbleTrail( vec3_t start, vec3_t end, float spacing ) {
 
 		re->reType = RT_SPRITE;
 		re->rotation = 0;
-		if ( cg_oldBubbles.integer ) {
+		if ( cg_bubblesTrailStyle.integer ) {
 			re->radius = 3;
 		} else {
 			re->radius = 2 + random() * 2;
@@ -100,7 +100,7 @@ void CG_BubbleTrail( vec3_t start, vec3_t end, float spacing ) {
 		VectorCopy( move, le->pos.trBase );
 		le->pos.trDelta[0] = crandom()*5;
 		le->pos.trDelta[1] = crandom()*5;
-		if ( cg_oldBubbles.integer ) {
+		if ( cg_bubblesTrailStyle.integer ) {
 			le->pos.trDelta[2] = crandom()*5 + 6;
 		} else {
 			le->pos.trDelta[2] = 85 + random()*10;
@@ -122,7 +122,7 @@ int CG_SpawnBubbles( localEntity_t **bubbles, vec3_t origin, float baseSize, int
 	float		rnd;
 	qboolean	spawnedLarge;
 
-	if ( cg_oldBubbles.integer ) {
+	if ( cg_bubblesTrailStyle.integer ) {
 		return 0;
 	}
 
@@ -272,18 +272,13 @@ void CG_SpawnEffect( vec3_t org ) {
 	re->reType = RT_MODEL;
 	re->shaderTime = cg.time;
 
-#ifndef MISSIONPACK
 	re->customShader = cgs.media.teleportEffectShader;
-#endif
 	re->hModel = cgs.media.teleportEffectModel;
 	AxisClear( re->axis );
 
 	VectorCopy( org, re->origin );
-#ifdef MISSIONPACK
-	re->origin[2] += 16;
-#else
+
 	re->origin[2] -= 24;
-#endif
 }
 
 
@@ -657,7 +652,7 @@ Generated a bunch of gibs launching out from the bodies location
 void CG_GibPlayer( vec3_t playerOrigin ) {
 	vec3_t	origin, velocity;
 
-	if ( CG_PointContents( playerOrigin, -1 ) & ( CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA ) ) {
+	if ( CG_PointContents( playerOrigin, -1 ) & MASK_WATER ) {
 		CG_SpawnBubbles( NULL, playerOrigin, 3, 5 + random() * 5 );
 	}
 

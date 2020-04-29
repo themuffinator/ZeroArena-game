@@ -41,43 +41,48 @@ CG_ParseScores
 =================
 */
 static void CG_ParseScores( int start ) {
-	int		i, powerups;
+	int i, j = 1;
 
-	cg.numScores = atoi( CG_Argv( 1 + start) );
-	if ( cg.numScores > MAX_CLIENTS ) {
+	cg.numScores = atoi( CG_Argv( j++ + start) );
+	if ( cg.numScores > MAX_CLIENTS )
 		cg.numScores = MAX_CLIENTS;
-	}
 
-	cg.teamScores[0] = atoi( CG_Argv( 2 + start) );
-	cg.teamScores[1] = atoi( CG_Argv( 3 + start) );
+	for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ )
+		cg.teamScores[i] = atoi( CG_Argv( j++ + start ) );
 
+	//CG_Printf( "numscores = %i, red score = %i\n",cg.numScores, cg.teamScores[TEAM_RED] );
 	memset( cg.scores, 0, sizeof( cg.scores ) );
 	for ( i = 0 ; i < cg.numScores ; i++ ) {
-		//
-		cg.scores[i].playerNum = atoi( CG_Argv( i * 14 + 4 + start) );
-		cg.scores[i].score = atoi( CG_Argv( i * 14 + 5 + start) );
-		cg.scores[i].ping = atoi( CG_Argv( i * 14 + 6 + start) );
-		cg.scores[i].time = atoi( CG_Argv( i * 14 + 7 + start) );
-		cg.scores[i].scoreFlags = atoi( CG_Argv( i * 14 + 8 + start) );
-		powerups = atoi( CG_Argv( i * 14 + 9 + start) );
-		cg.scores[i].accuracy = atoi(CG_Argv(i * 14 + 10 + start));
-		cg.scores[i].impressiveCount = atoi(CG_Argv(i * 14 + 11 + start));
-		cg.scores[i].excellentCount = atoi(CG_Argv(i * 14 + 12 + start));
-		cg.scores[i].guantletCount = atoi(CG_Argv(i * 14 + 13 + start));
-		cg.scores[i].defendCount = atoi(CG_Argv(i * 14 + 14 + start));
-		cg.scores[i].assistCount = atoi(CG_Argv(i * 14 + 15 + start));
-		cg.scores[i].perfect = atoi(CG_Argv(i * 14 + 16 + start));
-		cg.scores[i].captures = atoi(CG_Argv(i * 14 + 17 + start));
+		score_t* s = &cg.scores[i];
+		int k = j, powerups;
 
-		if ( cg.scores[i].playerNum < 0 || cg.scores[i].playerNum >= MAX_CLIENTS ) {
-			cg.scores[i].playerNum = 0;
+		s->playerNum = atoi( CG_Argv( i * 14 + k++ + start) );
+		s->score = atoi( CG_Argv( i * 14 + k++ + start) );
+		s->ping = atoi( CG_Argv( i * 14 + k++ + start) );
+		s->time = atoi( CG_Argv( i * 14 + k++ + start) );
+		s->scoreFlags = atoi( CG_Argv( i * 14 + k++ + start) );
+		powerups = atoi( CG_Argv( i * 14 + k++ + start) );
+		s->accuracy = atoi(CG_Argv(i * 14 + k++ + start));
+		s->impressiveCount = atoi(CG_Argv(i * 14 + k++ + start));
+		s->excellentCount = atoi(CG_Argv(i * 14 + k++ + start));
+		s->guantletCount = atoi(CG_Argv(i * 14 + k++ + start));
+		s->defendCount = atoi(CG_Argv(i * 14 + k++ + start));
+		s->assistCount = atoi(CG_Argv(i * 14 + k++ + start));
+		s->perfect = atoi(CG_Argv(i * 14 + k++ + start));
+		s->captures = atoi(CG_Argv(i * 14 + k++ + start));
+
+		if ( s->playerNum < 0 || s->playerNum >= MAX_CLIENTS ) {
+			s->playerNum = 0;
 		}
-		cgs.playerinfo[ cg.scores[i].playerNum ].score = cg.scores[i].score;
-		cgs.playerinfo[ cg.scores[i].playerNum ].powerups = powerups;
+		cgs.playerinfo[ s->playerNum ].score = s->score;
+		cgs.playerinfo[ s->playerNum ].powerups = powerups;
 
-		cg.scores[i].team = cgs.playerinfo[cg.scores[i].playerNum].team;
+		s->team = cgs.playerinfo[s->playerNum].team;
+
+		//CG_Printf( "player %i score = %i\n", s->playerNum, s->score );
 	}
 }
+
 
 /*
 =================
@@ -93,13 +98,10 @@ Each string is "playerNum location health armor weapon powerups"
 static void CG_ParseTeamInfo( int start ) {
 	int		i;
 	int		playerNum;
-	int		team;
-
-	team = atoi( CG_Argv( 1 + start ) );
-	if( team < 0 || team >= TEAM_NUM_TEAMS )
-	{
-		CG_Error( "CG_ParseTeamInfo: team out of range (%d)",
-				team );
+	int		team = atoi( CG_Argv( 1 + start ) );
+	
+	if ( team < FIRST_TEAM || team >= TEAM_NUM_TEAMS ) {
+		CG_Error( "CG_ParseTeamInfo: team out of range (%d)", team );
 		return;
 	}
 
@@ -152,9 +154,15 @@ void CG_ParseServerinfo( void ) {
 	cgs.scoreLimit = atoi( Info_ValueForKey( info, "scoreLimit" ) );
 	cgs.timeLimit = atoi( Info_ValueForKey( info, "timeLimit" ) );
 	cgs.maxplayers = atoi( Info_ValueForKey( info, "sv_maxclients" ) );
-	mapname = Info_ValueForKey( info, "mapname" );
+	cgs.bots_enabled = atoi( Info_ValueForKey( info, "bot_enable" ) );
+	mapname = Info_ValueForKey( info, "mapName" );
 	Com_sprintf( cgs.mapname, sizeof( cgs.mapname ), "maps/%s.bsp", mapname );
+	cgs.gravity = atoi( Info_ValueForKey( info, "g_gravity" ) );
+	cgs.tieredArmor = atoi( Info_ValueForKey( info, "g_armorTiered" ) );
+	cgs.teamSizeMin = atoi( Info_ValueForKey( info, "g_teamSize_min" ) );
+	cgs.teamSizeMax = atoi( Info_ValueForKey( info, "g_teamSize_max" ) );
 }
+
 
 /*
 ==================
@@ -170,9 +178,9 @@ static void CG_ParseWarmup( void ) {
 	warmup = atoi( info );
 	cg.warmupCount = -1;
 
-	if ( warmup == 0 && cg.warmup ) {
+	if ( warmup == 0 && cg.warmupTime ) {
 
-	} else if ( warmup > 0 && cg.warmup <= 0 ) {
+	} else if ( warmup > 0 && cg.warmupTime <= 0 ) {
 #ifdef MISSIONPACK
 		if (GTF(GTF_TEAMS)) {
 			trap_S_StartLocalSound( cgs.media.countPrepareTeamSound, CHAN_ANNOUNCER );
@@ -183,7 +191,29 @@ static void CG_ParseWarmup( void ) {
 		}
 	}
 
-	cg.warmup = warmup;
+	cg.warmupTime = warmup;
+}
+
+
+/*
+======================
+CG_NewSortedTeams
+======================
+*/
+void CG_NewSortedTeams( const char* configstring ) {
+	int i;
+	char str[1024];
+
+	if ( !configstring[0] ) return;
+	Q_strncpyz( str, configstring, sizeof( str ) );
+	//CG_Printf( "CG_NewSortedTeams: str = %s\n", str );
+	cgs.sortedTeams[0] = 0;	// ignore 0 to keep compatibility with team index
+	for ( i = 0; i < strlen( str ) && i < TOTAL_TEAMS; i++ ) {
+		int num = str[i] - '0';
+		//CG_Printf( "CG_NewSortedTeams: num (%i) = %i\n", i, num );
+
+		cgs.sortedTeams[i + FIRST_TEAM] = num;
+	}
 }
 
 /*
@@ -196,20 +226,38 @@ Called on load to set the initial values from configure strings
 void CG_SetConfigValues( void ) {
 	const char *s;
 
-	cgs.scores1 = atoi( CG_ConfigString( CS_SCORES1 ) );
-	cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
+	cgs.scores[0] = atoi( CG_ConfigString( CS_SCORES1 ) );
+	cgs.scores[1] = atoi( CG_ConfigString( CS_SCORES2 ) );
+	if ( GTF( GTF_TEAMS ) ) {
+		cgs.scores[2] = atoi( CG_ConfigString( CS_SCORES3 ) );
+		cgs.scores[3] = atoi( CG_ConfigString( CS_SCORES4 ) );
+		cgs.scores[4] = atoi( CG_ConfigString( CS_SCORES5 ) );
+		cgs.scores[5] = atoi( CG_ConfigString( CS_SCORES6 ) );
+	}
 	cgs.levelStartTime = atoi( CG_ConfigString( CS_LEVEL_START_TIME ) );
+
+	CG_NewSortedTeams( CG_ConfigString( CS_SORTEDTEAMS ) );
+
 	if ( GTF(GTF_CTF) ) {
+		int i, j = 0;
 		s = CG_ConfigString( CS_FLAGSTATUS );
-		cgs.redflag = s[0] - '0';
-		cgs.blueflag = s[1] - '0';
+
+		for ( i = FIRST_TEAM; i < strlen(s); i++ ) {
+			if ( !s[j] ) break;
+			cgs.flagStatus[i] = s[j] - '0';
+			j++;
+		}
 	}
 	else if( cgs.gameType == GT_1FCTF ) {
 		s = CG_ConfigString( CS_FLAGSTATUS );
-		cgs.flagStatus = s[0] - '0';
+		cgs.flagStatus[TEAM_FREE] = s[0] - '0';
 	}
 
-	cg.warmup = atoi( CG_ConfigString( CS_WARMUP ) );
+	cg.warmupTime = atoi( CG_ConfigString( CS_WARMUP ) );
+	cg.warmupState = atoi( CG_ConfigString( CS_WARMUP_STATE ) );
+	cg.warmupVal = atoi( CG_ConfigString( CS_WARMUP_VAL ) );
+
+	cgs.numTeams = atoi( CG_ConfigString( CS_NUMTEAMS ) );
 }
 
 /*
@@ -255,6 +303,7 @@ void CG_ShaderStateChanged(void) {
 	trap_R_GetGlobalFog( &cgs.globalFogType, cgs.globalFogColor, &cgs.globalFogDepthForOpaque, &cgs.globalFogDensity, &cgs.globalFogFarClip );
 }
 
+
 /*
 ================
 CG_ConfigStringModified
@@ -281,10 +330,35 @@ static void CG_ConfigStringModified( void ) {
 		CG_ParseServerinfo();
 	} else if ( num == CS_WARMUP ) {
 		CG_ParseWarmup();
+	} else if ( num == CS_WARMUP_STATE ) {
+		cg.warmupState = atoi( str );
+	} else if ( num == CS_WARMUP_VAL ) {
+		int i, numshort = 0;
+		cg.warmupVal = atoi( str );
+
+		if ( GTF( GTF_TEAMS ) && cg.warmupState == WARMUP_SHORT_TEAMS ) {
+			for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ ) {
+				if ( cg.warmupVal & (1 << (i - FIRST_TEAM)) ) {
+					cg.warmupShortTeams[i] = qtrue;
+					numshort++;
+				} else {
+					cg.warmupShortTeams[i] = qfalse;
+				}
+			}
+			cg.warmupNumShortTeams = numshort;
+		}
 	} else if ( num == CS_SCORES1 ) {
-		cgs.scores1 = atoi( str );
+		cgs.scores[0] = atoi( str );
 	} else if ( num == CS_SCORES2 ) {
-		cgs.scores2 = atoi( str );
+		cgs.scores[1] = atoi( str );
+	} else if ( num == CS_SCORES3 ) {
+		cgs.scores[2] = atoi( str );
+	} else if ( num == CS_SCORES4 ) {
+		cgs.scores[3] = atoi( str );
+	} else if ( num == CS_SCORES5 ) {
+		cgs.scores[4] = atoi( str );
+	} else if ( num == CS_SCORES6 ) {
+		cgs.scores[5] = atoi( str );
 	} else if ( num == CS_LEVEL_START_TIME ) {
 		cgs.levelStartTime = atoi( str );
 	} else if ( num == CS_VOTE_TIME ) {
@@ -301,20 +375,10 @@ static void CG_ConfigStringModified( void ) {
 #ifdef MISSIONPACK
 		trap_S_StartLocalSound( cgs.media.voteNow, CHAN_ANNOUNCER );
 #endif //MISSIONPACK
-	} else if ( num >= CS_TEAMVOTE_TIME && num <= CS_TEAMVOTE_TIME + 1) {
-		cgs.teamVoteTime[num-CS_TEAMVOTE_TIME] = atoi( str );
-		cgs.teamVoteModified[num-CS_TEAMVOTE_TIME] = qtrue;
-	} else if ( num >= CS_TEAMVOTE_YES && num <= CS_TEAMVOTE_YES + 1) {
-		cgs.teamVoteYes[num-CS_TEAMVOTE_YES] = atoi( str );
-		cgs.teamVoteModified[num-CS_TEAMVOTE_YES] = qtrue;
-	} else if ( num >= CS_TEAMVOTE_NO && num <= CS_TEAMVOTE_NO + 1) {
-		cgs.teamVoteNo[num-CS_TEAMVOTE_NO] = atoi( str );
-		cgs.teamVoteModified[num-CS_TEAMVOTE_NO] = qtrue;
-	} else if ( num >= CS_TEAMVOTE_STRING && num <= CS_TEAMVOTE_STRING + 1) {
-		Q_strncpyz( cgs.teamVoteString[num-CS_TEAMVOTE_STRING], str, sizeof( cgs.teamVoteString[0] ) );
-#ifdef MISSIONPACK
-		trap_S_StartLocalSound( cgs.media.voteNow, CHAN_ANNOUNCER );
-#endif
+	} else if ( num == CS_NUMTEAMS ) {
+		cgs.numTeams = atoi( str );
+	} else if ( num == CS_SORTEDTEAMS ) {
+		CG_NewSortedTeams( str );
 	} else if ( num == CS_INTERMISSION ) {
 		cg.intermissionStarted = atoi( str );
 	} else if ( num >= CS_MODELS && num < CS_MODELS+MAX_MODELS ) {
@@ -331,15 +395,16 @@ static void CG_ConfigStringModified( void ) {
 	} else if ( num >= CS_DLIGHTS && num < CS_DLIGHTS + MAX_DLIGHT_CONFIGSTRINGS ) {
 		// FIXME - dlight changes ignored!
 	} else if ( num == CS_FLAGSTATUS ) {
-		if( GTF(GTF_CTF) ) {
-			// format is rb where its red/blue, 0 is at base, 1 is taken, 2 is dropped
-			cgs.redflag = str[0] - '0';
-			cgs.blueflag = str[1] - '0';
-		}
-		else if( cgs.gameType == GT_1FCTF ) {
-			cgs.flagStatus = str[0] - '0';
-		}
+		if ( GTF( GTF_CTF ) ) {
+			int i, j = 0;
 
+			for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ ) {
+				cgs.flagStatus[i] = str[j] - '0';
+				j++;
+			}
+		} else if (cgs.gameType == GT_1FCTF) {
+			cgs.flagStatus[TEAM_FREE] = str[0] - '0';
+		}
 	}
 	else if ( num == CS_SHADERSTATE ) {
 		CG_ShaderStateChanged();
@@ -429,17 +494,6 @@ static qboolean CG_AddToPlayerChatBox( int localPlayerNum, const char *str ) {
 	return qtrue;
 }
 
-// copied from g_team.c
-const char *CG_TeamName(int team)  {
-	if (team==TEAM_RED)
-		return "RED";
-	else if (team==TEAM_BLUE)
-		return "BLUE";
-	else if (team==TEAM_SPECTATOR)
-		return "SPECTATOR";
-	return "FREE";
-}
-
 /*
 =======================
 CG_AddToTeamChat
@@ -479,14 +533,14 @@ CG_MapRestart
 The server has issued a map_restart, so the next snapshot
 is completely new and should not be interpolated to.
 
-A tournement restart will clear everything, but doesn't
+A tournament restart will clear everything, but doesn't
 require a reload of all the media
 ===============
 */
 static void CG_MapRestart( void ) {
 	int	i;
 
-	if ( cg_showmiss.integer ) {
+	if ( cg_showMiss.integer ) {
 		CG_Printf( "CG_MapRestart\n" );
 	}
 
@@ -514,12 +568,12 @@ static void CG_MapRestart( void ) {
 	// we really should clear more parts of cg here and stop sounds
 
 	// play the "fight" sound if this is a restart without warmup
-	if ( cg.warmup == 0 ) {
+	if ( cg.warmupTime == 0 ) {
 		trap_S_StartLocalSound( cgs.media.countFightSound, CHAN_ANNOUNCER );
 		if ( CG_NumLocalPlayers() > 1 ) {
-			CG_GlobalCenterPrint( "FIGHT!", SCREEN_HEIGHT/2, 2.0 );
+			CG_GlobalCenterPrint( "FIGHT!", SCREEN_HEIGHT/2, 0.8 );
 		} else {
-			CG_GlobalCenterPrint( "FIGHT!", 112 + GIANTCHAR_HEIGHT/2, 2.0 );
+			CG_GlobalCenterPrint( "FIGHT!", 112 + GIANTCHAR_HEIGHT/2, 0.8 );
 		}
 	}
 #ifdef MISSIONPACK
@@ -623,32 +677,26 @@ static void CG_ServerCommand( void ) {
 		return;
 	}
 
-	// Commands for team
-	if ( !Q_stricmp( cmd, "[RED]" ) ) {
-		team = TEAM_RED;
+	for ( i = FIRST_TEAM; i <= cgs.numTeams; i++ ) {
+		if ( !Q_stricmp( cmd, va( "[%s]", cg_teamNames[i] ) ) ) {
+			team = i;
+		}
+	}
+
+	if ( team >= FIRST_TEAM ) {
 		localPlayerBits = CG_LocalPlayerBitsForTeam( team );
 
 		// Get command
 		start++;
-		cmd = CG_Argv(start);
-	}
-	else if ( !Q_stricmp( cmd, "[BLUE]" ) ) {
-		team = TEAM_BLUE;
-		localPlayerBits = CG_LocalPlayerBitsForTeam( team );
-
-		// Get command
-		start++;
-		cmd = CG_Argv(start);
-	}
-	else if ( !Q_stricmp( cmd, "[SPECTATOR]" ) ) {
+		cmd = CG_Argv( start );
+	} else if ( !Q_stricmp( cmd, "[SPECTATOR]" ) ) {
 		team = TEAM_SPECTATOR;
 		localPlayerBits = CG_LocalPlayerBitsForTeam( team );
 
 		// Get command
 		start++;
 		cmd = CG_Argv(start);
-	}
-	else if ( !Q_stricmp( cmd, "[FREE]" ) ) {
+	} else if ( !Q_stricmp( cmd, "[FREE]" ) ) {
 		team = TEAM_FREE;
 		localPlayerBits = CG_LocalPlayerBitsForTeam( team );
 
@@ -820,8 +868,8 @@ static void CG_ServerCommand( void ) {
 		return;
 	}
 
-	// loaddeferred can be both a servercmd and a consolecmd
-	if ( !strcmp( cmd, "loaddeferred" ) ) {
+	// loadDeferred can be both a servercmd and a consolecmd
+	if ( !strcmp( cmd, "loadDeferred" ) ) {
 		if ( localPlayerBits != -1 ) {
 			return;
 		}

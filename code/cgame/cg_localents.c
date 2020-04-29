@@ -34,7 +34,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 #include "cg_local.h"
 
-#define	MAX_LOCAL_ENTITIES	512
+#define	MAX_LOCAL_ENTITIES	1024	//512
 localEntity_t	cg_localEntities[MAX_LOCAL_ENTITIES];
 localEntity_t	cg_activeLocalEntities;		// double linked list
 localEntity_t	*cg_freeLocalEntities;		// single linked list
@@ -43,7 +43,7 @@ localEntity_t	*cg_freeLocalEntities;		// single linked list
 ===================
 CG_InitLocalEntities
 
-This is called at startup and for tournement restarts
+This is called at startup and for tournament restarts
 ===================
 */
 void	CG_InitLocalEntities( void ) {
@@ -138,7 +138,7 @@ void CG_BloodTrail( localEntity_t *le ) {
 	t2 = step * ( cg.time / step );
 
 	for ( ; t <= t2; t += step ) {
-		BG_EvaluateTrajectory( &le->pos, t, newOrigin );
+		BG_EvaluateTrajectory( &le->pos, t, newOrigin, cgs.gravity );
 
 		blood = CG_SmokePuff( newOrigin, vec3_origin, 
 					  20,		// radius
@@ -226,7 +226,7 @@ void CG_ReflectVelocity( localEntity_t *le, trace_t *trace ) {
 	if ( !trace->allsolid ) {
 		// reflect the velocity on the trace plane
 		hitTime = cg.time - cg.frametime + cg.frametime * trace->fraction;
-		BG_EvaluateTrajectoryDelta( &le->pos, hitTime, velocity );
+		BG_EvaluateTrajectoryDelta( &le->pos, hitTime, velocity, cgs.gravity );
 		dot = DotProduct( velocity, trace->plane.normal );
 		VectorMA( velocity, -2*dot, trace->plane.normal, le->pos.trDelta );
 
@@ -289,7 +289,7 @@ void CG_AddFragment( localEntity_t *le ) {
 	}
 
 	// calculate new position
-	BG_EvaluateTrajectory( &le->pos, cg.time, newOrigin );
+	BG_EvaluateTrajectory( &le->pos, cg.time, newOrigin, cgs.gravity );
 
 	// trace a line from previous position to new position
 	CG_Trace( &trace, le->refEntity.origin, NULL, NULL, newOrigin, -1, CONTENTS_SOLID );
@@ -300,7 +300,7 @@ void CG_AddFragment( localEntity_t *le ) {
 		if ( le->leFlags & LEF_TUMBLE ) {
 			vec3_t angles;
 
-			BG_EvaluateTrajectory( &le->angles, cg.time, angles );
+			BG_EvaluateTrajectory( &le->angles, cg.time, angles, cgs.gravity );
 			AnglesToAxis( angles, le->refEntity.axis );
 		}
 
@@ -329,7 +329,7 @@ void CG_AddFragment( localEntity_t *le ) {
 		} else {
 			oldTime = le->pos.trTime;
 		}
-		BG_EvaluateTrajectory( &le->pos, oldTime, origin );
+		BG_EvaluateTrajectory( &le->pos, oldTime, origin, cgs.gravity );
 
 		VectorClear( angles );
 
@@ -430,7 +430,7 @@ static void CG_AddMoveScaleFade( localEntity_t *le ) {
 		re->radius = le->radius * ( 1.0 - c ) + 8;
 	}
 
-	BG_EvaluateTrajectory( &le->pos, cg.time, re->origin );
+	BG_EvaluateTrajectory( &le->pos, cg.time, re->origin, cgs.gravity );
 
 	// if the view would be "inside" the sprite, kill the sprite
 	// so it doesn't add too much overdraw
@@ -860,13 +860,13 @@ void CG_BubbleThink( localEntity_t *le ) {
 	trace_t	trace;
 
 	// calculate new position
-	BG_EvaluateTrajectory( &le->pos, cg.time, newOrigin );
+	BG_EvaluateTrajectory( &le->pos, cg.time, newOrigin, cgs.gravity );
 
 	// trace a line from previous position to new position
 	CG_Trace( &trace, le->refEntity.origin, NULL, NULL, newOrigin, -1, CONTENTS_SOLID );
 
 	contents = CG_PointContents( trace.endpos, -1 );
-	if ( !( contents & ( CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA ) ) ) {
+	if ( !( contents & MASK_WATER ) ) {
 		// Bubble isn't in liquid anymore, remove it.
 		CG_FreeLocalEntity( le );
 		return;

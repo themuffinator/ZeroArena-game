@@ -48,6 +48,7 @@ CG_DrawLoadingIcons
 ===================
 */
 static void CG_DrawLoadingIcons( void ) {
+#if 0
 	int		n;
 	int		x, y;
 
@@ -65,6 +66,7 @@ static void CG_DrawLoadingIcons( void ) {
 		x = 16 + n % 13 * 48;
 		CG_DrawPic( x, y, 32, 32, loadingItemIcons[n] );
 	}
+#endif
 }
 
 
@@ -162,7 +164,7 @@ void CG_DrawInformation( void ) {
 	const char	*info;
 	const char	*sysInfo;
 	int			y;
-	int			value;
+	//int			value;
 	qhandle_t	levelShot;
 	qhandle_t	detail;
 	char		buf[1024];
@@ -170,7 +172,7 @@ void CG_DrawInformation( void ) {
 	info = CG_ConfigString( CS_SERVERINFO );
 	sysInfo = CG_ConfigString( CS_SYSTEMINFO );
 
-	s = Info_ValueForKey( info, "mapname" );
+	s = Info_ValueForKey( info, "mapName" );
 	levelShot = trap_R_RegisterShaderNoMip( va( "levelshots/%s", s ) );
 	if ( !levelShot ) {
 		levelShot = trap_R_RegisterShaderNoMip( "menu/art/unknownmap" );
@@ -229,14 +231,6 @@ void CG_DrawInformation( void ) {
 		y += 10;
 	}
 
-	// map-specific message (long map name)
-	s = CG_ConfigString( CS_MESSAGE );
-	if ( s[0] ) {
-		UI_DrawProportionalString( 320, y, s,
-			UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite );
-		y += PROP_HEIGHT;
-	}
-
 	// cheats warning
 	s = Info_ValueForKey( sysInfo, "sv_cheats" );
 	if ( s[0] == '1' ) {
@@ -250,5 +244,27 @@ void CG_DrawInformation( void ) {
 		UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite );
 	y += PROP_HEIGHT;
 
+	// map-specific message (long map name)
+	s = CG_ConfigString( CS_MESSAGE );
+	if ( s[0] ) {
+		CG_SetScreenPlacement( PLACE_CENTER, PLACE_BOTTOM );
+		//CG_DrawString( SCREEN_WIDTH / 2, 400, s, UI_CENTER | UI_DROPSHADOW | UI_BIGFONT, NULL );
+		CG_DrawStringExt( SCREEN_WIDTH / 2, 400, s, UI_CENTER | UI_DROPSHADOW | UI_BIGFONT, NULL, 0.5f, 0, 1 );
+	}
+
+	// map author(s)
+	s = CG_ConfigString( CS_MAPAUTHOR1 );
+	if ( s[0] ) {
+		const char* t;
+		CG_SetScreenPlacement( PLACE_CENTER, PLACE_BOTTOM );
+		t = CG_ConfigString( CS_MAPAUTHOR2 );
+		if ( t[0] ) {
+			//CG_DrawString( SCREEN_WIDTH / 2, 420, va("%s | %s", s, t ), UI_CENTER | UI_DROPSHADOW | UI_SMALLFONT, NULL );
+			CG_DrawStringExt( SCREEN_WIDTH / 2, 420, va( "%s | %s", s, t ), UI_CENTER | UI_DROPSHADOW | UI_SMALLFONT, NULL, 0.25f, 0, 1 );
+		} else {
+			//CG_DrawString( SCREEN_WIDTH / 2, 420, s, UI_CENTER | UI_DROPSHADOW | UI_SMALLFONT, NULL );
+			CG_DrawStringExt( SCREEN_WIDTH / 2, 420, s, UI_CENTER | UI_DROPSHADOW | UI_SMALLFONT, NULL, 0.25f, 0, 1 );
+		}
+	}
 }
 

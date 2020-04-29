@@ -292,7 +292,7 @@ void CG_CheckChangedPredictableEvents( playerState_t *ps ) {
 
 				cg.cur_lc->predictableEvents[ i & (MAX_PREDICTED_EVENTS-1) ] = event;
 
-				if ( cg_showmiss.integer ) {
+				if ( cg_showMiss.integer ) {
 					CG_Printf("WARNING: changed predicted event\n");
 				}
 			}
@@ -346,6 +346,8 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 #else
 		trap_S_StartLocalSound( cgs.media.hitSound, CHAN_LOCAL_SOUND );
 #endif
+		cg.cur_lc->targetTime = cg.time;
+		cg.cur_lc->targetDmg = ps->persistant[PERS_ATTACKEE_ARMOR] & 0xff;
 	} else if ( ps->persistant[PERS_HITS] < ops->persistant[PERS_HITS] ) {
 		trap_S_StartLocalSound( cgs.media.hitTeamSound, CHAN_LOCAL_SOUND );
 	}
@@ -454,7 +456,7 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 		cg.bestLeadChange = LEAD_IGNORE;
 	} else {
 		//
-		if ( !cg.warmup ) {
+		if ( !cg.warmupTime ) {
 			// never play lead changes during warmup
 			if ( ps->persistant[PERS_RANK] != ops->persistant[PERS_RANK] ) {
 				if ( !GTF(GTF_TEAMS)) {
@@ -531,10 +533,10 @@ void CG_CheckGameSounds( void ) {
 
 	// frag limit warnings
 	if ( cgs.scoreLimit > 0 && GTL(GTL_FRAGS)) {
-		highScore = cgs.scores1;
+		highScore = cgs.scores[0];
 
-		if (GTF(GTF_TEAMS) && cgs.scores2 > highScore) {
-			highScore = cgs.scores2;
+		if (GTF(GTF_TEAMS) && cgs.scores[1] > highScore) {
+			highScore = cgs.scores[1];
 		}
 
 		if ( !( cg.fraglimitWarnings & 4 ) && highScore == (cgs.scoreLimit - 1) ) {

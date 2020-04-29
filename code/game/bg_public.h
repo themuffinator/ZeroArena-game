@@ -61,8 +61,9 @@ Suite 120, Rockville, Maryland 20850 USA.
 #endif
 
 #define	DEFAULT_GRAVITY		800
-#define	GIB_HEALTH			-40
+#define	GIB_HEALTH			-60	//-40
 #define	ARMOR_PROTECTION	0.66
+#define AMMO_INFINITE		-1
 
 #define	MAX_LOCATIONS		64
 
@@ -117,7 +118,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define	SPAWNFLAG_NOT_MEDIUM		0x00000200
 #define	SPAWNFLAG_NOT_HARD			0x00000400
 #define	SPAWNFLAG_NOT_DEATHMATCH	0x00000800
-//#define	SPAWNFLAG_NOT_COOP			0x00001000
+#define	SPAWNFLAG_NOT_COOP			0x00001000
 //-muff
 
 //
@@ -130,17 +131,18 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define	CS_MESSAGE				3		// from the map worldspawn's message field
 #define	CS_MOTD					4		// g_motd string for server message of the day
 #define	CS_WARMUP				5		// server time when the match will be restarted
+//multiteam: merge all scores into one index? otherwise keep in this order as it reads it as such
 #define	CS_SCORES1				6
 #define	CS_SCORES2				7
-#define CS_VOTE_TIME			8
-#define CS_VOTE_STRING			9
-#define	CS_VOTE_YES				10
-#define	CS_VOTE_NO				11
+#define	CS_SCORES3				8
+#define	CS_SCORES4				9
+#define	CS_SCORES5				10
+#define	CS_SCORES6				11
 
-#define CS_TEAMVOTE_TIME		12
-#define CS_TEAMVOTE_STRING		14
-#define	CS_TEAMVOTE_YES			16
-#define	CS_TEAMVOTE_NO			18
+#define CS_VOTE_TIME			12
+#define CS_VOTE_STRING			13
+#define	CS_VOTE_YES				14
+#define	CS_VOTE_NO				15
 
 #define	CS_GAME_PROTOCOL		20
 #define	CS_LEVEL_START_TIME		21		// so the timer only shows the current level
@@ -150,8 +152,18 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define	CS_PLAYERS_READY		25		// players wishing to exit the intermission
 
 #define	CS_ITEMS				27		// string of 0's and 1's that tell which items are present
+//TODO: merge message, quote and authors into one index?
+#define	CS_MAPAUTHOR1			28		// from the map worldspawn's message field
+#define	CS_MAPAUTHOR2			29		// from the map worldspawn's message field
+#define	CS_MAPQUOTE				30		// from the map worldspawn's message field
 
-#define	CS_MODELS				32
+#define CS_NUMTEAMS				31		// number of teams in team-based gametypes
+#define CS_SORTEDTEAMS			32		// teams sorted by score highest - lowest
+
+#define CS_WARMUP_STATE			33		// muff: warmup state tells clients what is needed for the match to begin
+#define CS_WARMUP_VAL			34		// muff: values to tell us about warmup state
+
+#define	CS_MODELS				36
 #define	CS_SOUNDS				(CS_MODELS+MAX_MODELS)
 #define	CS_PLAYERS				(CS_SOUNDS+MAX_SOUNDS)
 #define CS_LOCATIONS			(CS_PLAYERS+MAX_CLIENTS)
@@ -164,6 +176,23 @@ Suite 120, Rockville, Maryland 20850 USA.
 #if (CS_MAX) > MAX_CONFIGSTRINGS
 #error overflow: (CS_MAX) > MAX_CONFIGSTRINGS
 #endif
+
+typedef enum {
+	WARMUP_DELAYED,			// pre-warmup (delay is active)
+	WARMUP_DEFAULT,			// 'waiting for players' / multiple teams short of players
+	WARMUP_SHORT_TEAMS,		// teams: one team is short of players
+#if 0
+	WARMUP_SHORT_RED,		// teams: red team has too few players
+	WARMUP_SHORT_BLUE,		// teams: blue team has too few players
+	WARMUP_SHORT_GREEN,		// teams: green team has too few players
+	WARMUP_SHORT_YELLOW,	// teams: yellow team has too few players
+	WARMUP_SHORT_TEAL,		// teams: teal team has too few players
+	WARMUP_SHORT_PINK,		// teams: pink team has too few players
+#endif
+	WARMUP_IMBA,			// teams: teams are imbalanced
+	WARMUP_READYUP,			// time for players to get ready
+	WARMUP_COUNTDOWN		// all conditions met, counting down to match start
+} warmupStates_t;
 
 typedef enum {
 	GT_SINGLE_PLAYER,	// single player
@@ -316,7 +345,7 @@ typedef struct entityState_s {
 	int		weapon;			// determines weapon and flash model, etc
 	int		legsAnim;		// mask off ANIM_TOGGLEBIT
 	int		torsoAnim;		// mask off ANIM_TOGGLEBIT
-	int		tokens;			// harvester skulls
+	int		skullsES;		// harvester skulls
 } entityState_t;
 
 
@@ -326,8 +355,10 @@ typedef struct entityState_s {
 // array limits (engine will only network arrays <= 1024 elements)
 #define	MAX_STATS				16
 #define	MAX_PERSISTANT			16
-#define	MAX_POWERUPS			16 // entityState_t::powerups bit field limits this to <= 32.
+#define	MAX_POWERUPS			32		//16 // entityState_t::powerups bit field limits this to <= 32.
 #define	MAX_WEAPONS				(1<<WEAPONNUM_BITS) // playerState_t::stats[STAT_WEAPONS] bit field limits this to <= 16.
+
+//#define MAX_CARRIED_SKULLS		16
 
 #define	MAX_PS_EVENTS			2
 
@@ -427,7 +458,8 @@ typedef struct playerState_s {
 	int			powerups[MAX_POWERUPS];	// level.time that the powerup runs out
 	int			ammo[MAX_WEAPONS];
 
-	int			tokens;			// harvester skulls
+	int			skulls;			// harvester skulls
+	//int			skull[MAX_CARRIED_SKULLS];		//harvester skull slots - set to team of each, to replace token
 	int			loopSound;
 	int			jumppad_ent;	// jumppad entity hit this frame
 
@@ -551,7 +583,7 @@ typedef struct {
 	float		xyspeed;
 
 	// enables overbounce bug
-	qboolean	pmove_overbounce;
+	qboolean	pmove_overBounce;
 
 	// for fixed msec Pmove
 	int			pmove_fixed;
@@ -565,7 +597,7 @@ typedef struct {
 
 // if a full pmove isn't done on the client, you can just update the angles
 void PM_UpdateViewAngles( playerState_t *ps, const usercmd_t *cmd );
-void Pmove (pmove_t *pmove);
+void Pmove( pmove_t *pmove, const int dmFlags );
 
 //===================================================================================
 
@@ -577,8 +609,10 @@ typedef enum {
 	STAT_HOLDABLE_ITEM,
 	STAT_WEAPONS,					// 16 bit fields
 	STAT_ARMOR,				
+	STAT_ARMOR_TYPE,
 	STAT_DEAD_YAW,					// look this direction when dead (FIXME: get rid of?)
 	STAT_MAX_HEALTH,				// health / armor limit, changeable by handicap
+	STAT_CLIENTS_READY,
 //#ifdef MISSIONPACK
 	STAT_PERSISTANT_POWERUP
 //#endif
@@ -594,6 +628,7 @@ typedef enum {
 	PERS_HITS,						// total points damage inflicted so damage beeps can sound on change
 	PERS_RANK,						// player rank or team rank
 	PERS_TEAM,						// player team
+	PERS_PLAYSTATE,					// playing state for client - spectating, free or in a team
 	PERS_SPAWN_COUNT,				// incremented every respawn
 	PERS_PLAYEREVENTS,				// 16 bits that can be flipped for events
 	PERS_ATTACKER,					// playerNum of last damage inflicter
@@ -632,7 +667,9 @@ typedef enum {
 #define	EF_AWARD_DEFEND		0x00010000		// draw a defend sprite
 #define	EF_AWARD_ASSIST		0x00020000		// draw a assist sprite
 #define EF_AWARD_DENIED		0x00040000		// denied
-#define EF_TEAMVOTED		0x00080000		// already cast a team vote
+
+#define EF_DROPPED_ITEM		0x00080000		// dropped item, communicated to clients now
+
 #define EF_GIBBED			0x00100000		// player has been gibbed, client only renders player if com_blood or cg_gibs is 0
 
 // NOTE: may not have more than MAX_POWERUPS
@@ -645,10 +682,14 @@ typedef enum {
 	PW_INVIS,
 	PW_REGEN,
 	PW_FLIGHT,
-
+	// team items arranged by team index, do not change
+	PW_NEUTRALFLAG,
 	PW_REDFLAG,
 	PW_BLUEFLAG,
-	PW_NEUTRALFLAG,
+	PW_GREENFLAG,
+	PW_YELLOWFLAG,
+	PW_TEALFLAG,
+	PW_PINKFLAG,
 
 	PW_SCOUT,
 	PW_GUARD,
@@ -659,6 +700,9 @@ typedef enum {
 	PW_NUM_POWERUPS
 
 } powerup_t;
+
+//multiteam index
+#define PW_FLAGS_INDEX PW_NEUTRALFLAG
 
 typedef enum {
 	HI_NONE,
@@ -696,6 +740,23 @@ typedef enum {
 	WP_NUM_WEAPONS
 } weapon_t;
 
+typedef enum {
+	HEALTH_SMALL,
+	HEALTH_MEDIUM,
+	HEALTH_LARGE,
+	HEALTH_MEGA,
+	HEALTH_NUM
+} health_t;
+
+//muff: tiered armor (armor numbers)
+typedef enum {
+	ARMOR_SHARD,
+	ARMOR_JACKET,
+	ARMOR_COMBAT,
+	ARMOR_BODY,
+	ARMOR_NUM
+} armor_t;
+//-muff
 
 // reward sounds (stored in ps->persistant[PERS_PLAYEREVENTS])
 #define	PLAYEREVENT_DENIEDREWARD		0x0001
@@ -722,6 +783,8 @@ typedef enum {
 
 	EV_FOOTSTEP,
 	EV_FOOTSTEP_METAL,
+	EV_FOOTSTEP_SNOW,
+	EV_FOOTSTEP_WOOD,
 	EV_FOOTSPLASH,
 	EV_FOOTWADE,
 	EV_SWIM,
@@ -826,16 +889,40 @@ typedef enum {
 typedef enum {
 	GTS_RED_CAPTURE,
 	GTS_BLUE_CAPTURE,
+	GTS_GREEN_CAPTURE,
+	GTS_YELLOW_CAPTURE,
+	GTS_TEAL_CAPTURE,
+	GTS_PINK_CAPTURE,
 	GTS_RED_RETURN,
 	GTS_BLUE_RETURN,
+	GTS_GREEN_RETURN,
+	GTS_YELLOW_RETURN,
+	GTS_TEAL_RETURN,
+	GTS_PINK_RETURN,
 	GTS_RED_TAKEN,
 	GTS_BLUE_TAKEN,
+	GTS_GREEN_TAKEN,
+	GTS_YELLOW_TAKEN,
+	GTS_TEAL_TAKEN,
+	GTS_PINK_TAKEN,
 	GTS_REDOBELISK_ATTACKED,
 	GTS_BLUEOBELISK_ATTACKED,
+	GTS_GREENOBELISK_ATTACKED,
+	GTS_YELLOWOBELISK_ATTACKED,
+	GTS_TEALOBELISK_ATTACKED,
+	GTS_PINKOBELISK_ATTACKED,
 	GTS_REDTEAM_SCORED,
 	GTS_BLUETEAM_SCORED,
+	GTS_GREENTEAM_SCORED,
+	GTS_YELLOWTEAM_SCORED,
+	GTS_TEALTEAM_SCORED,
+	GTS_PINKTEAM_SCORED,
 	GTS_REDTEAM_TOOK_LEAD,
 	GTS_BLUETEAM_TOOK_LEAD,
+	GTS_GREENTEAM_TOOK_LEAD,
+	GTS_YELLOWTEAM_TOOK_LEAD,
+	GTS_TEALTEAM_TOOK_LEAD,
+	GTS_PINKTEAM_TOOK_LEAD,
 	GTS_TEAMS_ARE_TIED,
 	GTS_KAMIKAZE
 } global_team_sound_t;
@@ -981,17 +1068,33 @@ typedef struct animation_s {
 
 
 #define DEFAULT_REDTEAM_NAME		"Pagans"
-#define DEFAULT_BLUETEAM_NAME		"Stroggs"
+#define DEFAULT_BLUETEAM_NAME		"Invaders"
+#define DEFAULT_GREENTEAM_NAME		"Stroggs"
+#define DEFAULT_YELLOWTEAM_NAME		"Crusaders"
+#define DEFAULT_TEALTEAM_NAME		"The Fallen"
+#define DEFAULT_PINKTEAM_NAME		"Anarchists"
 #define MAX_TEAMNAME		32
 
 typedef enum {
+	PLAY_SPECTATOR,
+	PLAY_FREE,
+	PLAY_TEAM
+} playState_t;
+
+typedef enum {
+	TEAM_SPECTATOR = -1,
 	TEAM_FREE,
 	TEAM_RED,
 	TEAM_BLUE,
-	TEAM_SPECTATOR,
+	TEAM_GREEN,
+	TEAM_YELLOW,
+	TEAM_TEAL,
+	TEAM_PINK,
 
 	TEAM_NUM_TEAMS
 } team_t;
+#define FIRST_TEAM	TEAM_RED
+#define TOTAL_TEAMS	(TEAM_NUM_TEAMS - FIRST_TEAM)
 
 // Time between location updates
 #define TEAM_LOCATION_UPDATE_TIME		1000
@@ -1015,9 +1118,13 @@ typedef enum {
 typedef enum {
 	FLAG_ATBASE = 0,
 	FLAG_TAKEN,			// CTF
+	FLAG_DROPPED,
 	FLAG_TAKEN_RED,		// One Flag CTF
 	FLAG_TAKEN_BLUE,	// One Flag CTF
-	FLAG_DROPPED
+	FLAG_TAKEN_GREEN,	// One Flag CTF
+	FLAG_TAKEN_YELLOW,	// One Flag CTF
+	FLAG_TAKEN_TEAL,	// One Flag CTF
+	FLAG_TAKEN_PINK,	// One Flag CTF
 } flagStatus_t;
 
 // means of death
@@ -1045,6 +1152,7 @@ typedef enum {
 	MOD_SUICIDE,
 	MOD_TARGET_LASER,
 	MOD_TRIGGER_HURT,
+	MOD_BLASTER,
 #ifdef MISSIONPACK
 	MOD_NAIL,
 	MOD_CHAINGUN,
@@ -1058,6 +1166,37 @@ typedef enum {
 
 
 //---------------------------------------------------------
+typedef struct gitem_health_s {
+	int			quantity;
+	int			max;
+	int			respawn;
+} gitem_health_t;
+extern	gitem_health_t bghealth[3][HEALTH_NUM];
+
+//muff: tiered armor
+typedef enum {
+	ARR_NONE,
+	ARR_QW,
+	ARR_Q2,
+	ARR_COUNT
+} armorRules_t;
+
+typedef struct gitem_armor_s {
+	int		armor;
+	int		base_count;
+	int		max_count;
+	float	normal_protection;
+	float	energy_protection;
+} gitem_armor_t;
+extern	gitem_armor_t	bgarmor[ARR_COUNT][ARMOR_NUM];
+//-muff
+
+typedef struct gitem_weapons_s {
+	int		ammoMax;
+	int		ammoBoxValue;
+	int		weaponAmmoValue;
+	int		missile_velocity;
+} gitem_weapons_t;
 
 // gitem_t->type
 typedef enum {
@@ -1105,13 +1244,16 @@ gitem_t	*BG_FindItemForHoldable( holdable_t pw );
 #define	BG_ItemForItemNum(x) (&bg_itemlist[(x)])
 #define	BG_ItemNumForItem(x) ((x)-bg_itemlist)
 
-qboolean	BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const playerState_t *ps );
-
+qboolean	BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const playerState_t *ps, const int dmFlags, const int tieredArmor );
+int			BG_CarryingCapturableFlag( const playerState_t* ps, const gametype_t gametype );
 
 // g_dmFlags->integer flags
-#define	DF_NO_FALLING			8
-#define DF_FIXED_FOV			16
-#define	DF_NO_FOOTSTEPS			32
+#define	DF_NO_FALLING			0x00000008
+#define DF_FIXED_FOV			0x00000010
+#define	DF_NO_FOOTSTEPS			0x00000020
+
+#define DF_WEAPONS_STAY			0x00000040
+#define DF_INFINITE_AMMO		0x00000080
 
 // content masks
 #define	MASK_ALL				(-1)
@@ -1149,8 +1291,8 @@ typedef enum {
 
 
 
-void	BG_EvaluateTrajectory( const trajectory_t *tr, int atTime, vec3_t result );
-void	BG_EvaluateTrajectoryDelta( const trajectory_t *tr, int atTime, vec3_t result );
+void	BG_EvaluateTrajectory( const trajectory_t* tr, int atTime, vec3_t result, const float gravity );
+void	BG_EvaluateTrajectoryDelta( const trajectory_t *tr, int atTime, vec3_t result, const float gravity );
 
 void	BG_AddPredictableEventToPlayerstate( int newEvent, int eventParm, playerState_t *ps );
 
@@ -1159,7 +1301,7 @@ void	BG_TouchJumpPad( playerState_t *ps, entityState_t *jumppad );
 void	BG_PlayerStateToEntityState( playerState_t *ps, entityState_t *s, qboolean snap );
 void	BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s, int time, qboolean snap );
 
-qboolean	BG_PlayerTouchesItem( playerState_t *ps, entityState_t *item, int atTime );
+qboolean	BG_PlayerTouchesItem( playerState_t *ps, entityState_t *item, int atTime, const float gravity );
 
 int		BG_ComposeUserCmdValue( int weapon );
 void	BG_DecomposeUserCmdValue( int value, int *weapon );
@@ -1243,7 +1385,6 @@ void	SnapVectorTowards( vec3_t v, vec3_t to );
 #define UI_GRADIENT		0x00020000
 #define UI_NOSCALE		0x00040000 // fixed size with other UI elements, don't change it's scale
 #define UI_INMOTION		0x00080000 // use for scrolling / moving text to fix uneven scrolling caused by aligning to pixel boundary
-
 
 typedef struct
 {

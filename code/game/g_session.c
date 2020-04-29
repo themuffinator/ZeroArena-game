@@ -54,7 +54,7 @@ void G_WritePlayerSessionData( gplayer_t *player ) {
 
 	s = va("%i %i %i %i %i %i %i", 
 		player->sess.sessionTeam,
-		player->sess.spectatorNum,
+		player->sess.queueNum,
 		player->sess.spectatorState,
 		player->sess.spectatorPlayer,
 		player->sess.wins,
@@ -86,7 +86,7 @@ void G_ReadSessionData( gplayer_t *player ) {
 
 	sscanf( s, "%i %i %i %i %i %i %i",
 		&sessionTeam,
-		&player->sess.spectatorNum,
+		&player->sess.queueNum,
 		&spectatorState,
 		&player->sess.spectatorPlayer,
 		&player->sess.wins,
@@ -114,7 +114,7 @@ void G_InitSessionData( gplayer_t *player, char *userinfo ) {
 	sess = &player->sess;
 
 	// initial team determination
-	if (gt[g_gameType.integer].gtFlags & GTF_TEAMS) {
+	if ( GTF(GTF_TEAMS) ) {
 		// always spawn as spectator in team games
 		sess->sessionTeam = TEAM_SPECTATOR;
 		sess->spectatorState = SPECTATOR_FREE;
@@ -138,7 +138,7 @@ void G_InitSessionData( gplayer_t *player, char *userinfo ) {
 		sess->spectatorState = SPECTATOR_FREE;
 	}
 
-	AddTournamentQueue(player);
+	AddToTournamentQueue(player);
 
 	G_WritePlayerSessionData( player );
 }

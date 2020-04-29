@@ -551,7 +551,7 @@ void	Svcmd_Teleport_f( void ) {
 		angles[YAW] = atoi( str );
 	}
 
-	TeleportPlayer( ent, position, angles, qtrue, qfalse );
+	TeleportPlayer( ent, position, angles, qtrue, qfalse, qtrue );
 }
 
 /*
@@ -644,11 +644,11 @@ struct svcmd
   { "abort_podium", qfalse, Svcmd_AbortPodium_f },
   { "addBot", qfalse, Svcmd_AddBot_f, Svcmd_AddBotComplete },
   { "addIP", qfalse, Svcmd_AddIP_f },
-  { "botList", qfalse, Svcmd_BotList_f },
+  { "listBots", qfalse, Svcmd_BotList_f },
   { "botReport", qfalse, Svcmd_BotTeamplayReport_f },
-  { "entityList", qfalse, Svcmd_EntityList_f },
+  { "listEntities", qfalse, Svcmd_EntityList_f },
   { "forceTeam", qfalse, Svcmd_ForceTeam_f, Svcmd_ForceTeamComplete },
-  { "listIP", qfalse, Svcmd_ListIPs_f },
+  { "listIPs", qfalse, Svcmd_ListIPs_f },
   { "removeIP", qfalse, Svcmd_RemoveIP_f },
   { "say", qtrue, Svcmd_Say_f },
   { "teleport", qfalse, Svcmd_Teleport_f, Svcmd_TeleportComplete },

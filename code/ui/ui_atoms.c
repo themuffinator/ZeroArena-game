@@ -154,7 +154,7 @@ static void UI_CalcPostGameStats( void ) {
 	qboolean newHigh = qfalse;
 
 	trap_GetConfigString( CS_SERVERINFO, info, sizeof(info) );
-	Q_strncpyz( map, Info_ValueForKey( info, "mapname" ), sizeof(map) );
+	Q_strncpyz( map, Info_ValueForKey( info, "mapName" ), sizeof(map) );
 	game = atoi(Info_ValueForKey(info, "g_gameType"));
 
 	// compose file name
