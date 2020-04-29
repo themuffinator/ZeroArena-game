@@ -349,9 +349,20 @@ qboolean CG_DrawOldScoreboard( void ) {
 	// current rank
 	if ( !GTF( GTF_TEAMS ) ) {
 		if ( cg.cur_ps && cg.cur_ps->persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
-			s = va( "%s place with %i",
-				CG_PlaceString( cg.cur_ps->persistant[PERS_RANK] + 1 ),
-				cg.cur_ps->persistant[PERS_SCORE] );
+			if ( cg.intermissionStarted ) {
+				if ( !cg.cur_ps->persistant[PERS_RANK] ) {
+					s = va( "You won the match with a score of %i!",
+						cg.cur_ps->persistant[PERS_SCORE] );
+				} else {
+					s = va( "You finished %s place with a score of %i.",
+						CG_PlaceString( cg.cur_ps->persistant[PERS_RANK] + 1 ),
+						cg.cur_ps->persistant[PERS_SCORE] );
+				}
+			} else {
+				s = va( "%s place with a score of %i",
+					CG_PlaceString( cg.cur_ps->persistant[PERS_RANK] + 1 ),
+					cg.cur_ps->persistant[PERS_SCORE] );
+			}
 			y = SB_HEADER - 6 - CG_DrawStringLineHeight( UI_BIGFONT );
 			CG_DrawString( SCREEN_WIDTH / 2, y, s, UI_CENTER | UI_DROPSHADOW | UI_BIGFONT, NULL );
 		}
@@ -364,11 +375,18 @@ qboolean CG_DrawOldScoreboard( void ) {
 			if ( low > cgs.sortedTeams[i] ) low = cgs.sortedTeams[i];
 			if ( i > FIRST_TEAM && cgs.sortedTeams[i] == cgs.sortedTeams[i - 1] ) tie = qtrue;
 		}
-
-		if ( low == high || tie ) {
-			s = va( "Teams are tied at %i", high );
+		if ( cg.intermissionStarted ) {
+			if ( low == high || tie ) {
+				s = va( "Teams are tied at %i", high );
+			} else {
+				s = va( "%s wins with a score of %i", CG_TeamName( cgs.sortedTeams[1] ), cg.teamScores[cgs.sortedTeams[1]] );
+			}
 		} else {
-			s = va( "%s leads with a score of %i", CG_TeamName( cgs.sortedTeams[1] ), cg.teamScores[cgs.sortedTeams[1]] );
+			if ( low == high || tie ) {
+				s = va( "Teams are tied at %i", high );
+			} else {
+				s = va( "%s leads with a score of %i", CG_TeamName( cgs.sortedTeams[1] ), cg.teamScores[cgs.sortedTeams[1]] );
+			}
 		}
 
 		y = SB_HEADER - 6 - CG_DrawStringLineHeight( UI_BIGFONT );

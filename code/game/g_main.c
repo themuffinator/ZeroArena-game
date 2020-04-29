@@ -1865,9 +1865,15 @@ void CheckExitRules( void ) {
 
 	if ( GTL( GTL_FRAGS ) && g_scoreLimit.integer ) {
 		if ( GTF( GTF_TEAMS ) ) {
-			if ( level.sortedTeams[1] >= g_scoreLimit.integer ) {
-				AP( va( "print \"%s hit the Frag Limit.\n\"", G_PlayerTeamName( level.sortedTeams[1] ) ) );
+			if ( level.teamScores[level.sortedTeams[1]] >= g_scoreLimit.integer ) {
+				AP( va( "print \"%s wins! (hit the Frag Limit)\n\"", G_PlayerTeamName( level.sortedTeams[1] ) ) );
 				LogExit( "Frag Limit hit." );
+				return;
+			}
+			if ( gt_teams_frags_mercylimit.integer > 0
+					&& level.teamScores[level.sortedTeams[1]] >= (level.teamScores[level.sortedTeams[2]] + gt_teams_frags_mercylimit.integer) ) {
+				AP( va( "print \"%s wins! (hit the Mercy Limit: +%i frags).\n\"", G_PlayerTeamName( level.sortedTeams[1] ), gt_teams_frags_mercylimit.integer ) );
+				LogExit( "Mercy Limit hit." );
 				return;
 			}
 		} else {
@@ -1881,7 +1887,7 @@ void CheckExitRules( void ) {
 				}
 
 				if ( cl->ps.persistant[PERS_SCORE] >= g_scoreLimit.integer ) {
-					AP( va( "print \"%s hit the Frag Limit.\n\"", PlayerName( cl->pers ) ) );
+					AP( va( "print \"%s wins! (hit the Frag Limit)\n\"", PlayerName( cl->pers ) ) );
 					LogExit( "Frag Limit hit." );
 					return;
 				}
@@ -1894,7 +1900,7 @@ void CheckExitRules( void ) {
 
 		for ( i = FIRST_TEAM; i <= level.teams_max; i++ ) {
 			if ( level.teamScores[i] >= g_scoreLimit.integer ) {
-				AP( va( "print \"%s hit the Capture Limit.\n\"", G_PlayerTeamName( i ) ) );
+				AP( va( "print \"%s wins! (hit the Capture Limit)\n\"", G_PlayerTeamName( i ) ) );
 				LogExit( "Capture Limit hit." );
 				return;
 			}

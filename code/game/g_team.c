@@ -116,9 +116,9 @@ void AddTeamScore( vec3_t origin, team_t team, int score ) {
 
 	eventParm = -1;
 	if ( team == level.sortedTeams[1] ) {
-		leadTeamNum = level.sortedTeams[1];
-	} else {
 		leadTeamNum = level.sortedTeams[2];
+	} else {
+		leadTeamNum = level.sortedTeams[1];
 	}
 	leadTeamScore = level.teamScores[leadTeamNum];
 
