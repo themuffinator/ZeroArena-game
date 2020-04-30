@@ -150,6 +150,8 @@ vmCvar_t	g_warmupDelay;
 vmCvar_t	g_warmupReadyPercentage;
 vmCvar_t	g_warmupWeaponSet;
 
+vmCvar_t	g_intermissionForceExitTime;
+
 static cvarTable_t		gameCvarTable[] = {
 	// don't override the cheat state set by the system
 	{ &g_cheats, "sv_cheats", "", 0, 0, RANGE_ALL },
@@ -261,6 +263,8 @@ static cvarTable_t		gameCvarTable[] = {
 	{ &g_warmupReadyPercentage, "g_warmupReadyPercentage", "0.51", 0, 0, RANGE_FLOAT( 0.0f, 1.0f ) },
 	{ &g_warmupWeaponSet, "g_warmupWeaponSet", "1", 0, 0, RANGE_BOOL },
 
+	{ &g_intermissionForceExitTime, "g_intermissionForceExitTime", "20", 0, 0, RANGE_INT( 0, 60 ) },
+	
 	{ &g_rankings, "g_rankings", "0", 0, 0, RANGE_ALL }
 
 };
@@ -1720,8 +1724,7 @@ void CheckIntermissionExit( void ) {
 	}
 
 	// see which players are ready
-	ready = 0;
-	notReady = 0;
+	ready = notReady = 0;
 	playerCount = 0;
 	Com_ClientListClear( &readyList );
 	for ( i = 0; i < g_maxClients.integer; i++ ) {
@@ -1732,6 +1735,9 @@ void CheckIntermissionExit( void ) {
 		if ( g_entities[i].r.svFlags & SVF_BOT ) {
 			continue;
 		}
+		//muff: exclude spectators from readying
+		if ( cl->sess.sessionTeam == TEAM_SPECTATOR )
+			continue;
 
 		playerCount++;
 		if ( cl->readyToExit ) {
@@ -1767,6 +1773,10 @@ void CheckIntermissionExit( void ) {
 
 	// the first person to ready starts the ten second timeout
 	if ( !level.readyToExit ) {
+		level.readyToExit = qtrue;
+		level.exitTime = level.time;
+	//muff: force exit after a certain time
+	} else if ( g_intermissionForceExitTime.integer && level.intermissiontime + (g_intermissionForceExitTime.integer * 1000) < level.time ) {
 		level.readyToExit = qtrue;
 		level.exitTime = level.time;
 	}
@@ -1857,7 +1867,7 @@ void CheckExitRules( void ) {
 
 	if ( g_timeLimit.integer && !level.warmupTime ) {
 		if ( level.time - level.startTime >= g_timeLimit.integer * 60000 ) {
-			AP( "print \"Time Limit hit.\n\"" );
+			AP( "print \"" S_COLOR_CREAM "Time Limit hit.\n\"" );
 			LogExit( "Time Limit hit." );
 			return;
 		}
@@ -1866,13 +1876,13 @@ void CheckExitRules( void ) {
 	if ( GTL( GTL_FRAGS ) && g_scoreLimit.integer ) {
 		if ( GTF( GTF_TEAMS ) ) {
 			if ( level.teamScores[level.sortedTeams[1]] >= g_scoreLimit.integer ) {
-				AP( va( "print \"%s wins! (hit the Frag Limit)\n\"", G_PlayerTeamName( level.sortedTeams[1] ) ) );
+				AP( va( "print \"%s " S_COLOR_CREAM "wins!" S_COLOR_GREY " (hit the Frag Limit)\n\"", G_PlayerTeamName( level.sortedTeams[1] ) ) );
 				LogExit( "Frag Limit hit." );
 				return;
 			}
 			if ( gt_teams_frags_mercylimit.integer > 0
 					&& level.teamScores[level.sortedTeams[1]] >= (level.teamScores[level.sortedTeams[2]] + gt_teams_frags_mercylimit.integer) ) {
-				AP( va( "print \"%s wins! (hit the Mercy Limit: +%i frags).\n\"", G_PlayerTeamName( level.sortedTeams[1] ), gt_teams_frags_mercylimit.integer ) );
+				AP( va( "print \"%s " S_COLOR_CREAM "wins!" S_COLOR_GREY " (hit the Mercy Limit: +%i frags).\n\"", G_PlayerTeamName( level.sortedTeams[1] ), gt_teams_frags_mercylimit.integer ) );
 				LogExit( "Mercy Limit hit." );
 				return;
 			}
@@ -1887,7 +1897,7 @@ void CheckExitRules( void ) {
 				}
 
 				if ( cl->ps.persistant[PERS_SCORE] >= g_scoreLimit.integer ) {
-					AP( va( "print \"%s wins! (hit the Frag Limit)\n\"", PlayerName( cl->pers ) ) );
+					AP( va( "print \"%s wins!" S_COLOR_GREY " (hit the Frag Limit)\n\"", PlayerName( cl->pers ) ) );
 					LogExit( "Frag Limit hit." );
 					return;
 				}
@@ -1900,7 +1910,7 @@ void CheckExitRules( void ) {
 
 		for ( i = FIRST_TEAM; i <= level.teams_max; i++ ) {
 			if ( level.teamScores[i] >= g_scoreLimit.integer ) {
-				AP( va( "print \"%s wins! (hit the Capture Limit)\n\"", G_PlayerTeamName( i ) ) );
+				AP( va( "print \"%s " S_COLOR_CREAM "wins!" S_COLOR_GREY " (hit the Capture Limit)\n\"", G_PlayerTeamName( i ) ) );
 				LogExit( "Capture Limit hit." );
 				return;
 			}

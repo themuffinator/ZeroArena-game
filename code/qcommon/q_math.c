@@ -66,7 +66,7 @@ const vec4_t colorTable[] =
 	{ 0, 1, 1, 1 },
 	{ 1, 0, 1, 1 },
 	{ 1, 1, 1, 1 },
-	{0.26795f, 0.26795f, 0.26795f, 1},	// grey
+	{0.627f, 0.627f, 0.627f, 1},	// grey
 	{0.854f, 0.850f, 0.466f, 1.00000f},	// cream
 
 	// CPMA's alphabet rainbow

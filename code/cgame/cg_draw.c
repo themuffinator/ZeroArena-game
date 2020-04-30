@@ -1031,7 +1031,7 @@ static float CG_DrawScores( float y ) {
 	y -= scoreHeight;
 
 	y1 = y;
-	//multiteam TODO
+
 	if ( GTF( GTF_TEAMS ) ) {
 		CG_DrawScoresTeams( y, scoreHeight, y1 );
 	} else {
@@ -2788,7 +2788,7 @@ void CG_DrawNotify( qboolean voiceMenuOpen ) {
 	x = 5;
 
 	CG_SetScreenPlacement( PLACE_LEFT, PLACE_TOP );
-	CG_DrawStringAutoWrap( x, 2, cg.cur_lc->consoleText, UI_SMALLFONT, NULL, 0.25, 0, 0.4f, cgs.screenFakeWidth - x - 64 );
+	CG_DrawStringAutoWrap( x, 2, cg.cur_lc->consoleText, UI_SMALLFONT, NULL, 0.25, 0, 0, cgs.screenFakeWidth - x - 64 );
 }
 
 //==================================================================================

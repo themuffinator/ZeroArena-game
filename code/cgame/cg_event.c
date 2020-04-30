@@ -53,11 +53,11 @@ const char	*CG_PlaceString( int rank ) {
 	}
 
 	if ( rank == 1 ) {
-		s = S_COL24_DODGER_BLUE "1st" S_COLOR_WHITE;		// draw in blue
+		s = S_COL24_DODGER_BLUE "1st" S_COLOR_WHITE;	// draw in blue
 	} else if ( rank == 2 ) {
-		s = S_COLOR_RED "2nd" S_COLOR_WHITE;		// draw in red
+		s = S_COLOR_RED "2nd" S_COLOR_WHITE;			// draw in red
 	} else if ( rank == 3 ) {
-		s = S_COL24_AMBER "3rd" S_COLOR_WHITE;		// draw in yellow
+		s = S_COL24_AMBER "3rd" S_COLOR_WHITE;			// draw in yellow
 	} else if ( rank == 11 ) {
 		s = "11th";
 	} else if ( rank == 12 ) {
@@ -90,8 +90,8 @@ static void CG_Obituary( entityState_t *ent ) {
 	char		*message2;
 	const char	*targetInfo;
 	const char	*attackerInfo;
-	char		targetName[32];
-	char		attackerName[32];
+	char		targetName[MAX_NAME_LENGTH];
+	char		attackerName[MAX_NAME_LENGTH];
 	gender_t	gender;
 	playerInfo_t	*pi;
 	int				i;
@@ -116,9 +116,9 @@ static void CG_Obituary( entityState_t *ent ) {
 	if ( !targetInfo ) {
 		return;
 	}
-	Q_strncpyz( targetName, Info_ValueForKey( targetInfo, "n" ), sizeof(targetName) - 2);
-	strcat( targetName, S_COLOR_WHITE );
-
+	//Q_strncpyz( targetName, Info_ValueForKey( targetInfo, "n" ), sizeof(targetName) - 2);
+	//strcat( va( S_COLOR_WHITE "%s", targetName ), S_COLOR_CREAM );
+	Com_sprintf( targetName, sizeof( targetName ), S_COLOR_WHITE "%s" S_COLOR_CREAM, Info_ValueForKey( targetInfo, "n" ) );
 	message2 = "";
 
 	// check for single player messages
@@ -231,9 +231,9 @@ static void CG_Obituary( entityState_t *ent ) {
 			ps = &cg.snap->pss[i];
 
 			if (GTF(GTF_TEAMS) || cg.warmupTime) {
-				s = va("You fragged %s", targetName );
+				s = va("You fragged %s" S_COLOR_WHITE, targetName );
 			} else {
-				s = va("You fragged %s\n%s place with %i", targetName, 
+				s = va("You fragged %s" S_COLOR_WHITE "\n%s place with %i", targetName, 
 					CG_PlaceString( ps->persistant[PERS_RANK] + 1 ),
 					ps->persistant[PERS_SCORE] );
 			}
@@ -254,8 +254,9 @@ static void CG_Obituary( entityState_t *ent ) {
 		attacker = ENTITYNUM_WORLD;
 		strcpy( attackerName, "noname" );
 	} else {
-		Q_strncpyz( attackerName, Info_ValueForKey( attackerInfo, "n" ), sizeof(attackerName) - 2);
-		strcat( attackerName, S_COLOR_WHITE );
+		//Q_strncpyz( attackerName, Info_ValueForKey( attackerInfo, "n" ), sizeof(attackerName) - 2);
+		//strcat( va( S_COLOR_WHITE "%s", attackerName), S_COLOR_CREAM );
+		Com_sprintf( attackerName, sizeof( attackerName ), S_COLOR_WHITE "%s" S_COLOR_CREAM, Info_ValueForKey( attackerInfo, "n" ) );
 		// check for kill messages about the current playerNum
 		for (i = 0; i < CG_MaxSplitView(); i++) {
 			if ( target == cg.snap->pss[i].playerNum ) {
@@ -341,9 +342,9 @@ static void CG_Obituary( entityState_t *ent ) {
 			message = "was killed by";
 			break;
 		}
-
+		
 		if (message) {
-			CG_Printf( "%s %s %s%s\n", 
+			CG_Printf( "%s %s " S_COLOR_WHITE "%s%s\n", 
 				targetName, message, attackerName, message2);
 			return;
 		}

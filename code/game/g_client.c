@@ -656,7 +656,7 @@ team_t PickTeam( int ignorePlayerNum ) {
 	G_Printf( "PickTeam randomized\n" );
 	// all scores equal, just randomize it
 	while ( 1 ) {
-		team = (int)(rand() & level.teams_max);
+		team = (rand() & level.teams_max - 1) + FIRST_TEAM;
 		if ( team != tignore ) return team;
 	}
 	return TEAM_RED;

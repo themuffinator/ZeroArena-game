@@ -880,12 +880,12 @@ char* G_PlayerTeamName( team_t team ) {
 #endif
 
 	switch ( team ) {
-	case TEAM_RED: return (S_COLOR_RED "Red Team" S_COLOR_WHITE);
-	case TEAM_BLUE: return (S_COLOR_BLUE "Blue Team" S_COLOR_WHITE);
-	case TEAM_GREEN: return (S_COLOR_GREEN "Green Team" S_COLOR_WHITE);
-	case TEAM_YELLOW: return (S_COLOR_YELLOW "Yellow Team" S_COLOR_WHITE);
-	case TEAM_TEAL: return (S_COLOR_CYAN "Teal Team" S_COLOR_WHITE);
-	case TEAM_PINK: return (S_COLOR_MAGENTA "Pink Team" S_COLOR_WHITE);
+	case TEAM_RED: return (S_COLOR_RED "Red Team" S_COLOR_CREAM);
+	case TEAM_BLUE: return (S_COLOR_BLUE "Blue Team" S_COLOR_CREAM);
+	case TEAM_GREEN: return (S_COLOR_GREEN "Green Team" S_COLOR_CREAM);
+	case TEAM_YELLOW: return (S_COLOR_YELLOW "Yellow Team" S_COLOR_CREAM);
+	case TEAM_TEAL: return (S_COLOR_CYAN "Teal Team" S_COLOR_CREAM);
+	case TEAM_PINK: return (S_COLOR_MAGENTA "Pink Team" S_COLOR_CREAM);
 	default: return "No Team";
 	}
 
@@ -929,5 +929,5 @@ Return colorized name of player with white text escape at end. Easy way to add c
 ==================
 */
 char* PlayerName( playerPersistant_t p ) {
-	return va( "%s%s", p.netname, S_COLOR_WHITE );
+	return va( "%s%s", p.netname, S_COLOR_CREAM );	// S_COLOR_WHITE );
 }

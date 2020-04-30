@@ -213,20 +213,20 @@ static void CG_DrawPlayerScore( int y, score_t* score, float* color, float fade,
 		}
 		if ( rank == 0 ) {
 			hcolor[0] = 0;
-			hcolor[1] = 0;
-			hcolor[2] = 0.7f;
+			hcolor[1] = 0.345f;
+			hcolor[2] = 0.666f;
 		} else if ( rank == 1 ) {
-			hcolor[0] = 0.7f;
-			hcolor[1] = 0;
+			hcolor[0] = 0.686f;
+			hcolor[1] = 0.062f;
 			hcolor[2] = 0;
 		} else if ( rank == 2 ) {
-			hcolor[0] = 0.7f;
-			hcolor[1] = 0.7f;
+			hcolor[0] = 0.666f;
+			hcolor[1] = 0.470f;
 			hcolor[2] = 0;
 		} else if ( rank == -1 ) {
-			hcolor[0] = 0.7f;
-			hcolor[1] = 0.7f;
-			hcolor[2] = 0.7f;
+			hcolor[0] = 0.666f;
+			hcolor[1] = 0.666f;
+			hcolor[2] = 0.666f;
 		}
 
 		hcolor[3] = fade * 0.7;
@@ -243,7 +243,7 @@ static void CG_DrawPlayerScore( int y, score_t* score, float* color, float fade,
 		Com_sprintf( string, sizeof( string ), "%5i", score->score );
 	}
 	CG_DrawString( SB_SCORE_X + (SB_RATING_WIDTH / 2) + 4 * BIGCHAR_WIDTH, y, string, UI_RIGHT | UI_DROPSHADOW | UI_BIGFONT | UI_NOSCALE, color );
-
+	
 	if ( score->ping != -1 ) {
 		Com_sprintf( string, sizeof( string ), "%4i", score->ping );
 		CG_DrawString( SB_PING_X - (SB_RATING_WIDTH / 2) + 4 * BIGCHAR_WIDTH, y, string, UI_RIGHT | UI_DROPSHADOW | UI_BIGFONT | UI_NOSCALE, color );
@@ -255,7 +255,7 @@ static void CG_DrawPlayerScore( int y, score_t* score, float* color, float fade,
 	CG_DrawString( SB_NAME_X - (SB_RATING_WIDTH / 2), y, pi->name, UI_LEFT | UI_DROPSHADOW | UI_BIGFONT | UI_NOSCALE, color );
 
 	// add the "ready" marker for intermission exiting
-	if ( Com_ClientListContains( &cg.readyPlayers, score->playerNum ) ) {
+	if ( cg.intermissionStarted && Com_ClientListContains( &cg.readyPlayers, score->playerNum ) ) {
 		CG_DrawString( iconx, y, "READY", UI_LEFT | UI_DROPSHADOW | UI_BIGFONT | UI_NOSCALE, color );
 	}
 }
@@ -357,6 +357,11 @@ qboolean CG_DrawOldScoreboard( void ) {
 		fade = *fadeColor;
 	}
 
+	// request more scores regularly
+	if ( cg.scoresRequestTime + 2000 < cg.time ) {
+		cg.scoresRequestTime = cg.time;
+		trap_SendClientCommand( "score" );
+	}
 
 	// fragged by ... line
 	if ( cg.cur_lc && cg.cur_lc->killerName[0] ) {
@@ -459,7 +464,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 		teamCount = CG_TeamCount( TEAM_SPECTATOR, maxPlayers );
 		if ( teamCount ) {
 			CG_TeamScoreboard( y, TEAM_SPECTATOR, fade, teamCount, lineHeight );
-			y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
+			y += (teamCount * lineHeight) + BIGCHAR_HEIGHT;
 		}
 
 	} else {

@@ -513,9 +513,12 @@ void PlayerIntermissionThink( gplayer_t *player ) {
 	// swap and latch button actions
 	player->oldbuttons = player->buttons;
 	player->buttons = player->pers.cmd.buttons;
-	if ( player->buttons & ( BUTTON_ATTACK | BUTTON_USE_HOLDABLE ) & ( player->oldbuttons ^ player->buttons ) ) {
-		// this used to be an ^1 but once a player says ready, it should stick
-		player->readyToExit = 1;
+	//muff: give a short delay before being able to ready exit to avoid mistakenly readying
+	if ( level.intermissiontime + 1000 < level.time ) {
+		if ( player->buttons & (BUTTON_ATTACK | BUTTON_USE_HOLDABLE) & (player->oldbuttons ^ player->buttons) ) {
+			// this used to be an ^1 but once a player says ready, it should stick
+			player->readyToExit = 1;
+		}
 	}
 }
 

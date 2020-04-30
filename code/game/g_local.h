@@ -906,3 +906,5 @@ extern	vmCvar_t	g_doReady;
 extern	vmCvar_t	g_warmupDelay;
 extern	vmCvar_t	g_warmupReadyPercentage;
 extern	vmCvar_t	g_warmupWeaponSet;
+
+extern	vmCvar_t	g_intermissionForceExitTime;
