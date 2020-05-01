@@ -140,13 +140,7 @@ static void PlayerIcon( const char *modelAndSkin, char *iconName, int iconNameMa
 	char	model[MAX_QPATH];
 
 	Q_strncpyz( model, modelAndSkin, sizeof(model));
-	skin = strrchr( model, '/' );
-	if ( skin ) {
-		*skin++ = '\0';
-	}
-	else {
-		skin = "default";
-	}
+	skin = "bright";
 
 	Com_sprintf(iconName, iconNameMaxSize, "models/players/%s/icon_%s.tga", model, skin );
 

@@ -824,13 +824,8 @@ void PlayerUserinfoChanged( int playerNum ) {
 	player->ps.stats[STAT_MAX_HEALTH] = player->pers.maxHealth;
 
 	// set model
-	if(GTF(GTF_TEAMS)) {
-		Q_strncpyz( model, Info_ValueForKey (userinfo, "team_model"), sizeof( model ) );
-		Q_strncpyz( headModel, Info_ValueForKey (userinfo, "team_headModel"), sizeof( headModel ) );
-	} else {
-		Q_strncpyz( model, Info_ValueForKey (userinfo, "model"), sizeof( model ) );
-		Q_strncpyz( headModel, Info_ValueForKey (userinfo, "headModel"), sizeof( headModel ) );
-	}
+	Q_strncpyz( model, Info_ValueForKey (userinfo, "model"), sizeof( model ) );
+	Q_strncpyz( headModel, Info_ValueForKey (userinfo, "headModel"), sizeof( headModel ) );
 
 	// teamInfo
 	s = Info_ValueForKey( userinfo, "teamoverlay" );

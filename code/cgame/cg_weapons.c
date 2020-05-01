@@ -46,11 +46,11 @@ static void CG_GetWeaponColor( playerInfo_t* ci, byte col1[4], byte col2[4] ) {
 	c1[2] = (byte)c[2];
 	c1[3] = 255;
 
-	VectorCopy( ci->color2, c );
-	VectorScale( c, 255, c );
-	c2[0] = (byte)c[0];
-	c2[1] = (byte)c[1];
-	c2[2] = (byte)c[2];
+	//VectorCopy( ci->color2, c );
+	//VectorScale( c, 255, c );
+	c2[0] = 160;	// (byte)c[0];
+	c2[1] = 160;	//(byte)c[1];
+	c2[2] = 160;	//(byte)c[2];
 	c2[3] = 255;
 
 	VectorCopy( c1, col1 );
@@ -329,14 +329,14 @@ void CG_RailTrail (playerInfo_t *pi, vec3_t start, vec3_t end) {
 			re->radius = 1.1f;
 			re->customShader = cgs.media.railRingsShader;
 
-			re->shaderRGBA[0] = pi->color2[0] * 255;
-			re->shaderRGBA[1] = pi->color2[1] * 255;
-			re->shaderRGBA[2] = pi->color2[2] * 255;
+			re->shaderRGBA[0] = 0x20;	// pi->color2[0] * 255;
+			re->shaderRGBA[1] = 0x20;	//pi->color2[1] * 255;
+			re->shaderRGBA[2] = 0x20;	//pi->color2[2] * 255;
 			re->shaderRGBA[3] = 255;
 
-			le->color[0] = pi->color2[0] * 0.75;
-			le->color[1] = pi->color2[1] * 0.75;
-			le->color[2] = pi->color2[2] * 0.75;
+			le->color[0] = 0x10;	//pi->color2[0] * 0.75;
+			le->color[1] = 0x10;	//pi->color2[1] * 0.75;
+			le->color[2] = 0x10;	//pi->color2[2] * 0.75;
 			le->color[3] = 1.0f;
 
 			le->pos.trType = TR_LINEAR;

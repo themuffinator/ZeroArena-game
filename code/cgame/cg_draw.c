@@ -205,6 +205,8 @@ void CG_DrawHead( float x, float y, float w, float h, int playerNum, vec3_t head
 	pi = &cgs.playerinfo[playerNum];
 
 	if ( cg_draw3dIcons.integer ) {
+		byte rgba[4];
+
 		cm = pi->headModel;
 		if ( !cm ) {
 			return;
@@ -224,7 +226,21 @@ void CG_DrawHead( float x, float y, float w, float h, int playerNum, vec3_t head
 		// allow per-model tweaking
 		VectorAdd( origin, pi->headOffset, origin );
 
-		CG_Draw3DModelEx( x, y, w, h, pi->headModel, &pi->modelSkin, origin, headAngles, pi->c1RGBA );
+		// find the player color
+		if ( GTF( GTF_TEAMS ) && pi->team > 0 ) {
+			rgba[0] = 0xff * teamColorPlayers[pi->team][0];
+			rgba[1] = 0xff * teamColorPlayers[pi->team][1];
+			rgba[2] = 0xff * teamColorPlayers[pi->team][2];
+			rgba[3] = 0xff;
+		} else {
+			//Byte4Copy( pi->c1RGBA, rgba );
+			rgba[0] = 0xff * pi->color2[0];
+			rgba[1] = 0xff * pi->color2[1];
+			rgba[2] = 0xff * pi->color2[2];
+			rgba[3] = 0xff;
+		}
+		
+		CG_Draw3DModelEx( x, y, w, h, pi->headModel, &pi->modelSkin, origin, headAngles, rgba );
 	} else if ( cg_drawIcons.integer ) {
 		CG_DrawPic( x, y, w, h, pi->modelIcon );
 	}
@@ -1272,6 +1288,58 @@ static int CG_DrawPickupItem( int y ) {
 
 
 /*
+===================
+CG_DrawGameNotify
+===================
+*/
+static void CG_DrawGameNotify( int y ) {
+	int i, lines = 0, lineHeight, x, num;
+	vec4_t	hcolor;
+	float* fade;
+
+	if ( !cg_drawGameNotify.integer )
+		return;
+
+	// count lines to draw
+	for ( i = 0; i < MAX_NOTIFY_HISTORY; i++ ) {
+		if ( cg.notifyTime[i] ) {
+			if ( cg.notifyExpand ) {
+				lines++;
+				continue;
+			}
+			if ( cg.notifyTime[i] + NOTIFY_HISTORY_TIME + NOTIFY_HISTORY_FADE_TIME >= cg.time )
+				lines++;
+		}
+	}
+
+	if ( lines > ( cg.notifyExpand ? MAX_NOTIFY_HISTORY : cg_drawGameNotify.integer ) )
+		lines = (cg.notifyExpand ? MAX_NOTIFY_HISTORY : cg_drawGameNotify.integer);
+	if ( !lines ) return;
+
+	Vector4Copy( colorWhite, hcolor );
+
+	lineHeight = CG_DrawStringLineHeight( UI_TINYFONT );
+	//y -= lines * (lineHeight + 4);
+
+	for ( i = 0; i < lines; i++ ) {
+		// draw lines backwards
+		num = (MAX_NOTIFY_HISTORY + cg.notifyNum - i) % MAX_NOTIFY_HISTORY;
+		x = 16;
+
+		if ( !cg.notifyExpand ) {
+			fade = CG_FadeColor( cg.notifyTime[num] + NOTIFY_HISTORY_TIME, NOTIFY_HISTORY_FADE_TIME );
+			hcolor[3] = fade[3];
+		}
+
+		// text
+		CG_DrawString( x, y, cg.notifyText[num], UI_TINYFONT, hcolor );
+
+		y -= (lineHeight + 4);
+	}
+}
+
+
+/*
 =====================
 CG_DrawLowerLeft
 
@@ -1287,7 +1355,8 @@ static void CG_DrawLowerLeft( void ) {
 	if ( GTF( GTF_TEAMS ) && cg_drawTeamOverlay.integer == 3 ) {
 		y = CG_DrawTeamOverlay( y, qfalse, qfalse );
 	}
-	CG_DrawPickupItem( y );
+	y = CG_DrawPickupItem( y );
+	CG_DrawGameNotify( y );
 }
 
 
@@ -2778,7 +2847,6 @@ static void CG_DrawWarmup( void ) {
 }
 
 
-
 /*
 ===================
 CG_DrawGraphicalObits
@@ -2790,14 +2858,17 @@ static void CG_DrawGraphicalObits( int y ) {
 	char* name;
 	float	*fade;
 
+	if ( !cg_drawGraphicalObits.integer )
+		return;
+
 	// count lines to draw
 	for ( i = 0; i < MAX_GRAPHICAL_OBITS; i++ ) {
 		if ( cg.obitTime[i] && cg.obitTime[i] + GRAPH_OBIT_TIME + GRAPH_OBIT_FADE_TIME >= cg.time )
 			lines++;
 	}
 
-	if ( lines > cg_graphicalObits.integer )
-		lines = cg_graphicalObits.integer;
+	if ( lines > cg_drawGraphicalObits.integer )
+		lines = cg_drawGraphicalObits.integer;
 	if ( !lines ) return;
 
 	Vector4Copy( colorWhite, hcolor );
@@ -2852,7 +2923,7 @@ void CG_DrawNotify( void ) {
 
 	CG_SetScreenPlacement( PLACE_LEFT, PLACE_TOP );
 
-	if ( cg_graphicalObits.integer ) {
+	if ( cg_drawGraphicalObits.integer ) {
 		CG_DrawGraphicalObits( y );
 	} else {
 		CG_DrawStringAutoWrap( x, y, cg.cur_lc->consoleText, UI_SMALLFONT, NULL, 0.25, 0, 0, cgs.screenFakeWidth - x - 64 );

@@ -1785,11 +1785,7 @@ static void ServerPlayerIcon( const char* modelAndSkin, char* iconName, int icon
 
 	Q_strncpyz( model, modelAndSkin, sizeof( model ) );
 	skin = strrchr( model, '/' );
-	if ( skin ) {
-		*skin++ = '\0';
-	} else {
-		skin = "default";
-	}
+	skin = "bright";
 
 	Com_sprintf( iconName, iconNameMaxSize, "models/players/%s/icon_%s.tga", model, skin );
 

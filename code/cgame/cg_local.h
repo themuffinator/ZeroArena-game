@@ -107,6 +107,10 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define GRAPH_OBIT_TIME			3000
 #define GRAPH_OBIT_FADE_TIME	200
 
+#define MAX_NOTIFY_HISTORY			16
+#define NOTIFY_HISTORY_TIME			3000
+#define NOTIFY_HISTORY_FADE_TIME	200
+
 typedef enum {
 	FOOTSTEP_NORMAL,
 	FOOTSTEP_BOOT,
@@ -845,6 +849,12 @@ typedef struct {
 	int			crosshairRes;
 	int			crosshairSize;
 
+	// notification history
+	int			notifyNum;
+	int			notifyTime[MAX_NOTIFY_HISTORY];
+	char		notifyText[MAX_NOTIFY_HISTORY][MAX_SAY_TEXT];
+	qboolean	notifyExpand;
+
 	// obituaries
 	int			obitNum;
 	int			obitMOD[MAX_GRAPHICAL_OBITS];
@@ -1465,12 +1475,6 @@ extern	vmCvar_t		cg_defaultMaleHeadModel;
 extern	vmCvar_t		cg_defaultFemaleModel;
 extern	vmCvar_t		cg_defaultFemaleHeadModel;
 
-extern	vmCvar_t		cg_defaultTeamModelGender;
-extern	vmCvar_t		cg_defaultMaleTeamModel;
-extern	vmCvar_t		cg_defaultMaleTeamHeadModel;
-extern	vmCvar_t		cg_defaultFemaleTeamModel;
-extern	vmCvar_t		cg_defaultFemaleTeamHeadModel;
-
 extern	vmCvar_t		cg_handicap[MAX_SPLITVIEW];
 extern	vmCvar_t		cg_teamtask[MAX_SPLITVIEW];
 extern	vmCvar_t		cg_teampref[MAX_SPLITVIEW];
@@ -1491,8 +1495,9 @@ extern	vmCvar_t		cg_crosshairHitPulseTime;
 extern	vmCvar_t		cg_crosshairOpacity;
 extern	vmCvar_t		cg_crosshairPickupPulse;
 extern	vmCvar_t		cg_crosshairRes;
+extern	vmCvar_t		cg_drawGameNotify;
+extern	vmCvar_t		cg_drawGraphicalObits;
 extern	vmCvar_t		cg_drawPregameMessages;
-extern	vmCvar_t		cg_graphicalObits;
 extern	vmCvar_t		cg_impactMarkTime;
 extern	vmCvar_t		cg_kickScale;
 extern	vmCvar_t		cg_switchOnEmpty;
@@ -1613,6 +1618,7 @@ screenPlacement_e CG_GetScreenVerticalPlacement(void);
 void CG_AdjustFrom640( float *x, float *y, float *w, float *h );
 void CG_FillRect( float x, float y, float width, float height, const float *color );
 void CG_DrawPic( float x, float y, float width, float height, qhandle_t hShader );
+void CG_DrawTiledPic( float bounds_x, float bounds_y, float bounds_w, float bounds_h, float pic_w, float pic_h, qhandle_t hShader );
 void CG_DrawPicColor( float x, float y, float width, float height, qhandle_t hShader, const float *color );
 void CG_DrawNamedPic( float x, float y, float width, float height, const char *picname );
 void CG_SetClipRegion( float x, float y, float w, float h );
@@ -1638,6 +1644,7 @@ void CG_MField_Draw( mfield_t *edit, int x, int y, int style, vec4_t color, qboo
 
 float	*CG_FadeColor( int startMsec, int totalMsec );
 extern const vec4_t teamColor[TEAM_NUM_TEAMS];
+extern const vec4_t teamColorPlayers[TEAM_NUM_TEAMS];
 void CG_TileClear( void );
 void CG_KeysStringForBinding(const char *binding, char *string, int stringSize );
 void CG_ColorForHealth( vec4_t hcolor );

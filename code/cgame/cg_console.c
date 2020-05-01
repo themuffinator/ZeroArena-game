@@ -321,6 +321,7 @@ void Con_DrawSolidConsole( connstate_t state, float frac ) {
 	}
 	else {
 		CG_DrawPic( 0, 0, SCREEN_WIDTH, y, cgs.media.consoleShader );
+		//CG_DrawTiledPic( 0, 0, SCREEN_WIDTH, y, 256, 256, cgs.media.consoleShader );
 	}
 
 	color[0] = 1;

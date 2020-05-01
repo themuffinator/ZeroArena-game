@@ -205,8 +205,6 @@ static void PlayerModel_SaveChanges( void )
 {
 	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "model"), s_playermodel.modelskin );
 	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "headModel"), s_playermodel.headmodelskin );
-	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "team_model"), s_playermodel.modelskin );
-	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "team_headModel"), s_playermodel.headmodelskin );
 }
 
 /*

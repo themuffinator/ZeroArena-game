@@ -120,20 +120,16 @@ void CG_LoadingPlayer( int playerNum ) {
 		if ( skin ) {
 			*skin++ = '\0';
 		} else {
-			skin = "default";
+			skin = "bright";
 		}
 
 		Com_sprintf( iconName, MAX_QPATH, "models/players/%s/icon_%s.tga", model, skin );
 		loadingPlayerIcons[loadingPlayerIconCount] = trap_R_RegisterShaderNoMip( iconName );
 
 		if ( !loadingPlayerIcons[loadingPlayerIconCount] ) {
-			if ( GTF(GTF_TEAMS) ) {
-				defaultModel = cg_defaultTeamModelGender.string[0] == 'f' ? cg_defaultFemaleTeamModel.string : cg_defaultMaleTeamModel.string;
-			} else {
-				defaultModel = cg_defaultModelGender.string[0] == 'f' ? cg_defaultFemaleModel.string : cg_defaultMaleModel.string;
-			}
+			defaultModel = cg_defaultModelGender.string[0] == 'f' ? cg_defaultFemaleModel.string : cg_defaultMaleModel.string;
 
-			Com_sprintf( iconName, MAX_QPATH, "models/players/%s/icon_%s.tga", defaultModel, "default" );
+			Com_sprintf( iconName, MAX_QPATH, "models/players/%s/icon_%s.tga", defaultModel, "bright" );
 			loadingPlayerIcons[loadingPlayerIconCount] = trap_R_RegisterShaderNoMip( iconName );
 		}
 		if ( loadingPlayerIcons[loadingPlayerIconCount] ) {
@@ -144,7 +140,7 @@ void CG_LoadingPlayer( int playerNum ) {
 	Q_strncpyz( personality, Info_ValueForKey( info, "n" ), sizeof(personality) );
 	Q_CleanStr( personality );
 
-	if( cgs.gameType == GT_SINGLE_PLAYER ) {
+	if ( cgs.gameType == GT_SINGLE_PLAYER ) {
 		trap_S_RegisterSound( va( "sound/player/announce/%s.wav", personality ), qtrue );
 	}
 

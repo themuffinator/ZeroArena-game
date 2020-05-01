@@ -1023,49 +1023,6 @@ typedef struct animation_s {
 #define DEFAULT_MODEL_FEMALE	"major"
 #define DEFAULT_HEAD_FEMALE		"major"
 
-#ifdef MISSIONPACK
-// Default team player model names
-#define DEFAULT_TEAM_MODEL		"james"
-#define DEFAULT_TEAM_HEAD		"*james"
-
-#define DEFAULT_TEAM_MODEL2		"janet"
-#define DEFAULT_TEAM_HEAD2		"*janet"
-
-#define DEFAULT_TEAM_MODEL3		"james"
-#define DEFAULT_TEAM_HEAD3		"*james"
-
-#define DEFAULT_TEAM_MODEL4		"janet"
-#define DEFAULT_TEAM_HEAD4		"*janet"
-
-// For fallback player and gender-specific fallback sounds
-// Also used for Team Arena UI's character base model and CGame player pre-caching
-#define DEFAULT_TEAM_MODEL_GENDER	"male"
-#define DEFAULT_TEAM_MODEL_MALE		"james"
-#define DEFAULT_TEAM_HEAD_MALE		"*james"
-#define DEFAULT_TEAM_MODEL_FEMALE	"janet"
-#define DEFAULT_TEAM_HEAD_FEMALE	"*janet"
-#else
-// Default team player model names
-#define DEFAULT_TEAM_MODEL		DEFAULT_MODEL
-#define DEFAULT_TEAM_HEAD		DEFAULT_HEAD
-
-#define DEFAULT_TEAM_MODEL2		DEFAULT_MODEL2
-#define DEFAULT_TEAM_HEAD2		DEFAULT_HEAD2
-
-#define DEFAULT_TEAM_MODEL3		DEFAULT_MODEL3
-#define DEFAULT_TEAM_HEAD3		DEFAULT_HEAD3
-
-#define DEFAULT_TEAM_MODEL4		DEFAULT_MODEL4
-#define DEFAULT_TEAM_HEAD4		DEFAULT_HEAD4
-
-// For fallback player and gender-specific fallback sounds
-#define DEFAULT_TEAM_MODEL_GENDER	DEFAULT_MODEL_GENDER
-#define DEFAULT_TEAM_MODEL_MALE		DEFAULT_MODEL_MALE
-#define DEFAULT_TEAM_HEAD_MALE		DEFAULT_HEAD_MALE
-#define DEFAULT_TEAM_MODEL_FEMALE	DEFAULT_MODEL_FEMALE
-#define DEFAULT_TEAM_HEAD_FEMALE	DEFAULT_HEAD_FEMALE
-#endif
-
 
 #define DEFAULT_REDTEAM_NAME		"Pagans"
 #define DEFAULT_BLUETEAM_NAME		"Invaders"

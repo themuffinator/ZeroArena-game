@@ -1221,7 +1221,7 @@ qboolean UI_RegisterPlayerModelname( uiPlayerInfo_t *pi, const char *modelSkinNa
 	char		headModelName[MAX_QPATH];
 	char		headSkinName[MAX_QPATH];
 	char		filename[MAX_QPATH];
-	char		*slash;
+	//char		*slash;
 
 	pi->torsoModel = 0;
 	pi->headModel = 0;
@@ -1231,25 +1231,10 @@ qboolean UI_RegisterPlayerModelname( uiPlayerInfo_t *pi, const char *modelSkinNa
 	}
 
 	Q_strncpyz( modelName, modelSkinName, sizeof( modelName ) );
-
-	slash = strchr( modelName, '/' );
-	if ( !slash ) {
-		// modelName did not include a skin name
-		Q_strncpyz( skinName, "default", sizeof( skinName ) );
-	} else {
-		Q_strncpyz( skinName, slash + 1, sizeof( skinName ) );
-		*slash = '\0';
-	}
+	Q_strncpyz( skinName, "bright", sizeof( skinName ) );
 
 	Q_strncpyz( headModelName, headModelSkinName, sizeof( headModelName ) );
-	slash = strchr( headModelName, '/' );
-	if ( !slash ) {
-		// modelName did not include a skin name
-		Q_strncpyz( headSkinName, "default", sizeof( skinName ) );
-	} else {
-		Q_strncpyz( headSkinName, slash + 1, sizeof( skinName ) );
-		*slash = '\0';
-	}
+	Q_strncpyz( headSkinName, "bright", sizeof( skinName ) );
 
 	// load cmodels before models so filecache works
 
@@ -1286,7 +1271,7 @@ qboolean UI_RegisterPlayerModelname( uiPlayerInfo_t *pi, const char *modelSkinNa
 
 	// if any skins failed to load, fall back to default
 	if ( !UI_RegisterPlayerSkin( pi, modelName, skinName, headModelName, headSkinName, teamName) ) {
-		if ( !UI_RegisterPlayerSkin( pi, modelName, "default", headModelName, "default", teamName ) ) {
+		if ( !UI_RegisterPlayerSkin( pi, modelName, "bright", headModelName, "bright", teamName ) ) {
 			Com_Printf( "Failed to load skin file: %s : %s\n", modelName, skinName );
 			return qfalse;
 		}
@@ -1329,10 +1314,10 @@ UI_PlayerInfo_UpdateColor
 void UI_PlayerInfo_UpdateColor( uiPlayerInfo_t *pi ) {
 	CG_PlayerColorFromIndex( trap_Cvar_VariableIntegerValue( "color1" ), pi->color1 );
 
-	pi->c1RGBA[0] = 255 * pi->color1[0];
-	pi->c1RGBA[1] = 255 * pi->color1[1];
-	pi->c1RGBA[2] = 255 * pi->color1[2];
-	pi->c1RGBA[3] = 255;
+	pi->c1RGBA[0] = 0xff * pi->color1[0];
+	pi->c1RGBA[1] = 0xff * pi->color1[1];
+	pi->c1RGBA[2] = 0xff * pi->color1[2];
+	pi->c1RGBA[3] = 0xff;
 }
 
 

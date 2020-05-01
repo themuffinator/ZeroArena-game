@@ -653,6 +653,25 @@ void CG_ReplaceCharacter( char *str, char old, char new ) {
 	}
 }
 
+
+/*
+=================
+CG_GameNotifyAdd
+
+Add to notification text
+=================
+*/
+void CG_GameNotifyAdd( const char* in ) {
+	if ( !strlen(in) ) return;
+
+	cg.notifyNum = (cg.notifyNum + 1) % MAX_NOTIFY_HISTORY;
+	cg.notifyTime[cg.notifyNum] = cg.time;
+	//CG_Printf( "CG_GameNotifyAdd: num = %i, text in = %s\n", cg.notifyNum, in );
+	Q_strncpyz( cg.notifyText[cg.notifyNum], in, sizeof( cg.notifyText[cg.notifyNum] ) );
+	CG_ReplaceCharacter( cg.notifyText[cg.notifyNum], '\n', ' ' );
+}
+
+
 /*
 =================
 CG_ServerCommand
@@ -757,8 +776,8 @@ static void CG_ServerCommand( void ) {
 			trap_S_StartLocalSound( cgs.media.votePassed, CHAN_ANNOUNCER );
 		}
 #endif
-
-		CG_Printf("%s", CG_Argv( start+1 ) );
+		CG_Printf("%s", CG_Argv( start + 1 ) );
+		CG_GameNotifyAdd( va( "%s", CG_Argv( start + 1 )) );
 		return;
 	}
 
@@ -785,6 +804,7 @@ static void CG_ServerCommand( void ) {
 		Q_strncpyz( text, CG_Argv(start+1), MAX_SAY_TEXT );
 
 		CG_RemoveChatEscapeChar( text );
+		CG_GameNotifyAdd( text );
 		CG_Printf( "%s\n", text );
 		return;
 	}

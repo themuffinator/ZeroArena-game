@@ -372,21 +372,7 @@ static qboolean	CG_FindPlayerModelFile( char *filename, int length, playerInfo_t
 	char *team;
 	int i;
 
-	if (GTF(GTF_TEAMS)) {
-		switch ( pi->team ) {
-			case TEAM_BLUE: {
-				team = "blue";
-				break;
-			}
-			default: {
-				team = "red";
-				break;
-			}
-		}
-	}
-	else {
-		team = "default";
-	}
+	team = "bright";
 
 	for ( i = 0; i < 2; i++ ) {
 		if ( i == 0 && teamName && *teamName ) {
@@ -440,21 +426,7 @@ static qboolean	CG_FindPlayerHeadFile( char *filename, int length, playerInfo_t 
 	char *team, *headsFolder;
 	int i;
 
-	if ( GTF(GTF_TEAMS) ) {
-		switch ( pi->team ) {
-			case TEAM_BLUE: {
-				team = "blue";
-				break;
-			}
-			default: {
-				team = "red";
-				break;
-			}
-		}
-	}
-	else {
-		team = "default";
-	}
+	team = "bright";
 
 	if ( headModelName[0] == '*' ) {
 		headsFolder = "heads/";
@@ -901,23 +873,14 @@ static void CG_LoadPlayerInfo( int playerNum, playerInfo_t *pi ) {
 			CG_Error( "CG_RegisterPlayerModelname( %s, %s, %s, %s %s ) failed", pi->modelName, pi->skinName, pi->headModelName, pi->headSkinName, teamname );
 		}
 
-		if ( GTF(GTF_TEAMS) ) {
-			defaultModel = cg_defaultTeamModelGender.string[0] == 'f' ? cg_defaultFemaleTeamModel.string : cg_defaultMaleTeamModel.string;
-			defaultHeadModel = cg_defaultModelGender.string[0] == 'f' ? cg_defaultFemaleTeamHeadModel.string : cg_defaultMaleTeamHeadModel.string;
+		defaultModel = cg_defaultModelGender.string[0] == 'f' ? cg_defaultFemaleModel.string : cg_defaultMaleModel.string;
+		defaultHeadModel = cg_defaultModelGender.string[0] == 'f' ? cg_defaultFemaleHeadModel.string : cg_defaultMaleHeadModel.string;
 
-			// keep skin name
-			skinName = pi->skinName;
-			headSkinName = pi->headSkinName;
-		} else {
-			defaultModel = cg_defaultModelGender.string[0] == 'f' ? cg_defaultFemaleModel.string : cg_defaultMaleModel.string;
-			defaultHeadModel = cg_defaultModelGender.string[0] == 'f' ? cg_defaultFemaleHeadModel.string : cg_defaultMaleHeadModel.string;
-
-			skinName = "default";
-			headSkinName = "default";
-		}
+		skinName = "bright";
+		headSkinName = "bright";
 
 		if ( !CG_RegisterPlayerModelname( pi, defaultModel, skinName, defaultHeadModel, headSkinName, teamname ) ) {
-			CG_Error( "Default%s player model (model %s/%s, head %s/%s) failed to register", (GTF(GTF_TEAMS)) ? " team" : "", defaultModel, skinName, defaultHeadModel, headSkinName );
+			CG_Error( "Default player model (model %s/%s, head %s/%s) failed to register", defaultModel, skinName, defaultHeadModel, headSkinName );
 		}
 		modelloaded = qfalse;
 	}
@@ -933,11 +896,7 @@ static void CG_LoadPlayerInfo( int playerNum, playerInfo_t *pi ) {
 
 	// sounds
 	dir = pi->modelName;
-	if (GTF(GTF_TEAMS)) {
-		fallback = (pi->gender == GENDER_FEMALE) ? cg_defaultFemaleTeamModel.string : cg_defaultMaleTeamModel.string;
-	} else {
-		fallback = (pi->gender == GENDER_FEMALE) ? cg_defaultFemaleModel.string : cg_defaultMaleModel.string;
-	}
+	fallback = (pi->gender == GENDER_FEMALE) ? cg_defaultFemaleModel.string : cg_defaultMaleModel.string;
 
 	for ( i = 0 ; i < MAX_CUSTOM_SOUNDS ; i++ ) {
 		s = cg_customSoundNames[i];
@@ -1111,7 +1070,7 @@ void CG_NewPlayerInfo( int playerNum ) {
 	playerInfo_t newInfo;
 	const char	*configstring;
 	const char	*v;
-	char		*slash;
+	//char		*slash;
 
 	pi = &cgs.playerinfo[playerNum];
 
@@ -1187,40 +1146,18 @@ void CG_NewPlayerInfo( int playerNum ) {
 		// to prevent load hitches
 		char modelStr[MAX_QPATH];
 		char *skin;
-
-		if( GTF(GTF_TEAMS) ) {
-			trap_Cvar_VariableStringBuffer( "team_model", modelStr, sizeof( modelStr ) );
-		} else {
-			trap_Cvar_VariableStringBuffer( "model", modelStr, sizeof( modelStr ) );
-		}
-		if ( ( skin = strchr( modelStr, '/' ) ) == NULL) {
-			skin = "default";
-		} else {
-			*skin++ = 0;
-		}
+		
+		trap_Cvar_VariableStringBuffer( "model", modelStr, sizeof( modelStr ) );
+		//skin = strchr( modelStr, '/' );
+		skin = "bright";
 
 		Q_strncpyz( newInfo.skinName, skin, sizeof( newInfo.skinName ) );
 		Q_strncpyz( newInfo.modelName, modelStr, sizeof( newInfo.modelName ) );
 
-		if ( GTF(GTF_TEAMS) ) {
-			// keep skin name
-			slash = strchr( v, '/' );
-			if ( slash ) {
-				Q_strncpyz( newInfo.skinName, slash + 1, sizeof( newInfo.skinName ) );
-			}
-		}
 	} else {
 		Q_strncpyz( newInfo.modelName, v, sizeof( newInfo.modelName ) );
-
-		slash = strchr( newInfo.modelName, '/' );
-		if ( !slash ) {
-			// modelName didn not include a skin name
-			Q_strncpyz( newInfo.skinName, "default", sizeof( newInfo.skinName ) );
-		} else {
-			Q_strncpyz( newInfo.skinName, slash + 1, sizeof( newInfo.skinName ) );
-			// truncate modelName
-			*slash = 0;
-		}
+		Q_strncpyz( newInfo.skinName, "bright", sizeof( newInfo.skinName ) );
+		//*slash = 0;
 	}
 
 	// head model
@@ -1231,39 +1168,17 @@ void CG_NewPlayerInfo( int playerNum ) {
 		char modelStr[MAX_QPATH];
 		char *skin;
 
-		if( GTF(GTF_TEAMS) ) {
-			trap_Cvar_VariableStringBuffer( "team_headModel", modelStr, sizeof( modelStr ) );
-		} else {
-			trap_Cvar_VariableStringBuffer( "headModel", modelStr, sizeof( modelStr ) );
-		}
-		if ( ( skin = strchr( modelStr, '/' ) ) == NULL) {
-			skin = "default";
-		} else {
-			*skin++ = 0;
-		}
+		trap_Cvar_VariableStringBuffer( "headModel", modelStr, sizeof( modelStr ) );
+		//skin = strchr( modelStr, '/' );
+		skin = "bright";
 
 		Q_strncpyz( newInfo.headSkinName, skin, sizeof( newInfo.headSkinName ) );
 		Q_strncpyz( newInfo.headModelName, modelStr, sizeof( newInfo.headModelName ) );
 
-		if ( GTF(GTF_TEAMS) ) {
-			// keep skin name
-			slash = strchr( v, '/' );
-			if ( slash ) {
-				Q_strncpyz( newInfo.headSkinName, slash + 1, sizeof( newInfo.headSkinName ) );
-			}
-		}
 	} else {
 		Q_strncpyz( newInfo.headModelName, v, sizeof( newInfo.headModelName ) );
-
-		slash = strchr( newInfo.headModelName, '/' );
-		if ( !slash ) {
-			// modelName didn not include a skin name
-			Q_strncpyz( newInfo.headSkinName, "default", sizeof( newInfo.headSkinName ) );
-		} else {
-			Q_strncpyz( newInfo.headSkinName, slash + 1, sizeof( newInfo.headSkinName ) );
-			// truncate modelName
-			*slash = 0;
-		}
+		Q_strncpyz( newInfo.headSkinName, "bright", sizeof( newInfo.headSkinName ) );
+		//*slash = 0;
 	}
 
 	// scan for an existing playerinfo that matches this modelname
@@ -2575,6 +2490,7 @@ void CG_Player( centity_t *cent ) {
 	vec3_t			shadowOrigin;
 	float			shadowAlpha;
 	float			bodySinkOffset;
+	byte			rgba[4];
 #ifdef MISSIONPACK
 	refEntity_t		skull;
 	refEntity_t		powerup;
@@ -2670,6 +2586,20 @@ void CG_Player( centity_t *cent ) {
 		VectorCopy(cent->lerpOrigin, shadowOrigin);
 	}
 
+	// find the player color
+	if ( GTF( GTF_TEAMS ) && pi->team > 0 ) {
+		rgba[0] = 0xff * teamColorPlayers[pi->team][0];
+		rgba[1] = 0xff * teamColorPlayers[pi->team][1];
+		rgba[2] = 0xff * teamColorPlayers[pi->team][2];
+		rgba[3] = 0xff;
+	} else {
+		//Byte4Copy( pi->c1RGBA, rgba );
+		rgba[0] = 0xff * pi->color2[0];
+		rgba[1] = 0xff * pi->color2[1];
+		rgba[2] = 0xff * pi->color2[2];
+		rgba[3] = 0xff;
+	}
+
 	// add the shadow
 	shadow = CG_PlayerShadow( cent, shadowOrigin, shadowAlpha, &shadowPlane );
 
@@ -2699,7 +2629,7 @@ void CG_Player( centity_t *cent ) {
 	legs.renderfx = renderfx;
 	VectorCopy (legs.origin, legs.oldorigin);	// don't positionally lerp at all
 
-	Byte4Copy( pi->c1RGBA, legs.shaderRGBA );
+	Byte4Copy( rgba, legs.shaderRGBA );
 
 	CG_AddRefEntityWithPowerups( &legs, &cent->currentState );
 
@@ -2725,7 +2655,7 @@ void CG_Player( centity_t *cent ) {
 	torso.shadowPlane = shadowPlane;
 	torso.renderfx = renderfx;
 
-	Byte4Copy( pi->c1RGBA, torso.shaderRGBA );
+	Byte4Copy( rgba, torso.shaderRGBA );
 
 	CG_AddRefEntityWithPowerups( &torso, &cent->currentState );
 
@@ -2956,7 +2886,7 @@ void CG_Player( centity_t *cent ) {
 	head.shadowPlane = shadowPlane;
 	head.renderfx = renderfx;
 
-	Byte4Copy( pi->c1RGBA, head.shaderRGBA );
+	Byte4Copy( rgba, head.shaderRGBA );
 
 	CG_AddRefEntityWithPowerups( &head, &cent->currentState );
 

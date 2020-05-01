@@ -318,7 +318,7 @@ Draw the normal in-game scoreboard
 */
 qboolean CG_DrawOldScoreboard( void ) {
 	int		y, i, n1, n2;
-	float	fade;
+	float	alpha;
 	float* fadeColor;
 	char* s;
 	int maxPlayers;
@@ -343,7 +343,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 
 	if ( !cg.cur_lc || cg.cur_lc->showScores || cg.cur_lc->predictedPlayerState.pm_type == PM_DEAD ||
 		cg.cur_lc->predictedPlayerState.pm_type == PM_INTERMISSION ) {
-		fade = 1.0;
+		alpha = 1.0;
 		fadeColor = colorWhite;
 	} else {
 		fadeColor = CG_FadeColor( cg.cur_lc->scoreFadeTime, FADE_TIME );
@@ -353,8 +353,8 @@ qboolean CG_DrawOldScoreboard( void ) {
 			cg.cur_lc->killerName[0] = 0;
 			return qfalse;
 		}
-		// ZTM: FIXME?: to actually fade, should be fade=fadeColor[3] and later CG_DrawString should use fadeColor
-		fade = *fadeColor;
+		// ZTM: FIXME?: to actually alpha, should be alpha=fadeColor[3] and later CG_DrawString should use fadeColor
+		alpha = fadeColor[3];
 	}
 
 	// request more scores regularly
@@ -456,14 +456,14 @@ qboolean CG_DrawOldScoreboard( void ) {
 			teamCount = CG_TeamCount( team, maxPlayers );
 			if ( teamCount ) {
 				CG_DrawTeamBackground( 0, y - topBorderSize, SCREEN_WIDTH, teamCount* lineHeight + bottomBorderSize, 0.33f, team );
-				CG_TeamScoreboard( y, team, fade, teamCount, lineHeight );
+				CG_TeamScoreboard( y, team, alpha, teamCount, lineHeight );
 				y += (teamCount * lineHeight) + BIGCHAR_HEIGHT;
 			}
 		}
 
 		teamCount = CG_TeamCount( TEAM_SPECTATOR, maxPlayers );
 		if ( teamCount ) {
-			CG_TeamScoreboard( y, TEAM_SPECTATOR, fade, teamCount, lineHeight );
+			CG_TeamScoreboard( y, TEAM_SPECTATOR, alpha, teamCount, lineHeight );
 			y += (teamCount * lineHeight) + BIGCHAR_HEIGHT;
 		}
 
@@ -473,12 +473,12 @@ qboolean CG_DrawOldScoreboard( void ) {
 		//
 		n1 = CG_TeamCount( TEAM_FREE, maxPlayers );
 		if ( n1 ) {
-			CG_TeamScoreboard( y, TEAM_FREE, fade, n1, lineHeight );
+			CG_TeamScoreboard( y, TEAM_FREE, alpha, n1, lineHeight );
 			y += (n1 * lineHeight) + BIGCHAR_HEIGHT;
 		}
 		n2 = CG_TeamCount( TEAM_SPECTATOR, maxPlayers - n1 );
 		if ( n2 ) {
-			CG_TeamScoreboard( y, TEAM_SPECTATOR, fade, n2, lineHeight );
+			CG_TeamScoreboard( y, TEAM_SPECTATOR, alpha, n2, lineHeight );
 			y += (n2 * lineHeight) + BIGCHAR_HEIGHT;
 		}
 	}
@@ -487,7 +487,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 		// draw local player at the bottom
 		for ( i = 0; i < cg.numScores; i++ ) {
 			if ( cg.scores[i].playerNum == cg.cur_ps->playerNum ) {
-				CG_DrawPlayerScore( y, &cg.scores[i], fadeColor, fade, lineHeight == SB_NORMAL_HEIGHT );
+				CG_DrawPlayerScore( y, &cg.scores[i], fadeColor, alpha, lineHeight == SB_NORMAL_HEIGHT );
 				break;
 			}
 		}

@@ -226,7 +226,7 @@ static void PlayerIntroSound( const char *modelAndSkin ) {
 		skin = model;
 	}
 
-	if( Q_stricmp( skin, "default" ) == 0 ) {
+	if( Q_stricmp( skin, "bright" ) == 0 ) {
 		skin = model;
 	}
 
@@ -708,8 +708,6 @@ static void G_AddBot( const char *name, float skill, char *team, int delay, char
 		model = DEFAULT_MODEL;
 	}
 	Info_SetValueForKey( userinfo, key, model );
-	key = "team_model";
-	Info_SetValueForKey( userinfo, key, model );
 
 	key = "headModel";
 	headModel = Info_ValueForKey( botinfo, key );
@@ -720,8 +718,6 @@ static void G_AddBot( const char *name, float skill, char *team, int delay, char
 			headModel = model;
 		}
 	}
-	Info_SetValueForKey( userinfo, key, headModel );
-	key = "team_headModel";
 	Info_SetValueForKey( userinfo, key, headModel );
 
 	key = "color1";

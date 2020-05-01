@@ -312,6 +312,57 @@ void CG_DrawPic( float x, float y, float width, float height, qhandle_t hShader 
 	trap_R_DrawStretchPic( x, y, width, height, s0, t0, s1, t1, hShader );
 }
 
+
+/*
+================
+CG_DrawTiledPic
+
+Tiles an image across set coordinates
+=================
+*/
+void CG_DrawTiledPic( float bounds_x, float bounds_y, float bounds_w, float bounds_h, float pic_w, float pic_h, qhandle_t hShader ) {
+	float	start_x = bounds_x, start_y = bounds_y, x, y;
+
+	CG_AdjustFrom640( &bounds_x, &bounds_y, &bounds_w, &bounds_h );
+	CG_AdjustFrom640( NULL, NULL, &pic_w, &pic_h );
+
+	x = start_x;
+	y = start_y;
+
+	while ( 1 ) {
+		{
+			float adj_x, adj_y, adj_w, adj_h;
+			float s1, t1, s2, t2;
+
+			adj_x = x;
+			adj_y = y;
+			adj_w = pic_w;
+			adj_h = pic_h;
+
+			if ( x >= bounds_x ) s1 = x - bounds_x;
+			else s1 = (bounds_x - x) / pic_w;
+
+			if ( y >= bounds_y ) t1 = y - bounds_y;
+			else t1 = (bounds_y - y) / pic_h;
+
+			if ( x + pic_w < bounds_x + bounds_w ) s2 = 1;
+			else s2 = 1.0 - (((x + pic_w) - (bounds_x + bounds_w)) / pic_w);
+
+			if ( y + pic_h < bounds_y + bounds_h ) t2 = 1;
+			else t2 = 1.0 - (((y + pic_h) - (bounds_y + bounds_h)) / pic_h);
+
+			trap_R_DrawStretchPic( adj_x, adj_y, adj_w, adj_h, s1, t1, s2, t2, hShader );
+		}
+
+		if ( x + pic_w < bounds_x + bounds_w ) x += pic_w;
+		else {	// new line
+			x = start_x;
+			if ( y + pic_h >= bounds_y + bounds_h ) break;	// we're done
+			else y += pic_h;
+		}
+	}
+}
+
 /*
 ================
 CG_DrawNamedPic
@@ -833,6 +884,18 @@ const vec4_t teamColor[TEAM_NUM_TEAMS] = {
 	{0.1f, 0.9f, 0.9f, 1},
 	{0.9f, 0.1f, 0.9f, 1},
 };
+
+
+const vec4_t teamColorPlayers[TEAM_NUM_TEAMS] = {
+	{1, 1, 1, 1},
+	{1, 0, 0, 1},
+	{0, 0, 1, 1},
+	{0, 1, 0, 1},
+	{1, 1, 0, 1},
+	{0, 1, 1, 1},
+	{1, 0, 1, 1},
+};
+
 
 /*
 =================

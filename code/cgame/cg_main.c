@@ -275,8 +275,9 @@ vmCvar_t	cg_crosshairHitPulseTime;
 vmCvar_t	cg_crosshairOpacity;
 vmCvar_t	cg_crosshairPickupPulse;
 vmCvar_t	cg_crosshairRes;
+vmCvar_t	cg_drawGameNotify;
+vmCvar_t	cg_drawGraphicalObits;
 vmCvar_t	cg_drawPregameMessages;
-vmCvar_t	cg_graphicalObits;
 vmCvar_t	cg_impactMarkTime;
 vmCvar_t	cg_kickScale;
 vmCvar_t	cg_switchOnEmpty;
@@ -303,12 +304,6 @@ vmCvar_t	cg_defaultMaleModel;
 vmCvar_t	cg_defaultMaleHeadModel;
 vmCvar_t	cg_defaultFemaleModel;
 vmCvar_t	cg_defaultFemaleHeadModel;
-
-vmCvar_t	cg_defaultTeamModelGender;
-vmCvar_t	cg_defaultMaleTeamModel;
-vmCvar_t	cg_defaultMaleTeamHeadModel;
-vmCvar_t	cg_defaultFemaleTeamModel;
-vmCvar_t	cg_defaultFemaleTeamHeadModel;
 
 vmCvar_t	cg_handicap[MAX_SPLITVIEW];
 vmCvar_t	cg_teamtask[MAX_SPLITVIEW];
@@ -497,11 +492,6 @@ static cvarTable_t cgameCvarTable[] = {
 	{ &cg_defaultMaleHeadModel, "default_male_headmodel", DEFAULT_HEAD_MALE, CVAR_ARCHIVE, RANGE_ALL },
 	{ &cg_defaultFemaleModel, "default_female_model", DEFAULT_MODEL_FEMALE, CVAR_ARCHIVE, RANGE_ALL },
 	{ &cg_defaultFemaleHeadModel, "default_female_headmodel", DEFAULT_HEAD_FEMALE, CVAR_ARCHIVE, RANGE_ALL },
-	{ &cg_defaultTeamModelGender, "default_team_model_gender", DEFAULT_TEAM_MODEL_GENDER, CVAR_ARCHIVE, RANGE_ALL },
-	{ &cg_defaultMaleTeamModel, "default_male_team_model", DEFAULT_TEAM_MODEL_MALE, CVAR_ARCHIVE, RANGE_ALL },
-	{ &cg_defaultMaleTeamHeadModel, "default_male_team_headmodel", DEFAULT_TEAM_HEAD_MALE, CVAR_ARCHIVE, RANGE_ALL },
-	{ &cg_defaultFemaleTeamModel, "default_female_team_model", DEFAULT_TEAM_MODEL_FEMALE, CVAR_ARCHIVE, RANGE_ALL },
-	{ &cg_defaultFemaleTeamHeadModel, "default_female_team_headmodel", DEFAULT_TEAM_HEAD_FEMALE, CVAR_ARCHIVE, RANGE_ALL },
 
 	{ &cg_crosshairBrightness, "cg_crosshairBrightness", "1.0", CVAR_ARCHIVE, RANGE_FLOAT( 0, 1 ) },
 	{ &cg_crosshairColor, "cg_crosshairColor", "25", CVAR_ARCHIVE, RANGE_INT( 1, 26 ) },
@@ -511,8 +501,9 @@ static cvarTable_t cgameCvarTable[] = {
 	{ &cg_crosshairOpacity, "cg_crosshairOpacity", "1.0", CVAR_ARCHIVE, RANGE_FLOAT( 0, 1 ) },
 	{ &cg_crosshairPickupPulse, "cg_crosshairPickupPulse", "1", CVAR_ARCHIVE, RANGE_BOOL },
 	{ &cg_crosshairRes, "cg_crosshairRes", "0", CVAR_ARCHIVE, RANGE_ALL },
+	{ &cg_drawGameNotify, "cg_drawGameNotify", "2", CVAR_ARCHIVE, RANGE_INT( 0, MAX_NOTIFY_HISTORY ) },
+	{ &cg_drawGraphicalObits, "cg_drawGraphicalObits", "1", CVAR_ARCHIVE, RANGE_INT( 0, MAX_GRAPHICAL_OBITS ) },
 	{ &cg_drawPregameMessages, "cg_drawPregameMessages", "1", CVAR_ARCHIVE, RANGE_BOOL },
-	{ &cg_graphicalObits, "cg_graphicalObits", "0", CVAR_ARCHIVE, RANGE_INT( 0, MAX_GRAPHICAL_OBITS ) },
 	{ &cg_impactMarkTime, "cg_impactMarkTime", "10000", CVAR_ARCHIVE, RANGE_INT( 0, 60000 ) },
 	{ &cg_kickScale, "cg_kickScale", "0.25", CVAR_ARCHIVE, RANGE_FLOAT( 0, 1 ) },
 	{ &cg_switchOnEmpty, "cg_switchOnEmpty", "1", CVAR_ARCHIVE, RANGE_BOOL },
@@ -583,8 +574,6 @@ void CG_RegisterUserCvars( void ) {
 	int				userInfo[MAX_SPLITVIEW] = { CVAR_USERINFO, CVAR_USERINFO2, CVAR_USERINFO3, CVAR_USERINFO4 };
 	char* modelNames[MAX_SPLITVIEW] = { DEFAULT_MODEL, DEFAULT_MODEL2, DEFAULT_MODEL3, DEFAULT_MODEL4 };
 	char* headModelNames[MAX_SPLITVIEW] = { DEFAULT_HEAD, DEFAULT_HEAD2, DEFAULT_HEAD3, DEFAULT_HEAD4 };
-	char* teamModelNames[MAX_SPLITVIEW] = { DEFAULT_TEAM_MODEL, DEFAULT_TEAM_MODEL2, DEFAULT_TEAM_MODEL3, DEFAULT_TEAM_MODEL4 };
-	char* teamHeadModelNames[MAX_SPLITVIEW] = { DEFAULT_TEAM_HEAD, DEFAULT_TEAM_HEAD2, DEFAULT_TEAM_HEAD3, DEFAULT_TEAM_HEAD4 };
 	char* name;
 	userCvarTable_t* uservar;
 	vmCvar_t* vmcvar;
@@ -625,9 +614,6 @@ void CG_RegisterUserCvars( void ) {
 
 		trap_Cvar_Register( NULL, Com_LocalPlayerCvarName( i, "model" ), modelNames[i], userInfo[i] | CVAR_ARCHIVE );
 		trap_Cvar_Register( NULL, Com_LocalPlayerCvarName( i, "headModel" ), headModelNames[i], userInfo[i] | CVAR_ARCHIVE );
-
-		trap_Cvar_Register( NULL, Com_LocalPlayerCvarName( i, "team_model" ), teamModelNames[i], userInfo[i] | CVAR_ARCHIVE );
-		trap_Cvar_Register( NULL, Com_LocalPlayerCvarName( i, "team_headModel" ), teamHeadModelNames[i], userInfo[i] | CVAR_ARCHIVE );
 	}
 }
 
@@ -1437,13 +1423,6 @@ static void CG_RegisterSounds( void ) {
 	cgs.media.hgrenb1aSound = trap_S_RegisterSound( "sound/weapons/grenade/hgrenb1a.wav", qfalse );
 	cgs.media.hgrenb2aSound = trap_S_RegisterSound( "sound/weapons/grenade/hgrenb2a.wav", qfalse );
 
-#ifdef MISSIONPACK
-	if ( GTF( GTF_TEAMS ) || forceLoad ) {
-		CG_CachePlayerSounds( cg_defaultMaleTeamModel.string );
-		CG_CachePlayerSounds( cg_defaultFemaleTeamModel.string );
-	}
-#endif
-
 }
 
 
@@ -1729,11 +1708,6 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.cursor = trap_R_RegisterShaderNoMip( "menu/art/3_cursor2" );
 	cgs.media.sizeCursor = trap_R_RegisterShaderNoMip( "ui/assets/sizecursor.tga" );
 	cgs.media.selectCursor = trap_R_RegisterShaderNoMip( "ui/assets/selectcursor.tga" );
-
-	if ( GTF( GTF_TEAMS ) || bs ) {
-		CG_CachePlayerModels( cg_defaultMaleTeamModel.string, cg_defaultMaleTeamHeadModel.string );
-		CG_CachePlayerModels( cg_defaultFemaleTeamModel.string, cg_defaultFemaleTeamHeadModel.string );
-	}
 #endif
 
 	CG_ClearParticles();
@@ -1952,6 +1926,10 @@ void CG_Init( connstate_t state, int maxSplitView, int playVideo ) {
 	memset( cg.obitTime, 0, sizeof( cg.obitTime ) );
 	memset( cg.obitTarget, 0, sizeof( cg.obitTarget ) );
 	memset( cg.obitMOD, 0, sizeof( cg.obitMOD ) );
+	cg.notifyNum = 0;
+	memset( cg.notifyTime, 0, sizeof( cg.notifyTime ) );
+	memset( cg.notifyText, 0, sizeof( cg.notifyText ) );
+	cg.notifyExpand = qfalse;
 
 	CG_ConsoleInit();
 

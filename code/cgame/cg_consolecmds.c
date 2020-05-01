@@ -203,6 +203,7 @@ static void CG_ScoresDown_f(int localPlayerNum) {
 	}
 }
 
+
 /*
 =============
 CG_ScoresUp_f
@@ -216,6 +217,28 @@ static void CG_ScoresUp_f( int localPlayerNum ) {
 		player->scoreFadeTime = cg.time;
 	}
 }
+
+
+
+/*
+=============
+CG_NotifyDown_f
+=============
+*/
+static void CG_NotifyDown_f( int localPlayerNum ) {
+	cg.notifyExpand = qtrue;
+}
+
+
+/*
+=============
+CG_NotifyUp_f
+=============
+*/
+static void CG_NotifyUp_f( int localPlayerNum ) {
+	cg.notifyExpand = qfalse;
+}
+
 
 /*
 =============
@@ -260,48 +283,6 @@ void CG_SetHeadmodel_f( int localPlayerNum ) {
 	}
 }
 
-/*
-=============
-CG_SetTeamModel_f
-=============
-*/
-void CG_SetTeamModel_f( int localPlayerNum ) {
-	const char	*arg;
-	char	name[256];
-	char	cvarName[32];
-
-	Q_strncpyz( cvarName, Com_LocalPlayerCvarName( localPlayerNum, "team_model"), sizeof (cvarName) );
-
-	arg = CG_Argv( 1 );
-	if ( arg[0] ) {
-		trap_Cvar_Set( cvarName, arg );
-		trap_Cvar_Set( Com_LocalPlayerCvarName( localPlayerNum, "team_headModel"), arg );
-	} else {
-		trap_Cvar_VariableStringBuffer( cvarName, name, sizeof(name) );
-		Com_Printf("%s is set to %s\n", cvarName, name);
-	}
-}
-
-/*
-=============
-CG_SetTeamHeadmodel_f
-=============
-*/
-void CG_SetTeamHeadmodel_f( int localPlayerNum ) {
-	const char	*arg;
-	char	name[256];
-	char	cvarName[32];
-
-	Q_strncpyz( cvarName, Com_LocalPlayerCvarName( localPlayerNum, "team_headModel"), sizeof (cvarName) );
-
-	arg = CG_Argv( 1 );
-	if ( arg[0] ) {
-		trap_Cvar_Set( cvarName, arg );
-	} else {
-		trap_Cvar_VariableStringBuffer( cvarName, name, sizeof(name) );
-		Com_Printf("%s is set to %s\n", cvarName, name);
-	}
-}
 
 /*
 ==================
@@ -360,8 +341,8 @@ static void CG_Field_CompletePlayerModel( int argNum, qboolean lookingForHead, c
 	skinPrefix = ( lookingForHead ) ? "head_" : "upper_";
 	skinPrefixLength = ( lookingForHead ) ? 5 : 6;
 
-	skinTeamSuffix = ( lookingForTeam == TEAM_BLUE ) ? "_blue" : "_red";
-	skinTeamSuffixLength = ( lookingForTeam == TEAM_BLUE ) ? 5 : 6;
+	skinTeamSuffix = "_bright";
+	skinTeamSuffixLength = 8;
 
 	// ZTM: FIXME: have to clear whole list because BG_AddStringToList doesn't properly terminate list
 	memset( list, 0, sizeof( list ) );
@@ -515,7 +496,7 @@ CG_ModelComplete
 */
 static void CG_ModelComplete( int localPlayerNum, char *args, int argNum ) {
 	if ( argNum == 2 ) {
-		CG_Field_CompletePlayerModel( argNum, qfalse, "default", TEAM_FREE );
+		CG_Field_CompletePlayerModel( argNum, qfalse, "bright", TEAM_FREE );
 	}
 }
 
@@ -526,31 +507,10 @@ CG_HeadmodelComplete
 */
 static void CG_HeadmodelComplete( int localPlayerNum, char *args, int argNum ) {
 	if ( argNum == 2 ) {
-		CG_Field_CompletePlayerModel( argNum, qtrue, "default", TEAM_FREE );
+		CG_Field_CompletePlayerModel( argNum, qtrue, "bright", TEAM_FREE );
 	}
 }
 
-/*
-==================
-CG_TeamModelComplete
-==================
-*/
-static void CG_TeamModelComplete( int localPlayerNum, char *args, int argNum ) {
-	if ( argNum == 2 ) {
-		CG_Field_CompletePlayerModel( argNum, qfalse, "red", TEAM_RED );
-	}
-}
-
-/*
-==================
-CG_TeamHeadmodelComplete
-==================
-*/
-static void CG_TeamHeadmodelComplete( int localPlayerNum, char *args, int argNum ) {
-	if ( argNum == 2 ) {
-		CG_Field_CompletePlayerModel( argNum, qtrue, "red", TEAM_RED );
-	}
-}
 
 static void CG_CameraOrbit( int localPlayerNum, float speed ) {
 	localPlayer_t *player;
@@ -1210,6 +1170,8 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "-moveRight", IN_MoverightUp, 0 },
 	{ "+moveUp",IN_UpDown, 0 },
 	{ "-moveUp",IN_UpUp, 0 },
+	{ "+notify", CG_NotifyDown_f, CMD_INGAME },
+	{ "-notify", CG_NotifyUp_f, CMD_INGAME },
 	{ "+right",IN_RightDown, 0 },
 	{ "-right",IN_RightUp, 0 },
 	{ "+scores", CG_ScoresDown_f, CMD_INGAME },
@@ -1226,8 +1188,6 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "centerView", IN_CenterView, 0 },
 	{ "headModel", CG_SetHeadmodel_f, 0, CG_HeadmodelComplete },
 	{ "targetCommand", CG_TargetCommand_f, CMD_INGAME },
-	{ "team_model", CG_SetTeamModel_f, 0, CG_TeamModelComplete },
-	{ "team_headModel", CG_SetTeamHeadmodel_f, 0, CG_TeamHeadmodelComplete },
 	{ "tell_target", CG_TellTarget_f, CMD_INGAME },
 	{ "tell_attacker", CG_TellAttacker_f, CMD_INGAME },
 	{ "model", CG_SetModel_f, 0, CG_ModelComplete },
