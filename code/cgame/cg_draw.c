@@ -1270,6 +1270,7 @@ static int CG_DrawPickupItem( int y ) {
 	return y;
 }
 
+
 /*
 =====================
 CG_DrawLowerLeft
@@ -1286,7 +1287,6 @@ static void CG_DrawLowerLeft( void ) {
 	if ( GTF( GTF_TEAMS ) && cg_drawTeamOverlay.integer == 3 ) {
 		y = CG_DrawTeamOverlay( y, qfalse, qfalse );
 	}
-
 	CG_DrawPickupItem( y );
 }
 
@@ -2521,7 +2521,7 @@ static void CG_DrawReadyStatus( void ) {
 	playerState_t* ps = cg.cur_ps;	// &cg.snap->pss;
 	float			scale;	// w, h, scale;
 	char* s, * keyname;
-	vec4_t			color;
+	//vec4_t			color;
 	qboolean		ready;
 	
 	// spectators cannot ready
@@ -2535,9 +2535,11 @@ static void CG_DrawReadyStatus( void ) {
 	//if ( cg.cur_lc->showScores ) return;
 
 	//keyname = CG_Key_KeynumToString( trap_Key_GetKey( "readyUp" ) );
+	keyname = "";
 	//CG_KeysStringForBinding( "readyUp", keyname, strlen( keyname ) );
 	ready = (ps->stats[STAT_CLIENTS_READY] & (1 << ps->playerNum)) ? qtrue : qfalse;
-	if ( keyname[0] ) {
+
+	if ( keyname ) {
 		s = va( "Press " S_COLOR_CYAN "%s" S_COLOR_WHITE " to %s yourself", keyname, (ready ? "unready" : "ready") );
 	} else {
 		s = va( "Type " S_COLOR_CYAN "readyUp" S_COLOR_WHITE " in console to %s yourself", (ready ? "unready" : "ready") );
@@ -2573,7 +2575,7 @@ static void CG_DrawReadyStatus( void ) {
 		}
 	}
 #endif
-	Vector4Copy( (ready ? colorGreen : colorRed), color );
+	//Vector4Copy( (ready ? colorGreen : colorRed), color );
 #if 0
 	w = CG_Text_Width_Ext( s, scale, 0, fnt1 );
 	h = CG_Text_Height_Ext( s, scale, 0, fnt1 );
@@ -2723,6 +2725,7 @@ static void CG_DrawWarmup( void ) {
 		switch ( cg.warmupState ) {
 		case WARMUP_DELAYED:
 			s = va( "Warmup begins in: %2f", (float)(cg.warmupVal - cg.time)/1000.0f );
+			t = "";
 			break;
 		case WARMUP_DEFAULT:
 			s = "Waiting for more players.";
@@ -2775,6 +2778,68 @@ static void CG_DrawWarmup( void ) {
 }
 
 
+
+/*
+===================
+CG_DrawGraphicalObits
+===================
+*/
+static void CG_DrawGraphicalObits( int y ) {
+	int		i, num, lines = 0, iconSize, lineHeight, spacer, x;
+	vec4_t	hcolor;
+	char* name;
+	float	*fade;
+
+	// count lines to draw
+	for ( i = 0; i < MAX_GRAPHICAL_OBITS; i++ ) {
+		if ( cg.obitTime[i] && cg.obitTime[i] + GRAPH_OBIT_TIME + GRAPH_OBIT_FADE_TIME >= cg.time )
+			lines++;
+	}
+
+	if ( lines > cg_graphicalObits.integer )
+		lines = cg_graphicalObits.integer;
+	if ( !lines ) return;
+
+	Vector4Copy( colorWhite, hcolor );
+
+	lineHeight = CG_DrawStringLineHeight( UI_TINYFONT );
+	iconSize = lineHeight * 1.25;	// 16;
+	y += lines * (iconSize + 4);	// lineHeight;
+	spacer = CG_DrawStrlen( " ", UI_TINYFONT );
+
+	for ( i = 0; i < lines; i++ ) {
+		// draw lines backwards
+		num = (MAX_GRAPHICAL_OBITS + cg.obitNum - i ) % MAX_GRAPHICAL_OBITS;
+		x = 16;
+
+		fade = CG_FadeColor( cg.obitTime[num] + GRAPH_OBIT_TIME, GRAPH_OBIT_FADE_TIME );
+		hcolor[3] = fade[3];
+
+		// attacker name
+		name = va( "%s", cg.obitAttackerName[num] );
+		if ( name ) {
+			CG_DrawString( x, y + (iconSize - lineHeight) * 0.5, name, UI_TINYFONT, hcolor );
+			x += CG_DrawStrlenMaxChars( cg.obitAttackerName[num], UI_TINYFONT, strlen(cg.obitAttackerName[num]) ) + spacer;
+		}
+
+		// mod icon
+		trap_R_SetColor( hcolor );
+		CG_DrawPic( x, y, iconSize, iconSize, cg.obitIcon[num] );
+		trap_R_SetColor( NULL );
+		x += iconSize + spacer;
+
+		// target
+		name = va( "%s", cg.obitTargetName[num] );
+		CG_DrawString( x, y + (iconSize - lineHeight) * 0.5, name, UI_TINYFONT, hcolor );
+
+		y -= (iconSize + 4);	// lineHeight;
+	}
+	//CG_DrawString( 2, 100, va( "lines %i | firstNum %i | obitNum %i", lines, num, cg.obitNum ), UI_BIGFONT, hcolor );	//debug
+
+	//return y;
+}
+
+
 /*
 =====================
 CG_DrawNotify
@@ -2782,13 +2847,16 @@ CG_DrawNotify
 Draw console notify area.
 =====================
 */
-void CG_DrawNotify( qboolean voiceMenuOpen ) {
-	int x;
-
-	x = 5;
+void CG_DrawNotify( void ) {
+	int x = 5, y = 2;
 
 	CG_SetScreenPlacement( PLACE_LEFT, PLACE_TOP );
-	CG_DrawStringAutoWrap( x, 2, cg.cur_lc->consoleText, UI_SMALLFONT, NULL, 0.25, 0, 0, cgs.screenFakeWidth - x - 64 );
+
+	if ( cg_graphicalObits.integer ) {
+		CG_DrawGraphicalObits( y );
+	} else {
+		CG_DrawStringAutoWrap( x, y, cg.cur_lc->consoleText, UI_SMALLFONT, NULL, 0.25, 0, 0, cgs.screenFakeWidth - x - 64 );
+	}
 }
 
 //==================================================================================
@@ -3035,7 +3103,7 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
 	// draw status bar and other floating elements
 	CG_Draw2D( stereoView, &voiceMenuOpen );
 
-	CG_DrawNotify( voiceMenuOpen );
+	CG_DrawNotify();
 }
 
 /*

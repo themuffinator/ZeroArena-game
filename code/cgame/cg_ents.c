@@ -463,7 +463,7 @@ static void CG_Item( centity_t *cent ) {
 		ent.shaderRGBA[0] = 0xff * wi->weaponColor[0];
 		ent.shaderRGBA[1] = 0xff * wi->weaponColor[1];
 		ent.shaderRGBA[2] = 0xff * wi->weaponColor[2];
-		ent.shaderRGBA[3] = 0xff * wi->weaponColor[3];
+		ent.shaderRGBA[3] = 0xff;
 	}
 
 	ent.hModel = cg_items[es->modelindex].models[0];
@@ -1043,6 +1043,7 @@ static void CG_TeamBase( centity_t *cent ) {
 		VectorCopy( cent->lerpOrigin, model.origin );
 		AnglesToAxis( cent->currentState.angles, model.axis );
 		model.hModel = cgs.media.flagBaseModel;
+		t = TEAM_FREE;		//multiteam TODO
 
 		model.shaderRGBA[0] = teamColor[t][0] * 0xff;
 		model.shaderRGBA[1] = teamColor[t][1] * 0xff;

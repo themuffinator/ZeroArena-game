@@ -156,6 +156,8 @@ vmCvar_t	cg_brassTime;
 vmCvar_t	cg_bubblesTrailStyle;
 vmCvar_t	cg_cameraMode;
 vmCvar_t	cg_centerPrintTime;
+vmCvar_t	cg_color1;
+vmCvar_t	cg_color2;
 vmCvar_t	cg_coronaFarDist;
 vmCvar_t	cg_coronas;
 vmCvar_t	cg_crosshairHealth;
@@ -274,6 +276,7 @@ vmCvar_t	cg_crosshairOpacity;
 vmCvar_t	cg_crosshairPickupPulse;
 vmCvar_t	cg_crosshairRes;
 vmCvar_t	cg_drawPregameMessages;
+vmCvar_t	cg_graphicalObits;
 vmCvar_t	cg_impactMarkTime;
 vmCvar_t	cg_kickScale;
 vmCvar_t	cg_switchOnEmpty;
@@ -307,8 +310,6 @@ vmCvar_t	cg_defaultMaleTeamHeadModel;
 vmCvar_t	cg_defaultFemaleTeamModel;
 vmCvar_t	cg_defaultFemaleTeamHeadModel;
 
-vmCvar_t	cg_color1[MAX_SPLITVIEW];
-vmCvar_t	cg_color2[MAX_SPLITVIEW];
 vmCvar_t	cg_handicap[MAX_SPLITVIEW];
 vmCvar_t	cg_teamtask[MAX_SPLITVIEW];
 vmCvar_t	cg_teampref[MAX_SPLITVIEW];
@@ -363,6 +364,8 @@ static cvarTable_t cgameCvarTable[] = {
 	{ &cg_brassTime, "cg_brassTime", "5000", CVAR_ARCHIVE, RANGE_INT( 0, 60000 ) },
 	{ &cg_bubblesTrailStyle, "cg_bubblesTrailStyle", "1", CVAR_ARCHIVE, RANGE_BOOL },
 	{ &cg_centerPrintTime, "cg_centerPrintTime", "3", CVAR_CHEAT, RANGE_INT( 0, 10 ) },
+	{ &cg_color1, "color1", XSTRING( DEFAULT_PLAYER_COLOR1 ), CVAR_USERINFO | CVAR_ARCHIVE, RANGE_ALL },
+	{ &cg_color2, "color2", XSTRING( DEFAULT_PLAYER_COLOR2 ), CVAR_USERINFO | CVAR_ARCHIVE, RANGE_ALL },
 	{ &cg_coronaFarDist, "cg_coronaFarDist", "1536", CVAR_ARCHIVE, RANGE_ALL },
 	{ &cg_coronas, "cg_coronas", "1", CVAR_ARCHIVE, RANGE_INT( 0, 3 ) },
 	{ &cg_crosshairHealth, "cg_crosshairHealth", "0", CVAR_ARCHIVE, RANGE_BOOL },
@@ -509,6 +512,7 @@ static cvarTable_t cgameCvarTable[] = {
 	{ &cg_crosshairPickupPulse, "cg_crosshairPickupPulse", "1", CVAR_ARCHIVE, RANGE_BOOL },
 	{ &cg_crosshairRes, "cg_crosshairRes", "0", CVAR_ARCHIVE, RANGE_ALL },
 	{ &cg_drawPregameMessages, "cg_drawPregameMessages", "1", CVAR_ARCHIVE, RANGE_BOOL },
+	{ &cg_graphicalObits, "cg_graphicalObits", "0", CVAR_ARCHIVE, RANGE_INT( 0, MAX_GRAPHICAL_OBITS ) },
 	{ &cg_impactMarkTime, "cg_impactMarkTime", "10000", CVAR_ARCHIVE, RANGE_INT( 0, 60000 ) },
 	{ &cg_kickScale, "cg_kickScale", "0.25", CVAR_ARCHIVE, RANGE_FLOAT( 0, 1 ) },
 	{ &cg_switchOnEmpty, "cg_switchOnEmpty", "1", CVAR_ARCHIVE, RANGE_BOOL },
@@ -520,8 +524,6 @@ static cvarTable_t cgameCvarTable[] = {
 };
 
 static userCvarTable_t userCvarTable[] = {
-	{ cg_color1, "color1", XSTRING( DEFAULT_PLAYER_COLOR1 ), CVAR_USERINFO | CVAR_ARCHIVE, RANGE_ALL },
-	{ cg_color2, "color2", XSTRING( DEFAULT_PLAYER_COLOR2 ), CVAR_USERINFO | CVAR_ARCHIVE, RANGE_ALL },
 	{ cg_handicap, "handicap", "100", CVAR_USERINFO | CVAR_ARCHIVE, RANGE_ALL },
 	{ cg_teamtask, "teamTask", "0", CVAR_USERINFO, RANGE_ALL },
 	{ cg_teampref, "teampref", "", CVAR_USERINFO, RANGE_ALL },
@@ -1486,6 +1488,8 @@ static void CG_RegisterGraphics( void ) {
 
 	cgs.media.deferShader = trap_R_RegisterShaderNoMip( "gfx/2d/defer.tga" );
 
+	cgs.media.deathIcon = trap_R_RegisterShaderNoMip( "menu/icons/death.tga" );
+
 	cgs.media.scoreboardName = trap_R_RegisterShaderNoMip( "menu/tab/name.tga" );
 	cgs.media.scoreboardPing = trap_R_RegisterShaderNoMip( "menu/tab/ping.tga" );
 	cgs.media.scoreboardScore = trap_R_RegisterShaderNoMip( "menu/tab/score.tga" );
@@ -1942,6 +1946,12 @@ void CG_Init( connstate_t state, int maxSplitView, int playVideo ) {
 	cgs.media.consoleShader = trap_R_RegisterShader( "console" );
 	cgs.media.nodrawShader = trap_R_RegisterShaderEx( "nodraw", LIGHTMAP_NONE, qtrue );
 	cgs.media.whiteDynamicShader = trap_R_RegisterShaderEx( "white", LIGHTMAP_NONE, qtrue );
+
+	cg.obitNum = 0;
+	memset( cg.obitAttacker, 0, sizeof( cg.obitAttacker ) );
+	memset( cg.obitTime, 0, sizeof( cg.obitTime ) );
+	memset( cg.obitTarget, 0, sizeof( cg.obitTarget ) );
+	memset( cg.obitMOD, 0, sizeof( cg.obitMOD ) );
 
 	CG_ConsoleInit();
 

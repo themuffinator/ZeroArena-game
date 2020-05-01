@@ -101,6 +101,12 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define TEAM_OVERLAY_MAXNAME_WIDTH	12
 #define TEAM_OVERLAY_MAXLOCATION_WIDTH	16
 
+#define MAX_GRAPHICAL_OBITS		16	//4
+//#define GRAPH_OBIT_TOTAL_NUM	MAX_GRAPHICAL_OBITS - 1						// max number of drawn obits
+//#define GRAPH_OBIT_FIRST_NUM	MAX_GRAPHICAL_OBITS - GRAPH_OBIT_TOTAL_NUM	// first standard obit, -1 is overflow
+#define GRAPH_OBIT_TIME			3000
+#define GRAPH_OBIT_FADE_TIME	200
+
 typedef enum {
 	FOOTSTEP_NORMAL,
 	FOOTSTEP_BOOT,
@@ -839,6 +845,18 @@ typedef struct {
 	int			crosshairRes;
 	int			crosshairSize;
 
+	// obituaries
+	int			obitNum;
+	int			obitMOD[MAX_GRAPHICAL_OBITS];
+	int			obitTarget[MAX_GRAPHICAL_OBITS];
+	char		obitTargetName[MAX_GRAPHICAL_OBITS][MAX_NAME_LENGTH];
+	int			obitAttacker[MAX_GRAPHICAL_OBITS];
+	char		obitAttackerName[MAX_GRAPHICAL_OBITS][MAX_NAME_LENGTH];
+	int			obitTime[MAX_GRAPHICAL_OBITS];
+	qhandle_t	obitIcon[MAX_GRAPHICAL_OBITS];
+	int			obitShiftTime;						//TODO: just shifted up array, to use for transition effect
+	int			obitShiftNum;						//TODO: number of entries just shifted to use with obitShiftTime
+
 	// Local player data, from events and such
 	localPlayer_t	*cur_lc;	// Current local player data we are working with
 	playerState_t	*cur_ps; // Like cur_lc, but for player state
@@ -1023,6 +1041,9 @@ typedef struct {
 	qhandle_t	invulnerabilityPowerupModel;
 #endif
 	qhandle_t	dustPuffShader;
+
+	// obits
+	qhandle_t	deathIcon;
 
 	// scoreboard headers
 	qhandle_t	scoreboardName;
@@ -1321,6 +1342,8 @@ extern	vmCvar_t		cg_brassTime;
 extern	vmCvar_t 		cg_buildScript;
 extern	vmCvar_t		cg_cameraMode;
 extern	vmCvar_t		cg_centerPrintTime;
+extern	vmCvar_t		cg_color1;
+extern	vmCvar_t		cg_color2;
 extern	vmCvar_t		cg_coronaFarDist;
 extern	vmCvar_t		cg_coronas;
 extern	vmCvar_t		cg_crosshairHealth;
@@ -1448,8 +1471,6 @@ extern	vmCvar_t		cg_defaultMaleTeamHeadModel;
 extern	vmCvar_t		cg_defaultFemaleTeamModel;
 extern	vmCvar_t		cg_defaultFemaleTeamHeadModel;
 
-extern	vmCvar_t		cg_color1[MAX_SPLITVIEW];
-extern	vmCvar_t		cg_color2[MAX_SPLITVIEW];
 extern	vmCvar_t		cg_handicap[MAX_SPLITVIEW];
 extern	vmCvar_t		cg_teamtask[MAX_SPLITVIEW];
 extern	vmCvar_t		cg_teampref[MAX_SPLITVIEW];
@@ -1471,6 +1492,7 @@ extern	vmCvar_t		cg_crosshairOpacity;
 extern	vmCvar_t		cg_crosshairPickupPulse;
 extern	vmCvar_t		cg_crosshairRes;
 extern	vmCvar_t		cg_drawPregameMessages;
+extern	vmCvar_t		cg_graphicalObits;
 extern	vmCvar_t		cg_impactMarkTime;
 extern	vmCvar_t		cg_kickScale;
 extern	vmCvar_t		cg_switchOnEmpty;

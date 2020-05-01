@@ -78,6 +78,110 @@ const char	*CG_PlaceString( int rank ) {
 	return str;
 }
 
+
+/*
+=============
+CG_GraphObits_Add
+=============
+*/
+static void CG_GraphObits_Add( int mod, int target, int attacker ) {
+	char* s;
+
+	if ( mod == MOD_SUICIDE_TEAM_CHANGE ) return;
+
+	cg.obitNum = (cg.obitNum + 1) % MAX_GRAPHICAL_OBITS;
+
+	cg.obitMOD[cg.obitNum] = mod;
+	cg.obitTime[cg.obitNum] = cg.time;
+
+	if ( attacker == target || attacker == ENTITYNUM_WORLD ) {
+		Com_sprintf( cg.obitAttackerName[cg.obitNum], sizeof( cg.obitAttackerName[cg.obitNum] ), "" );
+	} else {
+		s = va( "%s", CG_ConfigString( CS_PLAYERS + attacker ) );
+		if ( s ) {
+			Com_sprintf( cg.obitAttackerName[cg.obitNum], sizeof( cg.obitAttackerName[cg.obitNum] ),
+				"%s", Info_ValueForKey( s, "n" ) );
+		}
+	}
+	s = va( "%s", CG_ConfigString( CS_PLAYERS + target ) );
+	if ( s ) {
+		Com_sprintf( cg.obitTargetName[cg.obitNum], sizeof( cg.obitTargetName[cg.obitNum] ),
+			"%s", Info_ValueForKey( s, "n" ) );
+	}
+
+	cg.obitAttacker[cg.obitNum] = attacker;
+	cg.obitTarget[cg.obitNum] = target;
+
+	switch ( mod ) {
+		case MOD_GAUNTLET:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_GAUNTLET].weaponIcon;
+			break;
+		case MOD_MACHINEGUN:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_MACHINEGUN].weaponIcon;
+			break;
+		case MOD_SHOTGUN:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_SHOTGUN].weaponIcon;
+			break;
+		case MOD_GRENADE:
+		case MOD_GRENADE_SPLASH:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_GRENADE_LAUNCHER].weaponIcon;
+			break;
+		case MOD_ROCKET:
+		case MOD_ROCKET_SPLASH:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_ROCKET_LAUNCHER].weaponIcon;
+			break;
+		case MOD_LIGHTNING:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_LIGHTNING].weaponIcon;
+			break;
+		case MOD_RAILGUN:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_RAILGUN].weaponIcon;
+			break;
+		case MOD_PLASMA:
+		case MOD_PLASMA_SPLASH:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_PLASMAGUN].weaponIcon;
+			break;
+		case MOD_BFG:
+		case MOD_BFG_SPLASH:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_BFG].weaponIcon;
+			break;
+		case MOD_GRAPPLE:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_GRAPPLING_HOOK].weaponIcon;
+			break;
+#ifdef MISSIONPACK
+		case MOD_NAIL:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_NAILGUN].weaponIcon;
+			break;
+		case MOD_PROXIMITY_MINE:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_PROX_LAUNCHER].weaponIcon;
+			break;
+		case MOD_CHAINGUN:
+			cg.obitIcon[cg.obitNum] = cg_weapons[WP_CHAINGUN].weaponIcon;
+			break;
+#endif
+#ifdef MISSIONPACK
+		case MOD_KAMIKAZE: break;
+		case MOD_JUICED: break;
+#endif
+		case MOD_WATER:
+		case MOD_SLIME:
+		case MOD_LAVA:
+		case MOD_CRUSH:
+		case MOD_TELEFRAG:
+		case MOD_FALLING:
+		case MOD_SUICIDE:
+		case MOD_TARGET_LASER:
+		case MOD_TRIGGER_HURT:
+		case MOD_BLASTER:
+			cg.obitIcon[cg.obitNum] = cgs.media.deathIcon;
+			break;
+		default:
+			cg.obitIcon[cg.obitNum] = cgs.media.deathIcon;
+			break;
+	}
+	//CG_Printf( "GraphObits_Add: num = %i, target = %i, attacker = %i, targetName = %s, attackerName = %s\n",
+	//	cg.obitNum, cg.obitTarget[cg.obitNum], cg.obitAttacker[cg.obitNum], cg.obitTargetName[cg.obitNum], cg.obitAttackerName[cg.obitNum] );
+}
+
 /*
 =============
 CG_Obituary
@@ -121,18 +225,11 @@ static void CG_Obituary( entityState_t *ent ) {
 	Com_sprintf( targetName, sizeof( targetName ), S_COLOR_WHITE "%s" S_COLOR_CREAM, Info_ValueForKey( targetInfo, "n" ) );
 	message2 = "";
 
+	CG_GraphObits_Add( mod, target, attacker );
+
 	// check for single player messages
 
 	switch( mod ) {
-	case MOD_SUICIDE:
-		message = "suicides";
-		break;
-	case MOD_FALLING:
-		message = "cratered";
-		break;
-	case MOD_CRUSH:
-		message = "was squished";
-		break;
 	case MOD_WATER:
 		message = "sank like a rock";
 		break;
@@ -141,6 +238,15 @@ static void CG_Obituary( entityState_t *ent ) {
 		break;
 	case MOD_LAVA:
 		message = "does a back flip into the lava";
+		break;
+	case MOD_CRUSH:
+		message = "was squished";
+		break;
+	case MOD_FALLING:
+		message = "cratered";
+		break;
+	case MOD_SUICIDE:
+		message = "suicides";
 		break;
 	case MOD_TARGET_LASER:
 		message = "saw the light";

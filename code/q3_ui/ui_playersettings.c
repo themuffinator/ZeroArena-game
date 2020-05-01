@@ -300,10 +300,8 @@ static void PlayerSettings_SaveChanges( void ) {
 			100 - s_playersettings.handicap.curvalue * 5 );
 
 	// effects color
-	trap_Cvar_SetValue( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "color1"),
-			uitogamecode[s_playersettings.effects.curvalue] );
-	trap_Cvar_SetValue( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "color2"),
-			uitogamecode[s_playersettings.effects2.curvalue] );
+	trap_Cvar_SetValue( "color1", uitogamecode[s_playersettings.effects.curvalue] );
+	trap_Cvar_SetValue( "color2", uitogamecode[s_playersettings.effects2.curvalue] );
 }
 
 
@@ -336,13 +334,13 @@ static void PlayerSettings_SetMenuItems( void ) {
 			Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "name")) );
 
 	// effects color
-	c = trap_Cvar_VariableValue( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "color1") ) - 1;
+	c = trap_Cvar_VariableValue( "color1" ) - 1;
 	if( c < 0 || c > NUM_COLOR_EFFECTS-1 ) {
 		c = NUM_COLOR_EFFECTS-1;
 	}
 	s_playersettings.effects.curvalue = gamecodetoui[c];
 
-	c = trap_Cvar_VariableValue( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "color2") ) - 1;
+	c = trap_Cvar_VariableValue( "color2" ) - 1;
 	if( c < 0 || c > NUM_COLOR_EFFECTS-1 ) {
 		c = NUM_COLOR_EFFECTS-1;
 	}
