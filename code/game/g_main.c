@@ -280,8 +280,8 @@ static cvarTable_t		gameCvarTable[] = {
 
 	{ &g_doReady, "g_doReady", "1", 0, 0, RANGE_BOOL },
 
-	{ &g_forceRespawn_delayMax, "g_forceRespawn_delayMax", "3000", 0, 0, RANGE_INT( 50, 60000 ) },	// q3 = 20000, ql = 2400
-	{ &g_forceRespawn_delayMin, "g_forceRespawn_delayMin", "1500", 0, 0, RANGE_INT( 50, 5000 ) },	// q3 = 1700, ql = 2000
+	{ &g_forceRespawn_delayMax, "g_forceRespawn_delayMax", "3000", 0, GCF_TRACK_CHANGE, RANGE_INT( 50, 60000 ) },	// q3 = 20000, ql = 2400
+	{ &g_forceRespawn_delayMin, "g_forceRespawn_delayMin", "1500", 0, GCF_TRACK_CHANGE, RANGE_INT( 50, 5000 ) },	// q3 = 1700, ql = 2000
 
 	{ &g_warmupDelay, "g_warmupDelay", "10", 0, 0, RANGE_INT( 0, 60 ) },	//ql = 30
 	{ &g_warmupReadyPercentage, "g_warmupReadyPercentage", "0.51", 0, 0, RANGE_FLOAT( 0.0f, 1.0f ) },
