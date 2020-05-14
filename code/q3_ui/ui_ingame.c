@@ -80,6 +80,19 @@ static ingamemenu_t	s_ingame;
 
 /*
 =================
+InGame_LeaveAction
+=================
+*/
+static void InGame_LeaveAction( qboolean result ) {
+	if( !result ) return;
+
+	UI_PopMenu();
+	trap_Cmd_ExecuteText( EXEC_APPEND, "disconnect\n" );
+}
+
+
+/*
+=================
 InGame_RestartAction
 =================
 */
@@ -115,9 +128,9 @@ UI_TogglePlayerIngame
 void UI_TogglePlayerIngame( int localPlayerNum )
 {
 	if (cg.localPlayers[localPlayerNum].playerNum == -1) {
-		trap_Cmd_ExecuteText( EXEC_APPEND, va("%s\n", Com_LocalPlayerCvarName(localPlayerNum, "dropin")) );
+		trap_Cmd_ExecuteText( EXEC_APPEND, "dropin" );
 	} else {
-		trap_Cmd_ExecuteText( EXEC_APPEND, va("%s\n", Com_LocalPlayerCvarName(localPlayerNum, "dropout")) );
+		trap_Cmd_ExecuteText( EXEC_APPEND, "dropout" );
 	}
 
 	UI_ForceMenuOff ();
@@ -143,7 +156,7 @@ void InGame_Event( void *ptr, int notification ) {
 		break;
 
 	case ID_LEAVEARENA:
-		trap_Cmd_ExecuteText( EXEC_APPEND, "disconnect\n" );
+		UI_ConfirmMenu( "LEAVE ARENA?", 0, InGame_LeaveAction );
 		break;
 
 	case ID_RESTART:
@@ -194,10 +207,14 @@ void InGame_MenuInit( void ) {
 	int		y;
 	char	info[MAX_INFO_STRING];
 	int		team;
+	qboolean	enableTeamOrders, enableBots;
 
 	memset( &s_ingame, 0 ,sizeof(ingamemenu_t) );
 
 	InGame_Cache();
+
+	enableBots = (trap_Cvar_VariableValue( "sv_running" ) && trap_Cvar_VariableValue( "bot_enable" ));
+	enableTeamOrders = ( enableBots && gt[UI_RetrieveGametypeNum()].gtFlags & GTF_TEAMS && cg.localPlayers[0].playerNum != -1 );
 
 	s_ingame.menu.wrapAround = qtrue;
 	s_ingame.menu.fullscreen = qfalse;
@@ -215,6 +232,14 @@ void InGame_MenuInit( void ) {
 	} else {
 		y = 96;
 	}
+
+	if ( !enableBots ) {
+		y += (INGAME_MENU_VERTICAL_SPACING * 2)/2;
+	}
+	if ( !enableTeamOrders ) {
+		y += (INGAME_MENU_VERTICAL_SPACING) / 2;
+	}
+
 	s_ingame.team.generic.type			= MTYPE_PTEXT;
 	s_ingame.team.generic.flags			= QMF_CENTER_JUSTIFY|QMF_PULSEIFFOCUS;
 	s_ingame.team.generic.x				= 320;
@@ -225,52 +250,43 @@ void InGame_MenuInit( void ) {
 	s_ingame.team.color					= text_big_color;
 	s_ingame.team.style					= UI_CENTER|UI_SMALLFONT;
 
-	y += INGAME_MENU_VERTICAL_SPACING;
-	s_ingame.addbots.generic.type		= MTYPE_PTEXT;
-	s_ingame.addbots.generic.flags		= QMF_CENTER_JUSTIFY|QMF_PULSEIFFOCUS;
-	s_ingame.addbots.generic.x			= 320;
-	s_ingame.addbots.generic.y			= y;
-	s_ingame.addbots.generic.id			= ID_ADDBOTS;
-	s_ingame.addbots.generic.callback	= InGame_Event; 
-	s_ingame.addbots.string				= "ADD BOTS";
-	s_ingame.addbots.color				= text_big_color;
-	s_ingame.addbots.style				= UI_CENTER|UI_SMALLFONT;
-	if( !trap_Cvar_VariableValue( "sv_running" ) || !trap_Cvar_VariableValue( "bot_enable" ) || (UI_RetrieveGametypeNum() == GT_SINGLE_PLAYER)) {
-		s_ingame.addbots.generic.flags |= QMF_GRAYED;
-	}
+	if ( enableBots ) {
+		y += INGAME_MENU_VERTICAL_SPACING;
+		s_ingame.addbots.generic.type = MTYPE_PTEXT;
+		s_ingame.addbots.generic.flags = QMF_CENTER_JUSTIFY | QMF_PULSEIFFOCUS;
+		s_ingame.addbots.generic.x = 320;
+		s_ingame.addbots.generic.y = y;
+		s_ingame.addbots.generic.id = ID_ADDBOTS;
+		s_ingame.addbots.generic.callback = InGame_Event;
+		s_ingame.addbots.string = "ADD BOTS";
+		s_ingame.addbots.color = text_big_color;
+		s_ingame.addbots.style = UI_CENTER | UI_SMALLFONT;
 
-	y += INGAME_MENU_VERTICAL_SPACING;
-	s_ingame.removebots.generic.type		= MTYPE_PTEXT;
-	s_ingame.removebots.generic.flags		= QMF_CENTER_JUSTIFY|QMF_PULSEIFFOCUS;
-	s_ingame.removebots.generic.x			= 320;
-	s_ingame.removebots.generic.y			= y;
-	s_ingame.removebots.generic.id			= ID_REMOVEBOTS;
-	s_ingame.removebots.generic.callback	= InGame_Event; 
-	s_ingame.removebots.string				= "REMOVE BOTS";
-	s_ingame.removebots.color				= text_big_color;
-	s_ingame.removebots.style				= UI_CENTER|UI_SMALLFONT;
-	if( !trap_Cvar_VariableValue( "sv_running" ) || !trap_Cvar_VariableValue( "bot_enable" ) || (UI_RetrieveGametypeNum() == GT_SINGLE_PLAYER)) {
-		s_ingame.removebots.generic.flags |= QMF_GRAYED;
+		y += INGAME_MENU_VERTICAL_SPACING;
+		s_ingame.removebots.generic.type = MTYPE_PTEXT;
+		s_ingame.removebots.generic.flags = QMF_CENTER_JUSTIFY | QMF_PULSEIFFOCUS;
+		s_ingame.removebots.generic.x = 320;
+		s_ingame.removebots.generic.y = y;
+		s_ingame.removebots.generic.id = ID_REMOVEBOTS;
+		s_ingame.removebots.generic.callback = InGame_Event;
+		s_ingame.removebots.string = "REMOVE BOTS";
+		s_ingame.removebots.color = text_big_color;
+		s_ingame.removebots.style = UI_CENTER | UI_SMALLFONT;
 	}
-
-	y += INGAME_MENU_VERTICAL_SPACING;
-	s_ingame.teamorders.generic.type		= MTYPE_PTEXT;
-	s_ingame.teamorders.generic.flags		= QMF_CENTER_JUSTIFY|QMF_PULSEIFFOCUS;
-	s_ingame.teamorders.generic.x			= 320;
-	s_ingame.teamorders.generic.y			= y;
-	s_ingame.teamorders.generic.id			= ID_TEAMORDERS;
-	s_ingame.teamorders.generic.callback	= InGame_Event; 
-	s_ingame.teamorders.string				= "TEAM ORDERS";
-	s_ingame.teamorders.color				= text_big_color;
-	s_ingame.teamorders.style				= UI_CENTER|UI_SMALLFONT;
-	if( !(gt[UI_RetrieveGametypeNum()].gtFlags & GTF_TEAMS)
-		|| cg.localPlayers[0].playerNum == -1 ) {
-		s_ingame.teamorders.generic.flags |= QMF_GRAYED;
-	}
-	else {
+	if ( enableTeamOrders ) {
+		y += INGAME_MENU_VERTICAL_SPACING;
+		s_ingame.teamorders.generic.type = MTYPE_PTEXT;
+		s_ingame.teamorders.generic.flags = QMF_CENTER_JUSTIFY | QMF_PULSEIFFOCUS;
+		s_ingame.teamorders.generic.x = 320;
+		s_ingame.teamorders.generic.y = y;
+		s_ingame.teamorders.generic.id = ID_TEAMORDERS;
+		s_ingame.teamorders.generic.callback = InGame_Event;
+		s_ingame.teamorders.string = "TEAM ORDERS";
+		s_ingame.teamorders.color = text_big_color;
+		s_ingame.teamorders.style = UI_CENTER | UI_SMALLFONT;
 		trap_GetConfigString( CS_PLAYERS + cg.localPlayers[0].playerNum, info, MAX_INFO_STRING );
 		team = atoi( Info_ValueForKey( info, "t" ) );
-		if( team == TEAM_SPECTATOR ) {
+		if ( team == TEAM_SPECTATOR ) {
 			s_ingame.teamorders.generic.flags |= QMF_GRAYED;
 		}
 	}
@@ -287,7 +303,7 @@ void InGame_MenuInit( void ) {
 		s_ingame.localPlayers.color				= text_big_color;
 		s_ingame.localPlayers.style				= UI_CENTER|UI_SMALLFONT;
 
-		if (UI_RetrieveGametypeNum() == GT_SINGLE_PLAYER)
+		if ( UI_RetrieveGametypeNum() == GT_CAMPAIGN || ui_singlePlayerActive.integer )
 		{
 			s_ingame.localPlayers.generic.flags |= QMF_GRAYED;
 		}
@@ -322,7 +338,7 @@ void InGame_MenuInit( void ) {
 	s_ingame.restart.generic.y			= y;
 	s_ingame.restart.generic.id			= ID_RESTART;
 	s_ingame.restart.generic.callback	= InGame_Event; 
-	s_ingame.restart.string				= "RESTART ARENA";
+	s_ingame.restart.string				= "RESTART GAME";
 	s_ingame.restart.color				= text_big_color;
 	s_ingame.restart.style				= UI_CENTER|UI_SMALLFONT;
 	if( !trap_Cvar_VariableValue( "sv_running" ) ) {
@@ -336,7 +352,7 @@ void InGame_MenuInit( void ) {
 	s_ingame.startnew.generic.y				= y;
 	s_ingame.startnew.generic.id				= ID_CREATE;
 	s_ingame.startnew.generic.callback		= InGame_Event; 
-	s_ingame.startnew.string					= "START NEW ARENA";
+	s_ingame.startnew.string					= "START NEW GAME";
 	s_ingame.startnew.color					= text_big_color;
 	s_ingame.startnew.style					= UI_CENTER|UI_SMALLFONT;
 	if( !trap_Cvar_VariableValue( "sv_running" ) ) {
@@ -362,7 +378,7 @@ void InGame_MenuInit( void ) {
 	s_ingame.leave.generic.y			= y;
 	s_ingame.leave.generic.id			= ID_LEAVEARENA;
 	s_ingame.leave.generic.callback		= InGame_Event; 
-	s_ingame.leave.string				= "LEAVE ARENA";
+	s_ingame.leave.string				= "LEAVE GAME";
 	s_ingame.leave.color				= text_big_color;
 	s_ingame.leave.style				= UI_CENTER|UI_SMALLFONT;
 
@@ -379,9 +395,13 @@ void InGame_MenuInit( void ) {
 
 	Menu_AddItem( &s_ingame.menu, &s_ingame.frame );
 	Menu_AddItem( &s_ingame.menu, &s_ingame.team );
-	Menu_AddItem( &s_ingame.menu, &s_ingame.addbots );
-	Menu_AddItem( &s_ingame.menu, &s_ingame.removebots );
-	Menu_AddItem( &s_ingame.menu, &s_ingame.teamorders );
+	if ( enableBots ) {
+		Menu_AddItem( &s_ingame.menu, &s_ingame.addbots );
+		Menu_AddItem( &s_ingame.menu, &s_ingame.removebots );
+	}
+	if ( enableTeamOrders ) {
+		Menu_AddItem( &s_ingame.menu, &s_ingame.teamorders );
+	}
 	if (UI_MaxSplitView() > 1) {
 		Menu_AddItem( &s_ingame.menu, &s_ingame.localPlayers);
 	}

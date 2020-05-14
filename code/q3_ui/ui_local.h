@@ -147,6 +147,9 @@ extern vmCvar_t	ui_menuFont;
 extern vmCvar_t	ui_menuFontProp;
 extern vmCvar_t	ui_menuFontBanner;
 
+extern vmCvar_t	ui_singlePlayerActive;
+
+#define ART_MAP_UNKNOWN				"menu/art/unknownmap"
 
 //
 // ui_qmenu.c
@@ -525,6 +528,8 @@ typedef struct {
 
 	vec3_t			color1;
 	byte			c1RGBA[4];
+	vec3_t			color2;
+	byte			c2RGBA[4];
 
 	// currently in use drawing parms
 	vec3_t			viewAngles;
@@ -558,6 +563,7 @@ void UI_DrawPlayer( float x, float y, float w, float h, uiPlayerInfo_t *pi, int 
 void UI_PlayerInfo_SetModel( uiPlayerInfo_t *pi, const char *model, const char *headModel, char *teamName );
 void UI_PlayerInfo_SetInfo( uiPlayerInfo_t *pi, int legsAnim, int torsoAnim, vec3_t viewAngles, vec3_t moveAngles, weapon_t weaponNum, qboolean chat );
 void UI_PlayerInfo_UpdateColor( uiPlayerInfo_t *pi );
+void UI_PlayerInfo_UpdateColor2( uiPlayerInfo_t* pi );
 qboolean UI_RegisterPlayerModelname( uiPlayerInfo_t *pi, const char *modelSkinName, const char *headModelSkinName, const char *teamName );
 
 //
@@ -624,7 +630,7 @@ void UI_SPLevelMenu_ReInit( void );
 // ui_spArena.c
 //
 void UI_SPArena_Start( const char *arenaInfo );
-void UI_SPMap_f( void );
+//void UI_SPMap_f( void );
 
 //
 // ui_spPostgame.c
@@ -692,7 +698,8 @@ void UI_NetworkOptionsMenu( void );
 //
 int UI_RetrieveGametypeNum( void );
 int UI_RetrieveGametypeNumFromInfo( char info[MAX_INFO_STRING] );
-
+int UI_RetrieveMaxTeamsNum( void );
+int UI_RetrieveMaxTeamsFromInfo( char info[MAX_INFO_STRING] );
 
 //
 // ui_gameinfo.c

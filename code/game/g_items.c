@@ -140,40 +140,47 @@ int Pickup_Powerup( gentity_t* ent, gentity_t* other ) {
 
 //======================================================================
 
-#ifdef MISSIONPACK
-int Pickup_PersistantPowerup( gentity_t* ent, gentity_t* other ) {
+int Pickup_Rune( gentity_t* ent, gentity_t* other ) {
 	float	handicap;
 	int		max;
 
-	other->player->ps.stats[STAT_PERSISTANT_POWERUP] = BG_ItemNumForItem( ent->item );
+	other->player->ps.stats[STAT_RUNE] = BG_ItemNumForItem( ent->item );
 	other->player->persistantPowerup = ent;
 
 	handicap = PlayerHandicap( other->player );
 
 	switch ( ent->item->giTag ) {
-	case PW_GUARD:
+	case PW_RESISTANCE:
 		max = (int)(2 * handicap);
-
 		other->health = max;
-		other->player->ps.stats[STAT_HEALTH] = max;
+		//other->player->ps.stats[STAT_HEALTH] = max;
 		other->player->ps.stats[STAT_MAX_HEALTH] = max;
-		other->player->ps.stats[STAT_ARMOR] = max;
+		//other->player->ps.stats[STAT_ARMOR] = max;
 		other->player->pers.maxHealth = max;
 		break;
 
 	case PW_SCOUT:
 		other->player->pers.maxHealth = handicap;
-		other->player->ps.stats[STAT_ARMOR] = 0;
+		other->player->ps.stats[STAT_ARMOR_TYPE] = 0;
 		break;
 
-	case PW_AMMOREGEN:
+	case PW_ARMAMENT:
 		other->player->pers.maxHealth = handicap;
 		memset( other->player->ammoTimes, 0, sizeof( other->player->ammoTimes ) );
 		break;
 
-	case PW_DOUBLER:
-	default:
+	case PW_STRENGTH:
 		other->player->pers.maxHealth = handicap;
+		break;
+
+	case PW_TENACITY:
+		other->player->pers.maxHealth = handicap;
+		break;
+
+	case PW_PARASITE:
+		other->player->pers.maxHealth = handicap;
+		break;
+	default:
 		break;
 	}
 
@@ -181,7 +188,7 @@ int Pickup_PersistantPowerup( gentity_t* ent, gentity_t* other ) {
 }
 
 //======================================================================
-#endif
+
 
 int Pickup_Holdable( gentity_t* ent, gentity_t* other ) {
 
@@ -191,6 +198,15 @@ int Pickup_Holdable( gentity_t* ent, gentity_t* other ) {
 		other->player->ps.eFlags |= EF_KAMIKAZE;
 	}
 
+	return RESPAWN_HOLDABLE;
+}
+
+
+//======================================================================
+int Pickup_Key( gentity_t* ent, gentity_t* other ) {
+
+	if ( ent->item->giTag > 0 && ent->item->giTag < UKEY_NUM_KEYS )
+		other->player->ps.keys[ent->item->giTag] += 1;
 	return RESPAWN_HOLDABLE;
 }
 
@@ -251,7 +267,7 @@ int Pickup_Weapon( gentity_t* ent, gentity_t* other ) {
 	Add_Ammo( other, ent->item->giTag, quantity );
 
 	if ( ent->item->giTag == WP_GRAPPLING_HOOK )
-		other->player->ps.ammo[ent->item->giTag] = -1; // unlimited ammo
+		other->player->ps.ammo[ent->item->giTag] = AMMO_INFINITE; // unlimited ammo
 
 	// team deathmatch has slow weapon respawns
 	return GTF( GTF_TDM ) ? g_weaponTeamRespawn.integer : g_weaponRespawn.integer;
@@ -277,7 +293,7 @@ int Pickup_Health( gentity_t* ent, gentity_t* other ) {
 
 	// small and mega healths will go over the max
 #ifdef MISSIONPACK
-	if ( BG_ItemForItemNum( other->player->ps.stats[STAT_PERSISTANT_POWERUP] )->giTag == PW_GUARD ) {
+	if ( BG_ItemForItemNum( other->player->ps.stats[STAT_RUNE] )->giTag == PW_RESISTANCE ) {
 		max = other->player->ps.stats[STAT_MAX_HEALTH];
 	} else
 #endif
@@ -313,7 +329,7 @@ int Pickup_Armor( gentity_t* ent, gentity_t* other ) {
 	int		upperBound;
 
 #ifdef MISSIONPACK
-	if ( BG_ItemForItemNum( other->player->ps.stats[STAT_PERSISTANT_POWERUP] )->giTag == PW_GUARD ) {
+	if ( BG_ItemForItemNum( other->player->ps.stats[STAT_RUNE] )->giTag == PW_RESISTANCE ) {
 		upperBound = other->player->ps.stats[STAT_MAX_HEALTH];
 	} else
 #endif
@@ -326,9 +342,12 @@ int Pickup_Armor( gentity_t* ent, gentity_t* other ) {
 		other->player->ps.stats[STAT_ARMOR] = upperBound;
 	}
 	//muff: upgrade armor tier so it's a more seemless change if tiered armor is enabled
-	if ( other->player->ps.stats[STAT_ARMOR_TYPE] < bgarmor[g_armorTiered.integer][ent->item->giTag].armor )
-		other->player->ps.stats[STAT_ARMOR_TYPE] += bgarmor[g_armorTiered.integer][ent->item->giTag].armor;
-
+	if ( other->player->ps.powerups[PW_SCOUT] ) {
+		other->player->ps.stats[STAT_ARMOR_TYPE] = 0;
+	} else {
+		if ( other->player->ps.stats[STAT_ARMOR_TYPE] < bgarmor[g_armorRules.integer][ent->item->giTag].armor )
+			other->player->ps.stats[STAT_ARMOR_TYPE] = bgarmor[g_armorRules.integer][ent->item->giTag].armor;
+	}
 	return g_classicItemRespawns.integer ? CRESPAWN_ARMOR : RESPAWN_ARMOR;
 }
 
@@ -347,7 +366,7 @@ static int Pickup_ArmorQW( gentity_t* ent, gentity_t* other ) {
 	gitem_armor_t	*oldInfo;
 
 	// old info
-	oldInfo = &bgarmor[g_armorTiered.integer][ps->stats[STAT_ARMOR_TYPE]];
+	oldInfo = &bgarmor[g_armorRules.integer][ps->stats[STAT_ARMOR_TYPE]];
 
 	// if no armor, reset type
 	if ( !ps->stats[STAT_ARMOR] && oldInfo->armor )
@@ -355,7 +374,7 @@ static int Pickup_ArmorQW( gentity_t* ent, gentity_t* other ) {
 
 	// shards: just add it and cap to max
 	if ( ent->item->giTag == ARMOR_SHARD ) {
-		gitem_armor_t* shard = &bgarmor[g_armorTiered.integer][ARMOR_SHARD];
+		gitem_armor_t* shard = &bgarmor[g_armorRules.integer][ARMOR_SHARD];
 		if ( !ps->stats[STAT_ARMOR] )
 			ps->stats[STAT_ARMOR] = shard->base_count;
 		else
@@ -366,7 +385,7 @@ static int Pickup_ArmorQW( gentity_t* ent, gentity_t* other ) {
 	// otherwise...
 	} else {
 		// get info on new armor
-		gitem_armor_t *newInfo = &bgarmor[g_armorTiered.integer][ent->item->giTag];
+		gitem_armor_t *newInfo = &bgarmor[g_armorRules.integer][ent->item->giTag];
 
 		// update the armor type
 		ps->stats[STAT_ARMOR_TYPE] = newInfo->armor;
@@ -374,6 +393,9 @@ static int Pickup_ArmorQW( gentity_t* ent, gentity_t* other ) {
 		ps->stats[STAT_ARMOR] = newInfo->base_count;
 		if ( ps->stats[STAT_ARMOR] > newInfo->max_count )
 			ps->stats[STAT_ARMOR] = newInfo->max_count;
+	}
+	if ( other->player->ps.powerups[PW_SCOUT] ) {
+		other->player->ps.stats[STAT_ARMOR_TYPE] = 0;
 	}
 
 	return g_classicItemRespawns.integer ? CRESPAWN_ARMOR : RESPAWN_ARMOR;
@@ -396,17 +418,17 @@ static int Pickup_ArmorQ2( gentity_t* ent, gentity_t* other ) {
 	newTotal = salvageTotal = armorMax = 0;
 
 	// get info on new armor
-	newInfo = &bgarmor[g_armorTiered.integer][ent->item->giTag];
+	newInfo = &bgarmor[g_armorRules.integer][ent->item->giTag];
 
 	// old info
 	oldTotal = other->player->ps.stats[STAT_ARMOR];
-	oldInfo = &bgarmor[g_armorTiered.integer][other->player->ps.stats[STAT_ARMOR_TYPE]];
+	oldInfo = &bgarmor[g_armorRules.integer][other->player->ps.stats[STAT_ARMOR_TYPE]];
 
 	// shards: add them up to shard max
 	if ( newInfo->armor == ARMOR_SHARD ) {
-		other->player->ps.stats[STAT_ARMOR] += bgarmor[g_armorTiered.integer][ARMOR_SHARD].base_count;
-		if ( other->player->ps.stats[STAT_ARMOR] > bgarmor[g_armorTiered.integer][ARMOR_SHARD].max_count )
-			other->player->ps.stats[STAT_ARMOR] = bgarmor[g_armorTiered.integer][ARMOR_SHARD].max_count;
+		other->player->ps.stats[STAT_ARMOR] += bgarmor[g_armorRules.integer][ARMOR_SHARD].base_count;
+		if ( other->player->ps.stats[STAT_ARMOR] > bgarmor[g_armorRules.integer][ARMOR_SHARD].max_count )
+			other->player->ps.stats[STAT_ARMOR] = bgarmor[g_armorRules.integer][ARMOR_SHARD].max_count;
 	// if player has no armor, simply add it
 	} else if ( !oldTotal ) {
 		other->player->ps.stats[STAT_ARMOR] = newInfo->base_count;
@@ -447,9 +469,46 @@ static int Pickup_ArmorQ2( gentity_t* ent, gentity_t* other ) {
 		G_Printf( "\n----------------------------\n" );
 	}
 #endif
+	if ( other->player->ps.powerups[PW_SCOUT] ) {
+		other->player->ps.stats[STAT_ARMOR_TYPE] = 0;
+	}
 
 	return g_classicItemRespawns.integer ? CRESPAWN_ARMOR : RESPAWN_ARMOR;
 }
+
+//======================================================================
+
+int Pickup_Misc( gentity_t* ent, gentity_t* other ) {
+	switch ( ent->item->giTag ) {
+	case MI_ANCIENT:
+		other->player->ps.stats[STAT_MAX_HEALTH] += 2;
+		if ( other->player->ps.stats[STAT_MAX_HEALTH] > 999 ) {
+			other->player->ps.stats[STAT_MAX_HEALTH] = 999;
+		}
+		break;
+	case MI_ADREN:
+		other->player->ps.stats[STAT_MAX_HEALTH] += 5;
+		if ( other->player->ps.stats[STAT_MAX_HEALTH] > 999 ) {
+			other->player->ps.stats[STAT_MAX_HEALTH] = 999;
+		}
+		if ( other->health < other->player->ps.stats[STAT_MAX_HEALTH] ) {
+			other->health = other->player->ps.stats[STAT_MAX_HEALTH];
+			other->player->ps.stats[STAT_HEALTH] = other->health;
+		}
+		break;
+	case MI_BANDO:
+		//TODO
+		break;
+	case MI_APACK:
+		//TODO
+		break;
+	default:
+		break;
+	}
+
+	return g_classicItemRespawns.integer ? ent->item->quantity : RESPAWN_ARMOR;
+}
+
 //-muff
 //======================================================================
 
@@ -542,7 +601,7 @@ void Touch_Item( gentity_t* ent, gentity_t* other, trace_t* trace ) {
 		return;		// dead people can't pickup
 
 	// the same pickup rules are used for client side and server side
-	if ( !BG_CanItemBeGrabbed( g_gameType.integer, &ent->s, &other->player->ps, g_dmFlags.integer, g_armorTiered.integer ) ) {
+	if ( !BG_CanItemBeGrabbed( g_gameType.integer, &ent->s, &other->player->ps, g_dmFlags.integer, g_armorRules.integer, level.time, level.warmupState ) ) {
 		return;
 	}
 
@@ -567,7 +626,7 @@ void Touch_Item( gentity_t* ent, gentity_t* other, trace_t* trace ) {
 //		predict = qfalse;
 		break;
 	case IT_ARMOR:
-		switch ( g_armorTiered.integer ) {
+		switch ( g_armorRules.integer ) {
 		case ARR_QW:
 			respawn = Pickup_ArmorQW( ent, other );
 			break;
@@ -582,13 +641,16 @@ void Touch_Item( gentity_t* ent, gentity_t* other, trace_t* trace ) {
 	case IT_HEALTH:
 		respawn = Pickup_Health( ent, other );
 		break;
+	case IT_MISC:
+		respawn = Pickup_Misc( ent, other );
+		break;
 	case IT_POWERUP:
 		respawn = Pickup_Powerup( ent, other );
 		predict = qfalse;
 		break;
 #ifdef MISSIONPACK
-	case IT_PERSISTANT_POWERUP:
-		respawn = Pickup_PersistantPowerup( ent, other );
+	case IT_RUNE:
+		respawn = Pickup_Rune( ent, other );
 		break;
 #endif
 	case IT_TEAM:
@@ -596,6 +658,9 @@ void Touch_Item( gentity_t* ent, gentity_t* other, trace_t* trace ) {
 		break;
 	case IT_HOLDABLE:
 		respawn = Pickup_Holdable( ent, other );
+		break;
+	case IT_KEY:
+		respawn = Pickup_Key( ent, other );
 		break;
 	default:
 		return;
@@ -708,7 +773,7 @@ gentity_t* LaunchItem( gitem_t* item, vec3_t origin, vec3_t velocity ) {
 	VectorSet( dropped->s.mins, -ITEM_RADIUS, -ITEM_RADIUS, -ITEM_RADIUS );
 	VectorSet( dropped->s.maxs, ITEM_RADIUS, ITEM_RADIUS, ITEM_RADIUS );
 	dropped->s.contents = CONTENTS_TRIGGER;
-
+	
 	dropped->touch = Touch_Item;
 
 	G_SetOrigin( dropped, origin );
@@ -744,16 +809,22 @@ Spawns an item and tosses it forward
 gentity_t* Drop_Item( gentity_t* ent, gitem_t* item, float angle ) {
 	vec3_t	velocity;
 	vec3_t	angles;
+	vec3_t	origin;
 
 	VectorCopy( ent->s.apos.trBase, angles );
 	angles[YAW] += angle;
-	angles[PITCH] = 0;	// always forward
+	angles[PITCH] = 20;	// 0;	// always forward
 
 	AngleVectors( angles, velocity, NULL, NULL );
-	VectorScale( velocity, 150, velocity );
-	velocity[2] += 200 + crandom() * 50;
+	//VectorScale( velocity, 150, velocity );
+	VectorScale( velocity, 200, velocity );
+	velocity[2] += 300 + crandom() * 50;	//50;
 
-	return LaunchItem( item, ent->s.pos.trBase, velocity );
+	origin[0] = ent->s.pos.trBase[0];
+	origin[1] = ent->s.pos.trBase[1];
+	origin[2] = ent->s.pos.trBase[2];
+
+	return LaunchItem( item, origin, velocity );
 }
 
 
@@ -765,7 +836,11 @@ Respawn the item
 ================
 */
 void Use_Item( gentity_t* ent, gentity_t* other, gentity_t* activator ) {
-	RespawnItem( ent );
+	if ( GTF( GTF_CAMPAIGN ) && g_singlePlayerActive.integer ) {
+
+	} else {
+		RespawnItem( ent );
+	}
 }
 
 //======================================================================
@@ -779,9 +854,6 @@ free fall from their spawn points
 ================
 */
 void FinishSpawningItem( gentity_t* ent ) {
-	trace_t		tr;
-	vec3_t		dest;
-
 	VectorSet( ent->s.mins, -ITEM_RADIUS, -ITEM_RADIUS, -ITEM_RADIUS );
 	VectorSet( ent->s.maxs, ITEM_RADIUS, ITEM_RADIUS, ITEM_RADIUS );
 
@@ -798,19 +870,11 @@ void FinishSpawningItem( gentity_t* ent ) {
 		// suspended
 		G_SetOrigin( ent, ent->s.origin );
 	} else {
-		// drop to floor
-		VectorSet( dest, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2] - 4096 );
-		trap_Trace( &tr, ent->s.origin, ent->s.mins, ent->s.maxs, dest, ent->s.number, MASK_SOLID );
-		if ( tr.startsolid ) {
-			G_Printf( "FinishSpawningItem: %s startsolid at %s\n", ent->classname, vtos( ent->s.origin ) );
-			G_FreeEntity( ent );
-			return;
-		}
+		G_DropEntityToFloor( ent );
+	}
 
-		// allow to ride movers
-		ent->s.groundEntityNum = tr.entityNum;
-
-		G_SetOrigin( ent, tr.endpos );
+	if ( !ent->s.angles[YAW] ) {
+		ent->s.angles[YAW] = rand() % 360;
 	}
 
 	// team slaves and targeted items aren't present at start
@@ -863,16 +927,24 @@ void G_CheckTeamItems( void ) {
 			}
 		}
 	} else if ( g_gameType.integer == GT_1FCTF ) {
+		gentity_t* ent;
 		gitem_t* item;
 		int		i;
 
-		// check for all valid flags
+		// check for all valid obelisks
 		for ( i = 0; i <= level.teams_max; i++ ) {
-			char* flagName = va( "%s Flag", g_teamNames[i] );
-			item = BG_FindItem( flagName );
-			if ( !item || !itemRegistered[BG_ItemNumForItem( item )] ) {
-				G_Printf( S_COLOR_YELLOW "WARNING: No %s in map\n", flagName );
+			char* entName = va( "team_%sobelisk", g_teamNamesLower[i] );
+			ent = NULL;
+			ent = G_Find( ent, FOFS( classname ), entName );
+			if ( !ent ) {
+				G_Printf( S_COLOR_YELLOW "WARNING: No %s in map\n", entName );
 			}
+		}
+
+		// check for all valid flags
+		item = BG_FindItem( "Neutral Flag" );
+		if ( !item || !itemRegistered[BG_ItemNumForItem( item )] ) {
+			G_Printf( S_COLOR_YELLOW "WARNING: No Neutral Flag in map\n" );
 		}
 	} else if ( g_gameType.integer == GT_OVERLOAD ) {
 		gentity_t* ent;
@@ -928,8 +1000,11 @@ void ClearRegisteredItems( void ) {
 	}
 	RegisterItem( BG_FindItemForWeapon( WP_GAUNTLET ) );
 	if ( g_gameType.integer == GT_HARVESTER ) {
-		RegisterItem( BG_FindItem( "Red Skull" ) );
-		RegisterItem( BG_FindItem( "Blue Skull" ) );
+		int i;
+
+		for ( i = FIRST_TEAM; i <= level.teams_max; i++ ) {
+			RegisterItem( BG_FindItem( va("%s Skull", g_teamNames[i]) ) );
+		}
 	}
 }
 
@@ -1024,8 +1099,7 @@ void G_SpawnItem( gentity_t* ent, gitem_t* item ) {
 		level.mapWeapons |= (1 << item->giTag);
 	}
 
-#ifdef MISSIONPACK
-	if ( item->giType == IT_PERSISTANT_POWERUP ) {
+	if ( item->giType == IT_RUNE ) {
 		qboolean redTeam = !!(ent->spawnflags & 2);
 		qboolean blueTeam = !!(ent->spawnflags & 4);
 
@@ -1039,7 +1113,6 @@ void G_SpawnItem( gentity_t* ent, gitem_t* item ) {
 		else
 			ent->s.team = 255;
 	}
-#endif
 }
 
 

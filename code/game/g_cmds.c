@@ -46,7 +46,7 @@ void DeathmatchScoreboardMessage( gentity_t* ent ) {
 	int			stringlength;
 	int			i, j;
 	gplayer_t* cl;
-	int			numSorted, scoreFlags, accuracy, perfect;
+	int			numSorted, scoreFlags, perfect;
 
 	// don't send scores to bots (bots don't parse them)
 	if ( ent->r.svFlags & SVF_BOT ) {
@@ -74,25 +74,22 @@ void DeathmatchScoreboardMessage( gentity_t* ent ) {
 			ping = cl->ps.ping < 999 ? cl->ps.ping : 999;
 		}
 
-		if ( cl->accuracy_shots ) {
-			accuracy = cl->accuracy_hits * 100 / cl->accuracy_shots;
-		} else {
-			accuracy = 0;
-		}
 		perfect = (cl->ps.persistant[PERS_RANK] == 0 && cl->ps.persistant[PERS_KILLED] == 0) ? 1 : 0;
 
 		//Q_strcat( entry, sizeof( entry ),
 		Com_sprintf( entry, sizeof( entry ),
-			" %i %i %i %i %i %i %i %i %i %i %i %i %i %i", level.sortedPlayers[i],
+			" %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i", level.sortedPlayers[i],
 				cl->ps.persistant[PERS_SCORE], ping, (level.time - cl->pers.enterTime) / 60000,
-				scoreFlags, g_entities[level.sortedPlayers[i]].s.powerups, accuracy,
+				scoreFlags, g_entities[level.sortedPlayers[i]].s.powerups, G_WeaponsTotalAccuracy( cl ),
 				cl->ps.persistant[PERS_IMPRESSIVE_COUNT],
 				cl->ps.persistant[PERS_EXCELLENT_COUNT],
 				cl->ps.persistant[PERS_GAUNTLET_FRAG_COUNT],
 				cl->ps.persistant[PERS_DEFEND_COUNT],
 				cl->ps.persistant[PERS_ASSIST_COUNT],
 				perfect,
-				cl->ps.persistant[PERS_CAPTURES] );
+				cl->ps.persistant[PERS_CAPTURES],
+				cl->ps.persistant[PERS_HOLYSHIT_COUNT]
+		);
 		j = strlen( entry );
 		if ( stringlength + j >= sizeof( string ) )
 			break;
@@ -120,6 +117,40 @@ void Cmd_Score_f( gentity_t* ent ) {
 	DeathmatchScoreboardMessage( ent );
 }
 
+
+
+
+/*
+==================
+G_SendWeaponsPlayerStats
+
+Send a client their weapon stats
+==================
+*/
+void G_SendWeaponsPlayerStats( gplayer_t* cl, const int playerNum ) {
+#if 0
+	int		/*num, */stringlength;
+	int		i, j;
+	char	entry[WP_NUM_WEAPONS][96];
+	char	string[1024];
+
+	//num = 0;
+	string[0] = 0;
+	stringlength = 0;
+	for ( i = WP_MACHINEGUN; i < WP_NUM_WEAPONS; i++ ) {
+		if ( i == WP_GRAPPLING_HOOK ) continue;
+
+		Com_sprintf( entry[i], sizeof( entry[i] ), "%i %i %i %i ", cl->statsWeaponShots[i], cl->statsWeaponHits[i], cl->statsWeaponDmgD[i], cl->statsWeaponDmgR[i] );
+		j = strlen( entry[i] );
+		if ( stringlength + j >= sizeof( string ) )
+			break;
+		strcpy( string + stringlength, entry[i] );
+		stringlength += j;
+	}
+
+	trap_SendServerCommand( playerNum, va( "pwstats %i %s", playerNum, string ) );
+#endif
+}
 
 
 /*
@@ -243,6 +274,302 @@ int PlayerNumberFromString( gentity_t* to, char* s, qboolean checkNums, qboolean
 	return -1;
 }
 
+
+
+
+
+/*
+=================
+Cmd_DropItem_f
+=================
+*/
+void Cmd_DropItem_f( gentity_t* ent ) {
+	gplayer_t* cl;
+	gitem_t* ditem;
+	gentity_t* dent;
+	char	*name;
+	int		i, count, dtype;
+	qboolean stock, droppable;
+	char* stype;
+
+	if ( trap_Argc() < 2 ) {
+		CP( va( "print \"Usage: drop [itemtype/itemname]\n\"" ) );
+		return;
+	}
+	
+	cl = ent->player;
+	name = ConcatArgs( 1 );
+	stock = droppable = qtrue;
+	dtype = count = 0;
+	ditem = BG_FindItem( name );
+	stype = "";
+	if ( ditem ) {
+		dtype = ditem->giType;
+	}
+
+	// find item by item type
+	if ( (!dtype && !Q_stricmp( name, "weapon" )) || dtype == IT_WEAPON ) {
+		int weapon = dtype ? ditem->giTag : cl->ps.weapon;
+		stype = "weapon";
+		if ( !ditem ) ditem = BG_FindItemForWeapon( cl->ps.weapon );
+
+		if ( weapon > 0 && weapon < WP_NUM_WEAPONS && weapon != WP_GAUNTLET ) {
+			if ( cl->ps.stats[STAT_WEAPONS] & (1 << weapon) ) {
+				if ( cl->ps.ammo[weapon] > 0 ) {
+					if ( ditem ) {
+						count = (ditem->quantity > cl->ps.ammo[cl->ps.weapon]) ? cl->ps.ammo[cl->ps.weapon] : ditem->quantity;
+					}
+				} else {
+					CP( "print \"Cannot drop weapon without ammo.\n\"" );
+					return;
+				}
+			} else {
+				stock = qfalse;
+			}
+		} else {
+			droppable = qfalse;
+		}
+	} else if ( (!dtype && !Q_stricmp( name, "ammo" ) ) || dtype == IT_AMMO ) {
+		weapon_t weapon = dtype ? ditem->giTag : cl->ps.weapon;
+		stype = "ammo";
+
+		if ( !ditem ) ditem = BG_FindItemForAmmo( weapon );
+
+		if ( weapon > 0 && weapon < WP_NUM_WEAPONS && weapon != WP_GAUNTLET && weapon != WP_GRAPPLING_HOOK ) {
+			if ( cl->ps.ammo[weapon] > 0 ) {
+				if ( ditem ) {
+					count = (ditem->quantity > cl->ps.ammo[weapon]) ? cl->ps.ammo[weapon] : ditem->quantity;
+				}
+			} else {
+				stock = qfalse;
+			}
+		} else {
+			droppable = qfalse;
+		}
+	} else if ( (!dtype && !Q_stricmp( name, "holdable" )) || dtype == IT_HOLDABLE ) {
+		if ( !cl->ps.stats[STAT_HOLDABLE_ITEM] ) {
+			stock = qfalse;
+		} else if ( !dtype ) {
+			if ( !ditem ) ditem = BG_ItemForItemNum( cl->ps.stats[STAT_HOLDABLE_ITEM] );
+			if ( !ditem ) stock = qfalse;
+		} else if ( cl->ps.stats[STAT_HOLDABLE_ITEM] != BG_ItemNumForItem( ditem ) ) {
+			stock = qfalse;
+		}
+	} else if ( (!dtype && !Q_stricmp( name, "powerup" )) || dtype == IT_POWERUP ) {
+		stype = "powerup";
+		if ( !dtype ) {
+			for ( i = 0; i < MAX_POWERUPS; i++ ) {
+				if ( cl->ps.powerups[i] ) {
+					ditem = BG_FindItemForPowerup( i );
+					if ( ditem ) {
+						if ( ditem->giType != IT_POWERUP )
+							continue;
+					}
+					break;
+				}
+			}
+			if ( ditem ) {
+				count = cl->ps.powerups[i];
+				if ( !count ) stock = qfalse;
+			} else {
+				stock = qfalse;
+			}
+		} else if ( !cl->ps.powerups[ditem->giTag] ) {
+			stock = qfalse;
+		} else {
+			count = cl->ps.powerups[ditem->giTag];
+		}
+	} else if ( (!dtype && !Q_stricmp( name, "key" ) ) || dtype == IT_KEY ) {
+		stype = "key";
+		if ( !dtype ) {
+			for ( i = 0; i < MAX_UNLOCK_KEYS; i++ ) {
+				if ( cl->ps.keys[i] ) {
+					ditem = BG_FindItemForUnlockKey( i );
+					break;
+				}
+			}
+			if ( ditem ) {
+				if ( !cl->ps.keys[i] ) {
+					stock = qfalse;
+				}
+			} else {
+				stock = qfalse;
+			}
+		} else if ( !cl->ps.keys[ditem->giTag] ) {
+			stock = qfalse;
+		}
+	} else if ( ( !dtype && !Q_stricmp( name, "rune" ) ) || dtype == IT_RUNE ) {
+		CP( "print \"Runes not currently droppable.\n\"" );	//FIXME: make it happen
+		return;
+#if 0
+		stype = "rune";
+		if ( !cl->ps.stats[STAT_RUNE] ) {
+			stock = qfalse;
+		} else if ( !dtype ) {
+			ditem = BG_ItemForItemNum( cl->ps.stats[STAT_RUNE] );
+		} else if ( cl->ps.stats[STAT_RUNE] != BG_ItemNumForItem( ditem ) ) {
+			stock = qfalse;
+		}
+#endif
+	} else if ( (!dtype && !Q_stricmp( name, "flag" ) ) || dtype == IT_TEAM ) {
+		stype = "flag";
+		if ( GTF( GTF_TEAMBASES ) ) {
+			if ( !dtype ) {
+				for ( i = PW_FLAGS_INDEX; i < PW_FLAGS_INDEX + TEAM_NUM_TEAMS; i++ ) {
+					if ( cl->ps.powerups[i] ) {
+						ditem = BG_FindItemForPowerup( i );
+						break;
+					}
+				}
+				if ( ditem ) {
+					if ( !cl->ps.powerups[i] ) {
+						stock = qfalse;
+					}
+				} else {
+					stock = qfalse;
+				}
+			} else if ( !cl->ps.powerups[ditem->giTag] ) {
+				stock = qfalse;
+			}
+		} else {
+			return;
+		}
+	} else if ( (!dtype && !Q_stricmp( name, "health" ) ) || dtype == IT_HEALTH ) {
+		stype = "health";
+		if ( ditem && ditem->quantity != 5 ) {
+			CP( "print \"Item is not droppable.\n\"" );
+			return;
+		}
+		if ( cl->ps.stats[STAT_HEALTH] > 5 ) {
+			ditem = BG_FindItem( "Small Health" );
+			if ( ditem ) {
+				count = 5;
+			}
+		} else {
+			CP( "print \"Not enough health available to drop.\n\"" );
+			return;
+		}
+	} else if ( ( !Q_stricmp( name, "armor" ) ) || dtype == IT_ARMOR ) {
+		int num = bgarmor[g_armorRules.integer][ARMOR_SHARD].base_count;
+
+		stype = "armor";
+		if ( ditem && ditem->quantity != num ) {
+			CP( "print \"Item is not droppable.\n\"" );
+			return;
+		}
+
+		if ( cl->ps.stats[STAT_ARMOR] >= num ) {
+			ditem = BG_FindItem( "Armor Shard" );
+			if ( ditem ) {
+				count = num;
+			}
+		} else {
+			CP( "print \"Not enough armor available to drop.\n\"" );
+			return;
+		}
+	} else {
+		CP( "print \"Invalid item.\n\"" );
+		return;
+	}
+
+	if ( !ditem && !stock ) {
+		CP( va( "print \"No item to drop: %s.\n\"", name ) );
+		return;
+	}
+	if ( !ditem ) {
+		CP( va( "print \"Invalid item: %s.\n\"", name ) );
+		return;
+	}
+	if ( !stock ) {
+		CP( va( "print \"Out of item: %s.\n\"", ditem->pickup_name ) );
+		return;
+	}
+	if ( !droppable ) {
+		CP( va( "print \"Item not droppable: %s.\n\"", ditem->pickup_name ) );
+		return;
+	}
+	if ( g_dropFlags.integer && g_dropFlags.integer & (1 << ditem->giType) ) {
+		CP( va( "print \"The server has disabled %s drops.\n\"", stype ? stype : "item" ) );
+		return;
+	}
+
+	// drop it like it's hot
+	dent = Drop_Item( ent, ditem, 0 );
+	if ( count > 0 ) dent->count = count;
+
+	// take away dropped item from inventory
+	switch ( ditem->giType ) {
+	case IT_WEAPON:
+		// remove weapon and a quantity of ammo
+		cl->ps.stats[STAT_WEAPONS] &= ~(1 << ditem->giTag);
+		cl->ps.ammo[ditem->giTag] -= count;
+
+		// if dropping current weapon, change weapons now
+		if ( cl->ps.weapon == ditem->giTag ) {
+			for ( i = WP_NUM_WEAPONS - 1; i > 0; i-- ) {
+				if ( cl->ps.stats[STAT_WEAPONS] & (1 << i) ) {
+					cl->ps.weapon = i;
+					break;
+				}
+			}
+		}
+		break;
+	case IT_AMMO:
+		cl->ps.ammo[ditem->giTag] -= count;
+		break;
+	case IT_HEALTH:
+		ent->health -= count;
+		cl->ps.stats[STAT_HEALTH] = ent->health;
+		break;
+	case IT_ARMOR:
+		cl->ps.stats[STAT_ARMOR] -= count;
+		break;
+	case IT_POWERUP:
+		cl->ps.powerups[ditem->giTag] = 0;
+		break;
+	case IT_KEY:
+		cl->ps.keys[ditem->giTag] = 0;
+		break;
+	case IT_RUNE:
+		cl->ps.stats[STAT_RUNE] = 0;
+		break;
+	case IT_TEAM:
+		cl->ps.powerups[ditem->giTag] = 0;
+		break;
+	case IT_HOLDABLE:
+		cl->ps.stats[STAT_HOLDABLE_ITEM] = 0;
+		if ( ditem->giTag == HI_PSCREEN || ditem->giTag == HI_PSHIELD ) {
+			cl->ps.stats[STAT_PARMOR_ACTIVE] = 0;
+		}
+		//TODO kamikaze
+		break;
+	default:
+		break;
+	}
+}
+
+
+/*
+==================
+Cmd_SpawnItem_f
+
+Spawn and toss an item forward
+==================
+*/
+void Cmd_SpawnItem_f( gentity_t* ent ) {
+	gitem_t* it;
+
+	if ( !CheatsOk( ent ) ) return;
+
+	it = BG_FindItem( ConcatArgs( 1 ) );
+	if ( !it ) return;
+
+	RegisterItem( it );
+	G_AddEvent( ent, EV_REGISTER_ITEM, BG_ItemNumForItem( it ) );
+	Drop_Item( ent, it, 0 );
+}
+
+
 /*
 ==================
 Cmd_Give_f
@@ -292,6 +619,7 @@ void Cmd_Give_f( gentity_t* ent ) {
 
 	if ( give_all || Q_stricmp( name, "armor" ) == 0 ) {
 		ent->player->ps.stats[STAT_ARMOR] = 200;
+		ent->player->ps.stats[STAT_ARMOR_TYPE] = ARMOR_BODY;
 
 		if ( !give_all )
 			return;
@@ -315,6 +643,10 @@ void Cmd_Give_f( gentity_t* ent ) {
 	}
 	if ( Q_stricmp( name, "assist" ) == 0 ) {
 		ent->player->ps.persistant[PERS_ASSIST_COUNT]++;
+		return;
+	}
+	if ( Q_stricmp( name, "holyshit" ) == 0 ) {
+		ent->player->ps.persistant[PERS_HOLYSHIT_COUNT]++;
 		return;
 	}
 
@@ -351,17 +683,12 @@ argv(0) god
 void Cmd_God_f( gentity_t* ent ) {
 	char* msg;
 
-	if ( !CheatsOk( ent ) ) {
-		return;
-	}
+	if ( !CheatsOk( ent ) ) return;
 
 	ent->flags ^= FL_GODMODE;
-	if ( !(ent->flags & FL_GODMODE) )
-		msg = "godmode OFF\n";
-	else
-		msg = "godmode ON\n";
+	msg = (ent->flags & FL_GODMODE) ? "ON" : "OFF";
 
-	AP( va( "print \"%s\"", msg ) );
+	CP( va( "print \"%c%cgodMode %c%c%s\n\"", Q_COLOR_ESCAPE, COLOR_CREAM, Q_COLOR_ESCAPE, COLOR_WHITE, msg  ) );
 }
 
 
@@ -377,17 +704,12 @@ argv(0) noTarget
 void Cmd_Notarget_f( gentity_t* ent ) {
 	char* msg;
 
-	if ( !CheatsOk( ent ) ) {
-		return;
-	}
+	if ( !CheatsOk( ent ) ) return;
 
 	ent->flags ^= FL_NOTARGET;
-	if ( !(ent->flags & FL_NOTARGET) )
-		msg = "noTarget OFF\n";
-	else
-		msg = "noTarget ON\n";
+	msg = (ent->flags & FL_NOTARGET) ? "ON" : "OFF";
 
-	AP( va( "print \"%s\"", msg ) );
+	CP( va( "print \"%c%cnoTarget %c%c%s\n\"", Q_COLOR_ESCAPE, COLOR_CREAM, Q_COLOR_ESCAPE, COLOR_WHITE, msg ) );
 }
 
 
@@ -401,18 +723,12 @@ argv(0) noClip
 void Cmd_Noclip_f( gentity_t* ent ) {
 	char* msg;
 
-	if ( !CheatsOk( ent ) ) {
-		return;
-	}
+	if ( !CheatsOk( ent ) ) return;
 
-	if ( ent->player->noClip ) {
-		msg = "noClip OFF\n";
-	} else {
-		msg = "noClip ON\n";
-	}
 	ent->player->noClip = !ent->player->noClip;
+	msg = ent->player->noClip ? "ON" : "OFF";
 
-	AP( va( "print \"%s\"", msg ) );
+	CP( va( "print \"%c%cnoClip %c%c%s\n\"", Q_COLOR_ESCAPE, COLOR_CREAM, Q_COLOR_ESCAPE, COLOR_WHITE, msg ) );
 }
 
 
@@ -427,51 +743,24 @@ hide the scoreboard, and take a special screenshot
 ==================
 */
 void Cmd_LevelShot_f( gentity_t* ent ) {
-	char		arg[MAX_TOKEN_CHARS];
+	char arg[MAX_TOKEN_CHARS];
 
 	if ( !ent->player->pers.localClient ) {
-		AP(
-			"print \"The levelShot command must be executed by a local client\n\"" );
+		AP( "print \"The levelShot command must be executed by a local client\n\"" );
 		return;
 	}
 
-	if ( !CheatsOk( ent ) )
-		return;
+	if ( !CheatsOk( ent ) ) return;
 
 	// doesn't work in single player
-	if ( g_gameType.integer == GT_SINGLE_PLAYER ) {
-		AP(
-			"print \"Must not be in singleplayer mode for levelShot\n\"" );
+	if ( g_singlePlayerActive.integer ) {
+		AP( "print \"Must not be in singleplayer mode for levelShot\n\"" );
 		return;
 	}
 
 	BeginIntermission();
 	trap_Argv( 1, arg, sizeof( arg ) );
 	trap_SendServerCommandEx( ent->player->pers.connectionNum, -1, va( "clientLevelShot %s", arg ) );
-}
-
-
-/*
-==================
-Cmd_TeamTask_f
-==================
-*/
-void Cmd_TeamTask_f( gentity_t* ent ) {
-	char userinfo[MAX_INFO_STRING];
-	char		arg[MAX_TOKEN_CHARS];
-	int task;
-	int playerNum = ent->player - level.players;
-
-	if ( trap_Argc() != 2 ) {
-		return;
-	}
-	trap_Argv( 1, arg, sizeof( arg ) );
-	task = atoi( arg );
-
-	trap_GetUserinfo( playerNum, userinfo, sizeof( userinfo ) );
-	Info_SetValueForKey( userinfo, "teamTask", va( "%d", task ) );
-	trap_SetUserinfo( playerNum, userinfo );
-	PlayerUserinfoChanged( playerNum );
 }
 
 
@@ -660,7 +949,7 @@ void SetTeam( gentity_t* ent, const char* s ) {
 	// get and distribute relevant parameters
 	PlayerUserinfoChanged( playerNum );
 
-	// player hasn't spawned yet, they sent teampref or g_teamAutoJoin is enabled
+	// player hasn't spawned yet, they sent teamPref or g_teamAutoJoin is enabled
 	if ( player->pers.connected != CON_CONNECTED ) {
 		return;
 	}
@@ -889,7 +1178,106 @@ static qboolean G_SayTo( gentity_t* ent, gentity_t* other, int mode ) {
 
 // escape character for botfiles/match.c parsing
 #define EC		"\x19"
+#if 0
+/*
+===========
+TokenizeTeamChat
+============
+*/
+#define Q_CHATTOKEN_ESCAPE	'%'
+#define Q_IsChatTokenString(p)	( p && *(p) == Q_CHATTOKEN_ESCAPE && *((p)+1) && *((p)+1) != Q_CHATTOKEN_ESCAPE )
+static void TokeniseTeamChat( gentity_t* ent, const char* in, char* out, int outSize ) {
+	int outpos = 0, tokenlessLen = 0, spaces = 0;
 
+	// discard leading spaces
+	for ( ; *in == ' '; in++ );
+
+	for ( ; *in && outpos < outSize - 1; in++ ) {
+		out[outpos] = *in;
+
+		if ( *in == ' ' ) {
+			// don't allow too many consecutive spaces
+			if ( spaces > 2 )
+				continue;
+
+			spaces++;
+		} else if ( outpos > 0 && out[outpos - 1] == Q_CHATTOKEN_ESCAPE ) {
+			if ( Q_IsChatTokenString( &out[outpos - 1] ) ) {
+				char* insert = NULL;
+				tokenlessLen--;
+
+				// health value
+				if ( *in == 'H' || *in == 'h' ) {
+					insert = va( "%i HP", ent->player->ps.stats[STAT_HEALTH] );
+				}
+				// armor value
+				else if ( *in == 'A' || *in == 'a' ) {
+					insert = va( "%i AP", ent->player->ps.stats[STAT_ARMOR] );
+				}
+				// current weapon name
+				else if ( *in == 'W' || *in == 'w' ) {
+					if ( ent->player->ps.weapon > 0 && ent->player->ps.weapon < WP_NUM_WEAPONS )
+						insert = va( "%s", weaponNamesShort[ent->player->ps.weapon] );
+				}
+				// current holdable name
+				else if ( *in == 'B' || *in == 'b' ) {
+					int *holdstr = BG_ItemForItemNum( ent->player->ps.stats[STAT_HOLDABLE_ITEM] )->giTag;
+					if ( holdstr ) insert = va( "%s", holdstr );
+				}
+				// current weapon ammo value
+				else if ( *in == 'M' || *in == 'm' ) {
+					if ( ent->player->ps.weapon > 0 && ent->player->ps.weapon < WP_NUM_WEAPONS
+							&& ent->player->ps.weapon != WP_GAUNTLET && ent->player->ps.weapon != WP_GRAPPLING_HOOK ) {
+						const char* names[WP_NUM_WEAPONS] = {
+							"", "", "Bullets", "Shells", "Grenades", "Rockets",
+							"Lightning Charge", "Slugs", "Cells", "BFG Cells", "",
+						#ifdef MISSIONPACK
+							"Nails", "Mines", "Chaingun Belt"
+						#endif
+						};
+						insert = va( "%i %s", ent->player->ps.ammo[ent->player->ps.weapon], names[ent->player->ps.weapon] );
+					}
+				}
+				// weapon ammo stock
+				else if ( *in == 'U' || *in == 'u' ) {
+					if ( ent->player->ps.weapon > 0 && ent->player->ps.weapon < WP_NUM_WEAPONS
+						&& ent->player->ps.weapon != WP_GAUNTLET && ent->player->ps.weapon != WP_GRAPPLING_HOOK ) {
+						int j;
+						const char* names[WP_NUM_WEAPONS] = {
+							"", "", "Bullets", "Shells", "Grenades", "Rockets",
+							"Lightning Charge", "Slugs", "Cells", "BFG Cells", "",
+						#ifdef MISSIONPACK
+							"Nails", "Mines", "Chaingun Belt"
+						#endif
+						};
+						for ( j = 0; j < WP_NUM_WEAPONS; j++ ) {
+							if ( ent->player->ps.stats[STAT_WEAPONS] & (1 << j) ) {
+								if ( insert ) strcat( insert, ", " );
+								strcat( insert, va( "%i %s", ent->player->ps.ammo[j], names[j] ) );
+							}
+						}
+					}
+				}
+
+				if ( insert ) {
+					out[outpos] = *insert;
+				}
+			} else {
+				spaces = 0;
+				tokenlessLen++;
+			}
+		} else {
+			spaces = 0;
+			tokenlessLen++;
+		}
+
+		outpos++;
+	}
+
+	out[outpos] = '\0';
+
+}
+#endif
 static void G_RemoveChatEscapeChar( char* text ) {
 	int i, l;
 
@@ -912,8 +1300,9 @@ void G_Say( gentity_t* ent, gentity_t* target, int mode, const char* chatText ) 
 	// don't let text be too long for malicious reasons
 	char		text[MAX_SAY_TEXT];
 	char		location[64];
-	char* cmd, * str, * netname;
+	char* cmd, * str;	// , * netname;
 	int			playerNum;
+	char		extname[MAX_NAME_LENGTH + 16];
 
 	if ( !GTF( GTF_TEAMS ) && mode == SAY_TEAM ) {
 		mode = SAY_ALL;
@@ -922,12 +1311,15 @@ void G_Say( gentity_t* ent, gentity_t* target, int mode, const char* chatText ) 
 	if ( target && !G_SayTo( ent, target, mode ) ) {
 		return;
 	}
-
 	if ( ent && ent->player ) {
-		netname = ent->player->pers.netname;
+		if ( ent->player->pers.netclan[0] != '\0' ) {
+			Com_sprintf( extname, sizeof( extname ), "%c%c%s %c%c%s%c%c", Q_COLOR_ESCAPE, COLOR_WHITE, ent->player->pers.netclan, Q_COLOR_ESCAPE, COLOR_WHITE, ent->player->pers.netname, Q_COLOR_ESCAPE, COLOR_CREAM );
+		} else {
+			Com_sprintf( extname, sizeof( extname ), "%c%c%s%c%c", Q_COLOR_ESCAPE, COLOR_WHITE, ent->player->pers.netname, Q_COLOR_ESCAPE, COLOR_CREAM );
+		}
 		playerNum = ent->s.number;
 	} else {
-		netname = "server";
+		Com_sprintf( extname, sizeof( extname ), "%c%cserver", Q_COLOR_ESCAPE, COLOR_CREAM );
 		playerNum = CHATPLAYER_SERVER;
 	}
 
@@ -936,30 +1328,34 @@ void G_Say( gentity_t* ent, gentity_t* target, int mode, const char* chatText ) 
 	switch ( mode ) {
 	default:
 	case SAY_ALL:
-		G_LogPrintf( "say: %s: %s\n", netname, text );
-		Com_sprintf( name, sizeof( name ), "%s%c%c"EC": ", netname, Q_COLOR_ESCAPE, COLOR_WHITE );
+		G_LogPrintf( "say: %s: %s\n", extname, text );
+		Com_sprintf( name, sizeof( name ), "%s"EC": ", extname );
 		color = COLOR_GREEN;
 		cmd = "chat";
 		break;
 	case SAY_TEAM:
-		G_LogPrintf( "sayteam: %s: %s\n", netname, text );
+	{
+		char *stok;
+		G_LogPrintf( "sayteam: %s: %s\n", extname, text );
 		if ( Team_GetLocationMsg( ent, location, sizeof( location ) ) )
 			Com_sprintf( name, sizeof( name ), EC"(%s%c%c"EC") (%s)"EC": ",
-				netname, Q_COLOR_ESCAPE, COLOR_WHITE, location );
+				extname, Q_COLOR_ESCAPE, COLOR_WHITE, location );
 		else
 			Com_sprintf( name, sizeof( name ), EC"(%s%c%c"EC")"EC": ",
-				netname, Q_COLOR_ESCAPE, COLOR_WHITE );
+				extname, Q_COLOR_ESCAPE, COLOR_WHITE );
+
 		color = COLOR_CYAN;
 		cmd = "tchat";
 		break;
+	}
 	case SAY_TELL:
 		if ( target && target->player ) {
-			G_LogPrintf( "tell: %s to %s: %s\n", netname, target->player->pers.netname, text );
+			G_LogPrintf( "tell: %s to %s: %s\n", extname, target->player->pers.netname, text );
 		}
 		if ( OnSameTeam( ent, target ) && Team_GetLocationMsg( ent, location, sizeof( location ) ) )
-			Com_sprintf( name, sizeof( name ), EC"[%s%c%c"EC"] (%s)"EC": ", netname, Q_COLOR_ESCAPE, COLOR_WHITE, location );
+			Com_sprintf( name, sizeof( name ), EC"[%s%c%c"EC"] (%s)"EC": ", extname, Q_COLOR_ESCAPE, COLOR_WHITE, location );
 		else
-			Com_sprintf( name, sizeof( name ), EC"[%s%c%c"EC"]"EC": ", netname, Q_COLOR_ESCAPE, COLOR_WHITE );
+			Com_sprintf( name, sizeof( name ), EC"[%s%c%c"EC"]"EC": ", extname, Q_COLOR_ESCAPE, COLOR_WHITE );
 		color = COLOR_MAGENTA;
 		cmd = "tell";
 		break;
@@ -1195,7 +1591,7 @@ void Cmd_CallVote_f( gentity_t* ent ) {
 	int		arg2Flags, arg2RangeMin, arg2RangeMax;
 
 	if ( !g_allowVote.integer ) {
-		AP( "print \"Voting not allowed here.\n\"" );
+		AP( "print \"Voting is not allowed here.\n\"" );
 		return;
 	}
 
@@ -1309,7 +1705,7 @@ void Cmd_CallVote_f( gentity_t* ent ) {
 	// special case for g_gameType, check for bad values
 	if ( !Q_stricmp( arg1, "g_gameType" ) ) {
 		i = atoi( arg2 );
-		if ( i == GT_SINGLE_PLAYER || i < 0 || i >= GT_MAX_GAME_TYPE ) {
+		if ( i == GT_CAMPAIGN || i < 0 || i >= GT_MAX_GAME_TYPE ) {
 			AP( "print \"Invalid gametype.\n\"" );
 			return;
 		}
@@ -1474,29 +1870,6 @@ void Cmd_SetViewpos_f( gentity_t* ent ) {
 }
 
 
-
-/*
-=================
-Cmd_Stats_f
-=================
-*/
-void Cmd_Stats_f( gentity_t* ent ) {
-/*
-	int max, n, i;
-
-	max = trap_AAS_PointReachabilityAreaIndex( NULL );
-
-	n = 0;
-	for ( i = 0; i < max; i++ ) {
-		if ( ent->player->areabits[i >> 3] & (1 << (i & 7)) )
-			n++;
-	}
-
-	//trap_SendServerCommand( ent-g_entities, va("print \"visited %d of %d areas\n\"", n, max));
-	trap_SendServerCommand( ent-g_entities, va("print \"%d%% level coverage\n\"", n * 100 / max));
-*/
-}
-
 /*
 =================
 ClientCommand
@@ -1505,42 +1878,14 @@ ClientCommand
 void ClientCommand( int connectionNum ) {
 	gentity_t* ent;
 	gconnection_t* connection;
-	int		localPlayerNum;
 	int		playerNum;
-	char* cmd;
-	char	buf[MAX_TOKEN_CHARS];
+	char	cmd[MAX_TOKEN_CHARS];
 
 	connection = &level.connections[connectionNum];
 
-	trap_Argv( 0, buf, sizeof( buf ) );
+	trap_Argv( 0, cmd, sizeof( cmd ) );
 
-	cmd = &buf[0];
-
-	// Commands for extra local players.
-	// 2team, 2give, 2teamtask, ...
-	if ( cmd[0] >= '2' && cmd[0] <= '0' + MAX_SPLITVIEW ) {
-		localPlayerNum = cmd[0] - '1';
-
-		cmd++;
-
-		if ( connection->localPlayerNums[localPlayerNum] == -1 ) {
-			trap_SendServerCommandEx( connectionNum, -1, va( "print \"unknown cmd %s\n\"", buf ) );
-			return;
-		}
-
-		playerNum = connection->localPlayerNums[localPlayerNum];
-	} else {
-		for ( localPlayerNum = 0; localPlayerNum < MAX_SPLITVIEW; localPlayerNum++ ) {
-			if ( connection->localPlayerNums[localPlayerNum] != -1 ) {
-				playerNum = connection->localPlayerNums[localPlayerNum];
-				break;
-			}
-		}
-		if ( localPlayerNum == MAX_SPLITVIEW ) {
-			//G_Printf("No Local player connected from connection %d!\n", connectionNum);
-			return;
-		}
-	}
+	playerNum = connection->localPlayerNums[0];
 
 	ent = g_entities + playerNum;
 	if ( !ent->player || ent->player->pers.connected != CON_CONNECTED ) {
@@ -1563,10 +1908,14 @@ void ClientCommand( int connectionNum ) {
 		Cmd_Score_f( ent );
 		return;
 	}
+	if ( Q_stricmp( cmd, "pwstat" ) == 0 ) {
+		G_SendWeaponsPlayerStats( ent->player, playerNum );
+		return;
+	}
 
 	// ignore all other commands when at intermission
 	if ( level.intermissiontime ) {
-		trap_SendServerCommand( playerNum, va( "print \"%s command not allowed at intermission.\n\"", buf ) );
+		trap_SendServerCommand( playerNum, va( "print \"Command not allowed during intermission: %s\n\"", cmd ) );
 		return;
 	}
 
@@ -1580,8 +1929,6 @@ void ClientCommand( int connectionNum ) {
 		Cmd_Noclip_f( ent );
 	else if ( Q_stricmp( cmd, "kill" ) == 0 )
 		Cmd_Kill_f( ent );
-	else if ( Q_stricmp( cmd, "teamTask" ) == 0 )
-		Cmd_TeamTask_f( ent );
 	else if ( Q_stricmp( cmd, "levelShot" ) == 0 )
 		Cmd_LevelShot_f( ent );
 	else if ( Q_stricmp( cmd, "follow" ) == 0 )
@@ -1604,8 +1951,10 @@ void ClientCommand( int connectionNum ) {
 		Cmd_GameCommand_f( ent );
 	else if ( Q_stricmp( cmd, "setViewPos" ) == 0 )
 		Cmd_SetViewpos_f( ent );
-	else if ( Q_stricmp( cmd, "stats" ) == 0 )
-		Cmd_Stats_f( ent );
+	else if ( Q_stricmp( cmd, "drop" ) == 0 )
+		Cmd_DropItem_f( ent );
+	if ( Q_stricmp( cmd, "spawn" ) == 0 )
+		Cmd_SpawnItem_f( ent );
 	else
-		trap_SendServerCommand( playerNum, va( "print \"unknown cmd %s\n\"", buf ) );
+		trap_SendServerCommand( playerNum, va( "print \"Unknown command: %s\n\"", cmd ) );
 }

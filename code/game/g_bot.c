@@ -505,7 +505,7 @@ void G_CheckBotSpawn( void ) {
 		PlayerBegin( botSpawnQueue[n].playerNum );
 		botSpawnQueue[n].spawnTime = 0;
 
-		if( g_gameType.integer == GT_SINGLE_PLAYER ) {
+		if ( g_singlePlayerActive.integer && !GTF(GTF_TEAMS) && !GTF(GTF_CAMPAIGN) ) {
 			trap_GetUserinfo( botSpawnQueue[n].playerNum, userinfo, sizeof(userinfo) );
 			PlayerIntroSound( Info_ValueForKey (userinfo, "model") );
 		}
@@ -621,7 +621,7 @@ static void G_AddBot( const char *name, float skill, char *team, int delay, char
 	value = trap_BotAllocateClient();
 	if ( value == -1 ) {
 		G_Printf( S_COLOR_RED "Unable to add bot. All player slots are in use.\n" );
-		G_Printf( S_COLOR_RED "Start server with more 'open' slots (or check setting of sv_maxclients cvar).\n" );
+		G_Printf( S_COLOR_RED "Start server with more 'open' slots (or check setting of sv_maxClients cvar).\n" );
 		return;
 	}
 
@@ -689,7 +689,7 @@ static void G_AddBot( const char *name, float skill, char *team, int delay, char
 	Info_SetValueForKey( userinfo, "rate", "25000" );
 	Info_SetValueForKey( userinfo, "snaps", "20" );
 	Info_SetValueForKey( userinfo, "skill", va("%.2g", skill) );
-	Info_SetValueForKey( userinfo, "teampref", team );
+	Info_SetValueForKey( userinfo, "teamPref", team );
 
 	if ( skill >= 1 && skill < 2 ) {
 		Info_SetValueForKey( userinfo, "handicap", "50" );
@@ -1210,7 +1210,7 @@ void G_InitBots( qboolean restart ) {
 
 	trap_Cvar_Register( &bot_minplayers, "bot_minplayers", "0", CVAR_SERVERINFO );
 
-	if( g_gameType.integer == GT_SINGLE_PLAYER ) {
+	if ( g_singlePlayerActive.integer && g_gameType.integer == GT_FFA ) {
 		trap_GetServerinfo( serverinfo, sizeof(serverinfo) );
 		Q_strncpyz( map, Info_ValueForKey( serverinfo, "mapName" ), sizeof(map) );
 		arenainfo = G_GetArenaInfoByMap( map );

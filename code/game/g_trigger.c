@@ -67,8 +67,13 @@ void multi_trigger( gentity_t *ent, gentity_t *activator ) {
 			return;
 		}
 #endif
-		if ( !(ent->spawnflags & activator->player->sess.sessionTeam) ) {
-			return;
+		if ( ent->spawnflags ) {
+			int i;
+			for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ ) {
+				if ( (ent->spawnflags & (1 << i)) && activator->player->sess.sessionTeam != i ) {
+					return;
+				}
+			}
 		}
 
 		if ( activator->player && ent->message ) {
@@ -78,7 +83,7 @@ void multi_trigger( gentity_t *ent, gentity_t *activator ) {
 		}
 	}
 
-	G_UseTargets (ent, ent->activator);
+	G_UseTargets( ent, ent->activator );
 
 	if ( ent->wait > 0 ) {
 		ent->think = multi_wait;
@@ -398,7 +403,7 @@ void hurt_touch( gentity_t *self, gentity_t *other, trace_t *trace ) {
 		dflags = DAMAGE_NO_PROTECTION;
 	else
 		dflags = 0;
-	G_Damage (other, self, self, NULL, NULL, self->damage, dflags, MOD_TRIGGER_HURT);
+	G_Damage( other, self, self, NULL, NULL, self->damage, dflags, MOD_TRIGGER_HURT, 0 );
 }
 
 void SP_trigger_hurt( gentity_t *self ) {
@@ -536,4 +541,72 @@ void SP_trigger_relay(gentity_t* self)
 {
 	self->use = trigger_relay_use;
 }
+
+
+
+/*
+==============================================================================
+
+trigger_key
+
+==============================================================================
+*/
+#if 0
+/*QUAKED trigger_key (.5 .5 .5) (-8 -8 -8) (8 8 8)
+A relay trigger that only fires it's targets if player has the proper key.
+Use "item" to specify the required key, for example "key_data_cd"
+*/
+void trigger_key_use( gentity_t* self, gentity_t* other, gentity_t* activator ) {
+	int			index;
+
+	if ( !self->item ) return;
+	if ( !activator->player ) return;
+
+	index = ITEM_INDEX( self->item );
+	if ( !activator->player->ps.keys[self->item->giTag] ) {
+		if ( level.time < self->touch_debounce_time )
+			return;
+		self->touch_debounce_time = level.time + 5.0;
+		trap_SendServerCommand( activator - g_entities, va( "print \"You need the %s\n\"", self->item->pickup_name );
+		G_Sound( activator, CHAN_AUTO, self->soundPos1 );	// , 1, ATTN_NORM, 0 );
+		return;
+	}
+
+	G_Sound( activator, CHAN_AUTO, self->soundPos2, 1 );	//, ATTN_NORM, 0 );
+	activator->player->ps.keys[self->item->giTag] -= 1;
+
+	//TODO set item respawn in coop here
+
+	G_UseTargets( self, activator );
+
+	self->use = NULL;
+}
+
+void SP_trigger_key( gentity_t* self ) {
+	if ( !self->sitem ) {
+		G_DPrintf( "no key item for trigger_key at %s\n", vtos( self->s.origin ) );
+		return;
+	}
+
+	self->item = BG_FindItemByClassname( self->sitem );
+	
+	if ( !self->item ) {
+		G_DPrintf( "item %s not found for trigger_key at %s\n", self->sitem, vtos( self->s.origin ) );
+		return;
+	}
+	if ( self->item->giType != IT_KEY || self->item->giTag < 0 || self->item->giTag >= UKEY_NUM_KEYS ) {
+		G_DPrintf( "item %s found for trigger_key at %s not a key\n", self->sitem, vtos( self->s.origin ) );
+		return;
+	}
+
+	if ( !self->target ) {
+		G_DPrintf( "%s at %s has no target\n", self->classname, vtos( self->s.origin ) );
+		return;
+	}
+	self->soundPos1 = G_SoundIndex( "misc/keytry.wav" );
+	self->soundPos2 = G_SoundIndex( "misc/keyuse.wav" );
+
+	self->use = trigger_key_use;
+}
+#endif
 //-q2

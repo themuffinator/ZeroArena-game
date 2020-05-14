@@ -3339,11 +3339,11 @@ void Controls_GetConfig( void )
 	//s_controls.invertmouse.curvalue  = DC->getCVarValue( "m_pitch" ) < 0;
 	//s_controls.smoothmouse.curvalue  = Com_Clamp( 0, 1, Controls_GetCvarValue( "m_filter" ) );
 	//s_controls.alwaysrun.curvalue    = Com_Clamp( 0, 1, Controls_GetCvarValue( "cl_run" ) );
-	//s_controls.autoswitch.curvalue   = Com_Clamp( 0, 1, Controls_GetCvarValue( "cg_autoswitch" ) );
+	//s_controls.autoswitch.curvalue   = Com_Clamp( 0, 1, Controls_GetCvarValue( "cg_autoSwitch" ) );
 	//s_controls.sensitivity.curvalue  = Com_Clamp( 2, 30, Controls_GetCvarValue( "sensitivity" ) );
 	//s_controls.joyenable.curvalue    = Com_Clamp( 0, 1, Controls_GetCvarValue( "in_joystick" ) );
 	//s_controls.joythreshold.curvalue = Com_Clamp( 0.05, 0.75, Controls_GetCvarValue( "joy_threshold" ) );
-	//s_controls.freelook.curvalue     = Com_Clamp( 0, 1, Controls_GetCvarValue( "cl_freelook" ) );
+	//s_controls.freelook.curvalue     = Com_Clamp( 0, 1, Controls_GetCvarValue( "cg_freeLook" ) );
 }
 
 /*
@@ -3375,11 +3375,11 @@ void Controls_SetConfig(qboolean restart)
 
 	//trap_Cvar_SetValue( "m_filter", s_controls.smoothmouse.curvalue );
 	//trap_Cvar_SetValue( "cl_run", s_controls.alwaysrun.curvalue );
-	//trap_Cvar_SetValue( "cg_autoswitch", s_controls.autoswitch.curvalue );
+	//trap_Cvar_SetValue( "cg_autoSwitch", s_controls.autoswitch.curvalue );
 	//trap_Cvar_SetValue( "sensitivity", s_controls.sensitivity.curvalue );
 	//trap_Cvar_SetValue( "in_joystick", s_controls.joyenable.curvalue );
 	//trap_Cvar_SetValue( "joy_threshold", s_controls.joythreshold.curvalue );
-	//trap_Cvar_SetValue( "cl_freelook", s_controls.freelook.curvalue );
+	//trap_Cvar_SetValue( "cg_freeLook", s_controls.freelook.curvalue );
 	DC->executeText(EXEC_APPEND, "in_restart\n");
 	//trap_Cmd_ExecuteText( EXEC_APPEND, "in_restart\n" );
 }
@@ -3403,11 +3403,11 @@ void Controls_SetDefaults( void )
 	//s_controls.invertmouse.curvalue  = Controls_GetCvarDefault( "m_pitch" ) < 0;
 	//s_controls.smoothmouse.curvalue  = Controls_GetCvarDefault( "m_filter" );
 	//s_controls.alwaysrun.curvalue    = Controls_GetCvarDefault( "cl_run" );
-	//s_controls.autoswitch.curvalue   = Controls_GetCvarDefault( "cg_autoswitch" );
+	//s_controls.autoswitch.curvalue   = Controls_GetCvarDefault( "cg_autoSwitch" );
 	//s_controls.sensitivity.curvalue  = Controls_GetCvarDefault( "sensitivity" );
 	//s_controls.joyenable.curvalue    = Controls_GetCvarDefault( "in_joystick" );
 	//s_controls.joythreshold.curvalue = Controls_GetCvarDefault( "joy_threshold" );
-	//s_controls.freelook.curvalue     = Controls_GetCvarDefault( "cl_freelook" );
+	//s_controls.freelook.curvalue     = Controls_GetCvarDefault( "cg_freeLook" );
 }
 
 int BindingIDFromName(const char *name) {

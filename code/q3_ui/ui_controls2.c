@@ -443,9 +443,11 @@ static bind_t g_bindings4[] =
 bind_t *g_bindings_list[MAX_SPLITVIEW] =
 {
 	g_bindings,
+#if 0
 	g_bindings2,
 	g_bindings3,
 	g_bindings4
+#endif
 };
 
 static menucommon_s *g_movement_controls[] =
@@ -970,8 +972,8 @@ static void Controls_DrawPlayer( void *self ) {
 	menubitmap_s	*b;
 	char			model[MAX_QPATH], headModel[MAX_QPATH];
 
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "model"), model, sizeof( model ) );
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "headModel"), headModel, sizeof( headModel ) );
+	trap_Cvar_VariableStringBuffer( "model", model, sizeof( model ) );
+	trap_Cvar_VariableStringBuffer( "headModel", headModel, sizeof( headModel ) );
 	if ( strcmp( model, s_controls.playerModel ) != 0 || strcmp( headModel, s_controls.playerHead ) != 0 ) {
 		UI_PlayerInfo_SetModel( &s_controls.playerinfo, model, headModel, NULL );
 		strcpy( s_controls.playerModel, model );
@@ -1031,7 +1033,7 @@ static void Controls_GetConfig( void )
 			break;
 
 		for (j = 0; j < UI_MaxSplitView(); j++) {
-			Controls_GetKeyAssignment(Com_LocalPlayerCvarName(j, bindptr->command), twokeys);
+			Controls_GetKeyAssignment(bindptr->command, twokeys);
 
 			g_bindings_list[j][i].bind1 = twokeys[0];
 			g_bindings_list[j][i].bind2 = twokeys[1];
@@ -1042,14 +1044,14 @@ static void Controls_GetConfig( void )
 		s_controls.invertmouse.curvalue  = Controls_GetCvarValue( "m_pitch" ) < 0;
 		s_controls.smoothmouse.curvalue  = Com_Clamp( 0, 1, Controls_GetCvarValue( "m_filter" ) );
 		s_controls.sensitivity.curvalue  = Com_Clamp( 2, 30, Controls_GetCvarValue( "sensitivity" ) );
-		s_controls.freelook.curvalue     = Com_Clamp( 0, 1, Controls_GetCvarValue( "cl_freelook" ) );
+		s_controls.freelook.curvalue     = Com_Clamp( 0, 1, Controls_GetCvarValue( "cg_freeLook" ) );
 	}
 
-	s_controls.alwaysrun.curvalue = Com_Clamp( 0, 1, Controls_GetCvarValue( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "cl_run" ) ) );
-	s_controls.cyclepastgauntlet.curvalue = Com_Clamp( 0, 1, Controls_GetCvarValue( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "cg_cyclePastGauntlet" ) ) );
-	s_controls.autoswitch.curvalue = Com_Clamp( 0, 1, Controls_GetCvarValue( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "cg_autoswitch" ) ) );
-	s_controls.joythreshold.curvalue = Com_Clamp( 0.05f, 0.75f, Controls_GetCvarValue( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "in_joystickThreshold" ) ) );
-	s_controls.joyanalog.curvalue = Com_Clamp( 0, 1, Controls_GetCvarValue( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "in_joystickUseAnalog" ) ) );
+	s_controls.alwaysrun.curvalue = Com_Clamp( 0, 1, Controls_GetCvarValue( "cg_alwaysRun" ) );
+	s_controls.cyclepastgauntlet.curvalue = Com_Clamp( 0, 1, Controls_GetCvarValue( "cg_cyclePastGauntlet" ) );
+	s_controls.autoswitch.curvalue = Com_Clamp( 0, 1, Controls_GetCvarValue( "cg_autoSwitch" ) );
+	s_controls.joythreshold.curvalue = Com_Clamp( 0.05f, 0.75f, Controls_GetCvarValue( "in_joystickThreshold" ) );
+	s_controls.joyanalog.curvalue = Com_Clamp( 0, 1, Controls_GetCvarValue( "in_joystickUseAnalog" ) );
 }
 
 /*
@@ -1075,10 +1077,10 @@ static void Controls_SetConfig( void )
 		for (j = 0; j < UI_MaxSplitView(); j++) {
 			if (g_bindings_list[j][i].bind1 != -1)
 			{
-				trap_Key_SetBinding( g_bindings_list[j][i].bind1, Com_LocalPlayerCvarName(j, bindptr->command) );
+				trap_Key_SetBinding( g_bindings_list[j][i].bind1, bindptr->command );
 
 				if (g_bindings_list[j][i].bind2 != -1)
-					trap_Key_SetBinding( g_bindings_list[j][i].bind2, Com_LocalPlayerCvarName(j, bindptr->command) );
+					trap_Key_SetBinding( g_bindings_list[j][i].bind2, bindptr->command );
 			}
 		}
 	}
@@ -1091,14 +1093,14 @@ static void Controls_SetConfig( void )
 
 		trap_Cvar_SetValue( "m_filter", s_controls.smoothmouse.curvalue );
 		trap_Cvar_SetValue( "sensitivity", s_controls.sensitivity.curvalue );
-		trap_Cvar_SetValue( "cl_freelook", s_controls.freelook.curvalue );
+		trap_Cvar_SetValue( "cg_freeLook", s_controls.freelook.curvalue );
 	}
 
-	trap_Cvar_SetValue( Com_LocalPlayerCvarName( s_controls.localPlayerNum, "cl_run" ), s_controls.alwaysrun.curvalue );
-	trap_Cvar_SetValue( Com_LocalPlayerCvarName( s_controls.localPlayerNum, "cg_cyclePastGauntlet" ), s_controls.cyclepastgauntlet.curvalue );
-	trap_Cvar_SetValue( Com_LocalPlayerCvarName( s_controls.localPlayerNum, "cg_autoswitch" ), s_controls.autoswitch.curvalue );
-	trap_Cvar_SetValue( Com_LocalPlayerCvarName( s_controls.localPlayerNum, "in_joystickThreshold" ), s_controls.joythreshold.curvalue );
-	trap_Cvar_SetValue( Com_LocalPlayerCvarName( s_controls.localPlayerNum, "in_joystickUseAnalog" ), s_controls.joyanalog.curvalue );
+	trap_Cvar_SetValue( "cg_alwaysRun", s_controls.alwaysrun.curvalue );
+	trap_Cvar_SetValue( "cg_cyclePastGauntlet", s_controls.cyclepastgauntlet.curvalue );
+	trap_Cvar_SetValue( "cg_autoSwitch", s_controls.autoswitch.curvalue );
+	trap_Cvar_SetValue( "in_joystickThreshold", s_controls.joythreshold.curvalue );
+	trap_Cvar_SetValue( "in_joystickUseAnalog", s_controls.joyanalog.curvalue );
 }
 
 /*
@@ -1128,16 +1130,16 @@ static void Controls_SetDefaults( void )
 		s_controls.invertmouse.curvalue  = Controls_GetCvarDefault( "m_pitch" ) < 0;
 		s_controls.smoothmouse.curvalue  = Controls_GetCvarDefault( "m_filter" );
 		s_controls.sensitivity.curvalue  = Controls_GetCvarDefault( "sensitivity" );
-		s_controls.freelook.curvalue     = Controls_GetCvarDefault( "cl_freelook" );
+		s_controls.freelook.curvalue     = Controls_GetCvarDefault( "cg_freeLook" );
 	}
 
-	s_controls.alwaysrun.curvalue = Controls_GetCvarDefault( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "cl_run" ) );
-	s_controls.cyclepastgauntlet.curvalue = Controls_GetCvarDefault( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "cg_cyclePastGauntlet" ) );
-	s_controls.autoswitch.curvalue = Controls_GetCvarDefault( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "cg_autoswitch" ) );
-	trap_Cvar_SetValue(Com_LocalPlayerCvarName(s_controls.localPlayerNum, "in_joystick"), 0);
-	trap_Cvar_SetValue(Com_LocalPlayerCvarName(s_controls.localPlayerNum, "in_joystickNo"), 0);
-	s_controls.joythreshold.curvalue = Controls_GetCvarDefault( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "in_joystickThreshold" ) );
-	s_controls.joyanalog.curvalue    = Controls_GetCvarDefault( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "in_joystickUseAnalog" ) );
+	s_controls.alwaysrun.curvalue = Controls_GetCvarDefault( "cg_alwaysRun" );
+	s_controls.cyclepastgauntlet.curvalue = Controls_GetCvarDefault( "cg_cyclePastGauntlet" );
+	s_controls.autoswitch.curvalue = Controls_GetCvarDefault( "cg_autoSwitch" );
+	trap_Cvar_SetValue("in_joystick", 0);
+	trap_Cvar_SetValue("in_joystickNo", 0);
+	s_controls.joythreshold.curvalue = Controls_GetCvarDefault( "in_joystickThreshold" );
+	s_controls.joyanalog.curvalue    = Controls_GetCvarDefault( "in_joystickUseAnalog" );
 }
 
 /*
@@ -1464,8 +1466,8 @@ static void Controls_InitModel( void )
 
 	memset( &s_controls.playerinfo, 0, sizeof(uiPlayerInfo_t) );
 
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "model"), model, sizeof ( model ) );
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "headModel"), headModel, sizeof ( headModel ) );
+	trap_Cvar_VariableStringBuffer( "model", model, sizeof ( model ) );
+	trap_Cvar_VariableStringBuffer( "headModel", headModel, sizeof ( headModel ) );
 
 	UI_PlayerInfo_SetModel( &s_controls.playerinfo, model, headModel, NULL );
 
@@ -2024,7 +2026,7 @@ static void Controls_MenuInit( int localPlayerNum )
 
 	Menu_AddItem( &s_controls.menu, &s_controls.back );
 
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_controls.localPlayerNum, "name"), s_controls.name.string, 16 );
+	trap_Cvar_VariableStringBuffer( "name", s_controls.name.string, 16 );
 	Q_CleanStr( s_controls.name.string );
 
 	// initialize the current config

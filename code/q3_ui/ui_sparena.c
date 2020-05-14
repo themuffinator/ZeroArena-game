@@ -35,30 +35,29 @@ void UI_SPArena_Start( const char *arenaInfo ) {
 	int		level;
 	char	*txt;
 
-	if ( trap_Cvar_VariableIntegerValue( "sv_maxclients" ) < 8 ) {
-		trap_Cvar_SetValue( "sv_maxclients", 8 );
+	if ( trap_Cvar_VariableIntegerValue( "sv_maxClients" ) < 8 ) {
+		trap_Cvar_SetValue( "sv_maxClients", 8 );
 	}
 
 	level = atoi( Info_ValueForKey( arenaInfo, "num" ) );
 	txt = Info_ValueForKey( arenaInfo, "special" );
-	if( txt[0] ) {
-		if( Q_stricmp( txt, "training" ) == 0 ) {
+	if ( txt[0] ) {
+		if ( Q_stricmp( txt, "training" ) == 0 ) {
 			level = -ARENAS_PER_TIER;
-		}
-		else if( Q_stricmp( txt, "final" ) == 0 ) {
+		} else if ( Q_stricmp( txt, "final" ) == 0 ) {
 			level = UI_GetNumSPTiers() * ARENAS_PER_TIER;
 		}
 	}
 	trap_Cvar_SetValue( "ui_spSelection", level );
 
-	trap_Cvar_SetValue( "ui_singlePlayerActive", 1 );
-	trap_Cvar_SetValue( "g_gameType", GT_SINGLE_PLAYER );
-	trap_Cvar_SetValue( "g_doWarmup", 0 );
+	//trap_Cvar_SetValue( "ui_singlePlayerActive", 1 );
+	trap_Cvar_SetValue( "g_gameType", GT_FFA );	//TODO singleplayer gametypes
+	//trap_Cvar_SetValue( "g_doWarmup", 0 );
 
 	map = Info_ValueForKey( arenaInfo, "map" );
-	trap_Cmd_ExecuteText( EXEC_APPEND, va( "map %s\n", map ) );
+	trap_Cmd_ExecuteText( EXEC_APPEND, va( "spMap %s\n", map ) );
 }
-
+#if 0
 void UI_SPMap_f( void ) {
 	char		command[16];
 	char		map[MAX_QPATH];
@@ -83,13 +82,14 @@ void UI_SPMap_f( void ) {
 		return;
 	}
 
-	if ( trap_Cvar_VariableIntegerValue( "sv_maxclients" ) < 8 ) {
-		trap_Cvar_SetValue( "sv_maxclients", 8 );
+	if ( trap_Cvar_VariableIntegerValue( "sv_maxClients" ) < 8 ) {
+		trap_Cvar_SetValue( "sv_maxClients", 8 );
 	}
 
 	trap_Cvar_SetValue( "ui_singlePlayerActive", 1 );
-	trap_Cvar_SetValue( "g_gameType", GT_SINGLE_PLAYER );
-	trap_Cvar_SetValue( "g_doWarmup", 0 );
+	trap_Cvar_SetValue( "g_gameType", GT_FFA );	// GT_CAMPAIGN );	//TODO singleplayer gametypes
+	//trap_Cvar_SetValue( "g_doWarmup", 0 );	//warmup is ignored in sp anyway
 
 	trap_Cmd_ExecuteText( EXEC_APPEND, va( "%s %s\n", cheats ? "devmap" : "map", map ) );
 }
+#endif

@@ -50,7 +50,7 @@ void CG_TargetCommand_f( int localPlayerNum ) {
 	}
 
 	trap_Argv( 1, test, 4 );
-	trap_SendClientCommand( va( "%s %i %i", Com_LocalPlayerCvarName( localPlayerNum, "gc" ), targetNum, atoi( test ) ) );
+	trap_SendClientCommand( va( "gc %i %i", targetNum, atoi( test ) ) );
 }
 
 
@@ -78,6 +78,8 @@ Keybinding command
 static void CG_SizeDown_f (void) {
 	// manually clamp here so cvar range warning isn't shown
 	trap_Cvar_SetValue("cg_viewSize", Com_Clamp( 30, 100, (int)(cg_viewSize.integer-10) ) );
+	if ( !cgs.media.backTileShader )
+		cgs.media.backTileShader = trap_R_RegisterShader( "gfx/2d/backtile" );
 }
 
 /*
@@ -183,6 +185,12 @@ CG_ScoresDown
 static void CG_ScoresDown_f(int localPlayerNum) {
 	localPlayer_t *player = &cg.localPlayers[localPlayerNum];
 
+	if ( GTF( GTF_CAMPAIGN ) && cg_singlePlayer.integer ) {
+		player->showScores = qfalse;
+		player->scoreFadeTime = cg.time;
+		return;
+	}
+
 	if ( cg.scoresRequestTime + 2000 < cg.time ) {
 		// the scores are more than two seconds out of data,
 		// so request new ones
@@ -219,6 +227,26 @@ static void CG_ScoresUp_f( int localPlayerNum ) {
 }
 
 
+//======================================================================
+
+void CG_WeaponStatsDown_f( int localPlayerNum ) {
+	if ( cg.statsRequestTime + 2000 < cg.time ) {
+		// the scores are more than two seconds out of data,
+		// so request new ones
+		cg.statsRequestTime = cg.time;
+		trap_SendClientCommand( "pwstat" );
+	}
+
+	cg.localPlayers[0].showStats = qtrue;
+}
+
+
+void CG_WeaponStatsUp_f( int localPlayerNum ) {
+	cg.localPlayers[0].showStats = qfalse;
+}
+
+//======================================================================
+
 
 /*
 =============
@@ -250,12 +278,12 @@ void CG_SetModel_f( int localPlayerNum ) {
 	char	name[256];
 	char	cvarName[32];
 
-	Q_strncpyz( cvarName, Com_LocalPlayerCvarName( localPlayerNum, "model"), sizeof (cvarName) );
+	Q_strncpyz( cvarName, "model", sizeof (cvarName) );
 
 	arg = CG_Argv( 1 );
 	if ( arg[0] ) {
 		trap_Cvar_Set( cvarName, arg );
-		trap_Cvar_Set( Com_LocalPlayerCvarName( localPlayerNum, "headModel"), arg );
+		trap_Cvar_Set( "headModel", arg );
 	} else {
 		trap_Cvar_VariableStringBuffer( cvarName, name, sizeof(name) );
 		Com_Printf("%s is set to %s\n", cvarName, name);
@@ -272,7 +300,7 @@ void CG_SetHeadmodel_f( int localPlayerNum ) {
 	char	name[256];
 	char	cvarName[32];
 
-	Q_strncpyz( cvarName, Com_LocalPlayerCvarName( localPlayerNum, "headModel"), sizeof (cvarName) );
+	Q_strncpyz( cvarName, "headModel", sizeof (cvarName) );
 
 	arg = CG_Argv( 1 );
 	if ( arg[0] ) {
@@ -550,7 +578,7 @@ static void CG_TellTarget_f( int localPlayerNum ) {
 	}
 
 	trap_Args( message, sizeof( message ) );
-	Com_sprintf( command, sizeof( command ), "%s %i %s", Com_LocalPlayerCvarName( localPlayerNum, "tell" ), playerNum, message );
+	Com_sprintf( command, sizeof( command ), "tell %i %s", playerNum, message );
 	trap_SendClientCommand( command );
 }
 
@@ -565,7 +593,7 @@ static void CG_TellAttacker_f( int localPlayerNum ) {
 	}
 
 	trap_Args( message, sizeof( message ) );
-	Com_sprintf( command, sizeof( command ), "%s %i %s", Com_LocalPlayerCvarName( localPlayerNum, "tell" ), playerNum, message );
+	Com_sprintf( command, sizeof( command ), "tell %i %s", playerNum, message );
 	trap_SendClientCommand( command );
 }
 
@@ -1182,6 +1210,8 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "-strafe", IN_StrafeUp, 0 },
 	{ "+useItem",IN_Button2Down, 0 },
 	{ "-useItem",IN_Button2Up, 0 },
+	{ "+weaponStats", CG_WeaponStatsDown_f, CMD_INGAME },
+	{ "-weaponStats", CG_WeaponStatsUp_f, CMD_INGAME },
 	{ "+zoom", CG_ZoomDown_f, CMD_INGAME },
 	{ "-zoom", CG_ZoomUp_f, CMD_INGAME },
 	{ "centerEcho", CG_CenterEcho_f, CMD_INGAME },
@@ -1209,7 +1239,6 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "noClip", CG_ForwardToServer_f, CMD_INGAME },
 	{ "where", CG_ForwardToServer_f, CMD_INGAME },
 	{ "kill", CG_ForwardToServer_f, CMD_INGAME },
-	{ "teamTask", CG_ForwardToServer_f, CMD_INGAME },
 	{ "levelShot", CG_ForwardToServer_f, CMD_INGAME },
 	{ "follow", CG_ForwardToServer_f, CMD_INGAME, CG_FollowComplete },
 	{ "followNext", CG_ForwardToServer_f, CMD_INGAME },
@@ -1218,8 +1247,11 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "readyUp", CG_ForwardToServer_f, CMD_INGAME },
 	{ "callVote", CG_ForwardToServer_f, CMD_INGAME, CG_CallVoteComplete },
 	{ "vote", CG_ForwardToServer_f, CMD_INGAME, CG_VoteComplete },
+	{ "statsWeapons", CG_ForwardToServer_f, CMD_INGAME },
 	{ "setViewPos", CG_ForwardToServer_f, CMD_INGAME },
-	{ "stats", CG_ForwardToServer_f, CMD_INGAME }
+	{ "stats", CG_ForwardToServer_f, CMD_INGAME },
+	{ "drop", CG_ForwardToServer_f, CMD_INGAME },
+	{ "spawn", CG_ForwardToServer_f, CMD_INGAME, CG_GiveComplete }
 };
 
 static int numPlayerCommands = ARRAY_LEN( playerCommands );
@@ -1361,7 +1393,7 @@ so it can perform tab completion
 =================
 */
 void CG_InitConsoleCommands( void ) {
-	int		i, j;
+	int		i;	// , j;
 
 	for ( i = 0 ; i < cg_numCommands ; i++ ) {
 		trap_AddCommand( cg_commands[i].cmd );
@@ -1372,8 +1404,6 @@ void CG_InitConsoleCommands( void ) {
 	}
 
 	for ( i = 0 ; i < numPlayerCommands ; i++ ) {
-		for ( j = 0; j < CG_MaxSplitView(); j++ ) {
-			trap_AddCommand( Com_LocalPlayerCvarName( j, playerCommands[i].cmd ) );
-		}
+		trap_AddCommand( playerCommands[i].cmd );
 	}
 }

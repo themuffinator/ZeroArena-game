@@ -89,6 +89,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define STAT_MINUS			10	// num frame for '-' stats digit
 
 #define	ICON_SIZE			48
+#define	ICON_SIZE_SMALL		(ICON_SIZE/2)
 #define	CHAR_WIDTH			32
 #define	CHAR_HEIGHT			48
 #define	TEXT_ICON_SPACE		4
@@ -101,7 +102,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define TEAM_OVERLAY_MAXNAME_WIDTH	12
 #define TEAM_OVERLAY_MAXLOCATION_WIDTH	16
 
-#define MAX_GRAPHICAL_OBITS		16	//4
+#define MAX_GRAPHICAL_OBITS		8	//16	//4
 //#define GRAPH_OBIT_TOTAL_NUM	MAX_GRAPHICAL_OBITS - 1						// max number of drawn obits
 //#define GRAPH_OBIT_FIRST_NUM	MAX_GRAPHICAL_OBITS - GRAPH_OBIT_TOTAL_NUM	// first standard obit, -1 is overflow
 #define GRAPH_OBIT_TIME			3000
@@ -375,7 +376,8 @@ typedef struct {
 	int				defendCount;
 	int				assistCount;
 	int				captures;
-	qboolean	perfect;
+	int				holyShitCount;
+	qboolean		perfect;
 	int				team;
 } score_t;
 
@@ -409,7 +411,6 @@ typedef struct {
 	int				handicap;
 	int				wins, losses;	// in tourney mode
 
-	int				teamTask;		// task in teamplay (offence/defence)
 	qboolean		teamLeader;		// true when this is a team leader
 
 	int				powerups;		// so can display quad/flag status
@@ -481,14 +482,18 @@ typedef struct weaponInfo_s {
 	qhandle_t		ammoIcon;
 
 	qhandle_t		ammoModel;
-//muff
-	vec3_t			weaponColor;
+//muff new coloring
+	vec3_t			colorBase;				// for colored weapon items models and icons
+	vec3_t			colorMissile;			// for missile (and default plasma/rail weapon model) color
+	vec3_t			colorExplosion;			// for explosion and flash color
+	vec3_t			colorExpLight;			// for explosion and flash dlights
 //-muff
 	qhandle_t		missileModel;
 	sfxHandle_t		missileSound;
 	void			(*missileTrailFunc)( centity_t *, const struct weaponInfo_s *wi );
 	float			missileDlight;
 	vec3_t			missileDlightColor;
+	vec3_t			missileColor;
 
 	void			(*ejectBrassFunc)( centity_t * );
 
@@ -507,6 +512,7 @@ typedef struct {
 	qboolean		registered;
 	qhandle_t		models[MAX_ITEM_MODELS];
 	qhandle_t		icon;
+	qhandle_t		icon2;	// icon override
 } itemInfo_t;
 
 
@@ -689,7 +695,28 @@ typedef struct {
 	int				teamChatPos;
 	int				teamLastChatPos;
 
+	// stats
+	qboolean		showStats;
 } localPlayer_t;
+
+typedef struct {
+	//pulled from wpstats
+	int			statsWeaponShots[WP_NUM_WEAPONS];		// total number of shots per weapon
+	int			statsWeaponHits[WP_NUM_WEAPONS];		// total number of hits per weapon
+	int			statsWeaponDmgD[WP_NUM_WEAPONS];		// total damage dealt per weapon
+	int			statsWeaponDmgR[WP_NUM_WEAPONS];		// total damage received per weapon
+	float		statsWeaponDamageRatio[WP_NUM_WEAPONS];	// damage delivered : received ratio per weapon
+
+	// derived from above
+	float		statsWeaponAccuracy[WP_NUM_WEAPONS];	// overall weapon accuracy
+
+	int			statsWeaponTotalDmgD;
+	int			statsWeaponTotalDmgR;
+	float		statsWeaponTotalDamageRatio;
+	int			statsWeaponTotalShots;
+	int			statsWeaponTotalHits;
+	float		statsWeaponTotalAccuracy;
+} playerStats_t;
  
 #define MAX_SPAWN_VARS          64
 #define MAX_SPAWN_VARS_CHARS    2048
@@ -743,6 +770,8 @@ typedef struct {
 	vec3_t		autoAxis[3];
 	vec3_t		autoAnglesFast;
 	vec3_t		autoAxisFast[3];
+	vec3_t		autoAnglesClassic;
+	vec3_t		autoAxisClassic[3];
 
 	// view rendering
 	refdef_t	refdef;
@@ -801,6 +830,10 @@ typedef struct {
 	char		messagePrompt[64];
 	mfield_t		messageField;
 
+	// stats
+	int				statsRequestTime;
+	playerStats_t	pstats;
+
 	// scoreboard
 	int			scoresRequestTime;
 	int			numScores;
@@ -819,6 +852,8 @@ typedef struct {
 	int			soundBufferOut;
 	int			soundTime;
 	qhandle_t	soundBuffer[MAX_SOUNDBUFFER];
+
+	int			iconImageSize;
 
 	// warmup countdown
 	int			warmupTime;
@@ -854,6 +889,7 @@ typedef struct {
 	int			notifyTime[MAX_NOTIFY_HISTORY];
 	char		notifyText[MAX_NOTIFY_HISTORY][MAX_SAY_TEXT];
 	qboolean	notifyExpand;
+	qboolean	notifyForce;
 
 	// obituaries
 	int			obitNum;
@@ -872,7 +908,6 @@ typedef struct {
 	playerState_t	*cur_ps; // Like cur_lc, but for player state
 	int				cur_localPlayerNum;
 	localPlayer_t	localPlayers[MAX_SPLITVIEW];
-
 } cg_t;
 
 
@@ -921,7 +956,6 @@ typedef struct {
 	qhandle_t	flagPoleModel;
 	qhandle_t	flagFlapModel;
 
-	cgSkin_t	flagFlapSkin;	// colorize
 	qhandle_t	flagBaseModel;	// colorize
 
 	qhandle_t	overloadBaseModel;
@@ -956,8 +990,6 @@ typedef struct {
 	qhandle_t	gibLeg;
 	qhandle_t	gibSkull;
 	qhandle_t	gibBrain;
-
-	qhandle_t	smoke2;
 
 	qhandle_t	machinegunBrassModel;
 	qhandle_t	shotgunBrassModel;
@@ -1011,7 +1043,11 @@ typedef struct {
 	qhandle_t	regenShader;
 	qhandle_t	battleSuitShader;
 	qhandle_t	battleWeaponShader;
+	qhandle_t	invulnShader;
+	qhandle_t	invulnWeaponShader;
 	qhandle_t	hastePuffShader;
+	qhandle_t	powerShieldShader;
+	qhandle_t	powerShieldWeaponShader;
 #ifdef MISSIONPACK
 	qhandle_t	redKamikazeShader;
 	qhandle_t	blueKamikazeShader;
@@ -1040,16 +1076,19 @@ typedef struct {
 	qhandle_t	kamikazeShockWave;
 	qhandle_t	kamikazeHeadModel;
 	qhandle_t	kamikazeHeadTrail;
-	qhandle_t	guardPowerupModel;
-	qhandle_t	scoutPowerupModel;
-	qhandle_t	doublerPowerupModel;
-	qhandle_t	ammoRegenPowerupModel;
 	qhandle_t	invulnerabilityImpactModel;
 	qhandle_t	invulnerabilityJuicedModel;
 	qhandle_t	medkitUsageModel;
 	qhandle_t	heartShader;
 	qhandle_t	invulnerabilityPowerupModel;
 #endif
+	qhandle_t	resistanceBandModel;
+	qhandle_t	scoutBandModel;
+	qhandle_t	strengthBandModel;
+	qhandle_t	tenacityBandModel;
+	qhandle_t	armamentBandModel;
+	qhandle_t	parasiteBandModel;
+
 	qhandle_t	dustPuffShader;
 
 	// obits
@@ -1068,6 +1107,7 @@ typedef struct {
 	qhandle_t	medalDefend;
 	qhandle_t	medalAssist;
 	qhandle_t	medalCapture;
+	qhandle_t	medalHolyShit;
 
 	// sounds
 	sfxHandle_t	itemPickupSounds[MAX_ITEMS];
@@ -1077,13 +1117,8 @@ typedef struct {
 	sfxHandle_t	useNothingSound;
 	sfxHandle_t	wearOffSound;
 	sfxHandle_t	footsteps[FOOTSTEP_TOTAL][4];
-	sfxHandle_t	sfx_lghit1;
-	sfxHandle_t	sfx_lghit2;
-	sfxHandle_t	sfx_lghit3;
-	sfxHandle_t	sfx_ric1;
-	sfxHandle_t	sfx_ric2;
-	sfxHandle_t	sfx_ric3;
-	//sfxHandle_t	sfx_railg;
+	sfxHandle_t	sfx_lghit[3];
+	sfxHandle_t	sfx_ric[3];
 	sfxHandle_t	sfx_rockexp;
 	sfxHandle_t	sfx_plasmaexp;
 	sfxHandle_t obeliskHitSound1;	//TODO asset
@@ -1189,12 +1224,10 @@ typedef struct {
 #endif
 	sfxHandle_t flagReturnedSound[TEAM_NUM_TEAMS];	//TODO asset
 
-	sfxHandle_t	enemyTookYourFlagSound;
-	sfxHandle_t yourTeamTookEnemyFlagSound;
+	sfxHandle_t	enemyPickedUpFlagSound;
+	sfxHandle_t yourTeamPickedUpFlagSound;
 	sfxHandle_t	youHaveFlagSound;
 
-	sfxHandle_t	enemyTookTheFlagSound;	//TODO asset
-	sfxHandle_t yourTeamTookTheFlagSound;	//TODO asset
 	sfxHandle_t yourBaseIsUnderAttackSound;	//TODO asset
 
 	sfxHandle_t holyShitSound;
@@ -1211,15 +1244,17 @@ typedef struct {
 	// new stuff
 	sfxHandle_t	countPrepareTeamSound;
 
-	sfxHandle_t ammoregenSound;
-	sfxHandle_t doublerSound;
-	sfxHandle_t guardSound;
-	sfxHandle_t scoutSound;
-
 	qhandle_t cursor;
 	qhandle_t selectCursor;
 	qhandle_t sizeCursor;
 #endif
+
+	sfxHandle_t scoutSound;
+	sfxHandle_t resistanceSound;
+	sfxHandle_t strengthSound;
+	sfxHandle_t armamentSound;
+	sfxHandle_t tenacitySound;
+	sfxHandle_t parasiteSound;
 
 	sfxHandle_t	regenSound;
 	sfxHandle_t	protectSound;
@@ -1230,6 +1265,10 @@ typedef struct {
 	sfxHandle_t	wstbimpmSound;
 	sfxHandle_t	wstbimpdSound;
 	sfxHandle_t	wstbactvSound;
+	sfxHandle_t	vampireSound;
+	sfxHandle_t	parmorSound;
+	sfxHandle_t	parmorOnSound;
+	sfxHandle_t	parmorOffSound;
 
 } cgMedia_t;
 
@@ -1291,10 +1330,11 @@ typedef struct {
 	int				sortedTeams[TEAM_NUM_TEAMS];			// teams sorted by highest to lowest score, 0 = TEAM_FREE
 	float			gravity;
 
-	int				tieredArmor;
+	int				armorRules;
 	int				teamSizeMin;
 	int				teamSizeMax;
-
+	int				forceWeaponColors;
+	
 	qboolean  newHud;
 
 	//
@@ -1344,6 +1384,7 @@ extern	markPoly_t		cg_markPolys[MAX_MARK_POLYS];
 extern	vmCvar_t		cg_animSpeed;
 extern	vmCvar_t		cg_antiLag;
 extern	vmCvar_t		cg_atmosphericEffects;
+extern	vmCvar_t		cg_autoSwitch;
 extern	vmCvar_t		cg_blood;
 extern	vmCvar_t		cg_bobPitch;
 extern	vmCvar_t		cg_bobRoll;
@@ -1358,6 +1399,7 @@ extern	vmCvar_t		cg_coronaFarDist;
 extern	vmCvar_t		cg_coronas;
 extern	vmCvar_t		cg_crosshairHealth;
 extern	vmCvar_t		cg_crosshairSize;
+extern	vmCvar_t		cg_cyclePastGauntlet;
 extern	vmCvar_t		cg_debug;
 extern	vmCvar_t		cg_debugAnim;
 extern	vmCvar_t		cg_debugEvents;
@@ -1365,7 +1407,7 @@ extern	vmCvar_t		cg_debugPosition;
 extern	vmCvar_t		cg_dedicated;
 extern	vmCvar_t		cg_deferPlayers;
 extern	vmCvar_t		cg_draw2D;
-extern	vmCvar_t		cg_draw3dIcons;
+extern	vmCvar_t		cg_draw3DIcons;
 extern	vmCvar_t		cg_drawAmmoWarning;
 extern	vmCvar_t		cg_drawAttacker;
 extern	vmCvar_t		cg_drawBBox;
@@ -1374,9 +1416,10 @@ extern	vmCvar_t		cg_drawCrosshairNames;
 extern	vmCvar_t		cg_drawFPS;
 extern	vmCvar_t		cg_drawFriend;
 extern	vmCvar_t		cg_drawGrappleHook;
+extern	vmCvar_t		cg_drawGun;
 extern	vmCvar_t		cg_drawIcons;
 extern	vmCvar_t		cg_drawLagometer;
-extern	vmCvar_t		cg_drawPickupItems;
+extern	vmCvar_t		cg_drawItemPickups;
 extern	vmCvar_t		cg_drawRewards;
 extern	vmCvar_t		cg_drawScores;
 extern	vmCvar_t		cg_drawShaderInfo;
@@ -1398,6 +1441,7 @@ extern	vmCvar_t		cg_gun_frame;
 extern	vmCvar_t		cg_gun_x;
 extern	vmCvar_t		cg_gun_y;
 extern	vmCvar_t		cg_gun_z;
+extern	vmCvar_t		cg_handicap;
 extern	vmCvar_t		cg_hudFont;
 extern	vmCvar_t		cg_hudFontBorder;
 extern	vmCvar_t		cg_hudTextScale;
@@ -1438,6 +1482,12 @@ extern	vmCvar_t		cg_teamChatTime;
 extern	vmCvar_t		cg_teamChatsOnly;
 extern	vmCvar_t		cg_teamDmLeadAnnouncements;
 extern	vmCvar_t		cg_teamOverlayUserinfo;
+extern	vmCvar_t		cg_teamPref;
+extern	vmCvar_t		cg_thirdPerson;
+extern	vmCvar_t		cg_thirdPersonRange;
+extern	vmCvar_t		cg_thirdPersonAngle;
+extern	vmCvar_t		cg_thirdPersonHeight;
+extern	vmCvar_t		cg_thirdPersonSmooth;
 extern	vmCvar_t		cg_timescale;
 extern	vmCvar_t		cg_timescaleFadeEnd;
 extern	vmCvar_t		cg_timescaleFadeSpeed;
@@ -1475,18 +1525,6 @@ extern	vmCvar_t		cg_defaultMaleHeadModel;
 extern	vmCvar_t		cg_defaultFemaleModel;
 extern	vmCvar_t		cg_defaultFemaleHeadModel;
 
-extern	vmCvar_t		cg_handicap[MAX_SPLITVIEW];
-extern	vmCvar_t		cg_teamtask[MAX_SPLITVIEW];
-extern	vmCvar_t		cg_teampref[MAX_SPLITVIEW];
-extern	vmCvar_t		cg_autoswitch[MAX_SPLITVIEW];
-extern	vmCvar_t		cg_cyclePastGauntlet[MAX_SPLITVIEW];
-extern	vmCvar_t		cg_drawGun[MAX_SPLITVIEW];
-extern	vmCvar_t		cg_thirdPerson[MAX_SPLITVIEW];
-extern	vmCvar_t		cg_thirdPersonRange[MAX_SPLITVIEW];
-extern	vmCvar_t		cg_thirdPersonAngle[MAX_SPLITVIEW];
-extern	vmCvar_t		cg_thirdPersonHeight[MAX_SPLITVIEW];
-extern	vmCvar_t		cg_thirdPersonSmooth[MAX_SPLITVIEW];
-
 extern	vmCvar_t		cg_crosshairBrightness;
 extern	vmCvar_t		cg_crosshairColor;
 extern	vmCvar_t		cg_crosshairHitColor;
@@ -1495,22 +1533,28 @@ extern	vmCvar_t		cg_crosshairHitPulseTime;
 extern	vmCvar_t		cg_crosshairOpacity;
 extern	vmCvar_t		cg_crosshairPickupPulse;
 extern	vmCvar_t		cg_crosshairRes;
+extern	vmCvar_t		cg_disableRGBA;
 extern	vmCvar_t		cg_drawGameNotify;
 extern	vmCvar_t		cg_drawGraphicalObits;
 extern	vmCvar_t		cg_drawPregameMessages;
+extern	vmCvar_t		cg_highResIcons;
 extern	vmCvar_t		cg_impactMarkTime;
+extern	vmCvar_t		cg_itemFX;
 extern	vmCvar_t		cg_kickScale;
+extern	vmCvar_t		cg_levelBrushContents;
+extern	vmCvar_t		cg_levelBrushSurfaces;
+extern	vmCvar_t		cg_placeholderSimpleItems;
+extern	vmCvar_t		cg_playIntros;
 extern	vmCvar_t		cg_switchOnEmpty;
 extern	vmCvar_t		cg_switchToEmpty;
 extern	vmCvar_t		cg_zoomOutOnDeath;
 extern	vmCvar_t		cg_zoomScaling;
 extern	vmCvar_t		cg_zoomSensitivity;
 extern	vmCvar_t		cg_zoomToggle;
-#ifdef MISSIONPACK
-extern	vmCvar_t		cg_currentSelectedPlayer[MAX_SPLITVIEW];
-extern	vmCvar_t		cg_currentSelectedPlayerName[MAX_SPLITVIEW];
-#endif
 
+extern	vmCvar_t		pmove_q2;
+extern	vmCvar_t		pmove_q2slide;
+extern	vmCvar_t		pmove_q2air;
 //
 // cg_main.c
 //
@@ -1533,6 +1577,8 @@ void CG_LocalPlayerRemoved(int localPlayerNum);
 void CG_StartMusic( void );
 
 void CG_UpdateCvars( void );
+void CG_RegisterItemVisuals( int itemNum );
+void CG_RegisterItemSounds( int itemNum );
 
 int CG_CrosshairPlayer( int localPlayerNum );
 int CG_LastAttacker( int localPlayerNum );
@@ -1624,7 +1670,7 @@ void CG_DrawNamedPic( float x, float y, float width, float height, const char *p
 void CG_SetClipRegion( float x, float y, float w, float h );
 void CG_ClearClipRegion( void );
 void CG_LerpColor( const vec4_t a, const vec4_t b, vec4_t c, float t );
-
+const fontInfo_t* CG_FontForStyle( int style );
 void CG_DrawString( int x, int y, const char* str, int style, const vec4_t color );
 void CG_DrawStringWithCursor( int x, int y, const char* str, int style, const fontInfo_t *font, const vec4_t color, int cursorPos, int cursorChar );
 void CG_DrawStringExt( int x, int y, const char* str, int style, const vec4_t color, float scale, int maxChars, float shadowOffset );
@@ -1635,16 +1681,19 @@ void CG_DrawBigStringColor( int x, int y, const char *s, vec4_t color );
 void CG_DrawSmallString( int x, int y, const char *s, float alpha );
 void CG_DrawSmallStringColor( int x, int y, const char *s, vec4_t color );
 
-float CG_DrawStrlenCommon( const char *str, int style, const fontInfo_t *font, int maxchars );
+float CG_DrawStrlenCommon( const char *str, int style, const fontInfo_t *font, float scale, int maxchars );
 float CG_DrawStrlenMaxChars( const char *str, int style, int maxchars );
 float CG_DrawStrlen( const char *str, int style );
 int CG_DrawStringLineHeight( int style );
+int CG_DrawStringLineHeightExt( int style, float scale );
 
 void CG_MField_Draw( mfield_t *edit, int x, int y, int style, vec4_t color, qboolean drawCursor );
 
 float	*CG_FadeColor( int startMsec, int totalMsec );
 extern const vec4_t teamColor[TEAM_NUM_TEAMS];
-extern const vec4_t teamColorPlayers[TEAM_NUM_TEAMS];
+//extern const vec4_t teamColorPlayers[TEAM_NUM_TEAMS];
+//float* CG_TeamColorsNormal( team_t team );
+void CG_TeamColors( team_t team, vec3_t c, char* source );
 void CG_TileClear( void );
 void CG_KeysStringForBinding(const char *binding, char *string, int stringSize );
 void CG_ColorForHealth( vec4_t hcolor );
@@ -1663,6 +1712,8 @@ extern const char* cg_teamNamesLetter[TEAM_NUM_TEAMS];
 extern const char* cg_teamShortNames[TEAM_NUM_TEAMS];
 extern const char* CG_TeamName( team_t team );
 extern char* CG_PlayerName( playerInfo_t *p, const qboolean clanTag );
+qhandle_t CG_GetIconHandle( char* in );
+qboolean CG_IsValidTeam( const team_t team );
 
 //
 // cg_draw.c
@@ -1673,9 +1724,9 @@ typedef enum {
   TEAMCHAT_PRINT
 } q3print_t;
 
-extern	int sortedTeamPlayers[TOTAL_TEAMS][TEAM_MAXOVERLAY];
-extern	int	numSortedTeamPlayers[TOTAL_TEAMS];
-extern	int	sortedTeamPlayersTime[TOTAL_TEAMS];
+extern	int sortedTeamPlayers[TEAM_NUM_TEAMS][TEAM_MAXOVERLAY];
+extern	int	numSortedTeamPlayers[TEAM_NUM_TEAMS];
+extern	int	sortedTeamPlayersTime[TEAM_NUM_TEAMS];
 extern	int drawTeamOverlayModificationCount;
 extern  char systemChat[256];
 extern  char teamChat1[256];
@@ -1784,17 +1835,18 @@ qboolean CG_PositionRotatedEntityOnTag( refEntity_t *entity, const refEntity_t *
 //
 // cg_weapons.c
 //
+void CG_GetWeaponColorFloat( playerInfo_t* ci, weapon_t weaponNum, vec3_t col1, vec3_t col2 );
+//void CG_GetWeaponColorByte( playerInfo_t* ci, weapon_t weaponNum, byte col1[4], byte col2[4] );
 void CG_NextWeapon_f( int localPlayerNum );
 void CG_PrevWeapon_f( int localPlayerNum );
 void CG_Weapon_f( int localPlayerNum );
 void CG_WeaponToggle_f( int localPlayerNum );
 
 void CG_RegisterWeapon( int weaponNum );
-void CG_RegisterItemVisuals( int itemNum );
 
 void CG_FireWeapon( centity_t *cent );
-void CG_MissileHitWall( int weapon, int playerNum, vec3_t origin, vec3_t dir, impactSound_t soundType );
-void CG_MissileHitPlayer( int weapon, vec3_t origin, vec3_t dir, int entityNum );
+void CG_MissileHitWall( weapon_t weapon, int playerNum, vec3_t origin, vec3_t dir, impactSound_t soundType );
+void CG_MissileHitPlayer( weapon_t weapon, int playerNum, vec3_t origin, vec3_t dir, const int targetNum );
 void CG_ShotgunPattern( vec3_t origin, vec3_t origin2, int seed, int otherEntNum );
 void CG_ShotgunFire( entityState_t *es );
 void CG_Bullet( vec3_t origin, int sourceEntityNum, vec3_t normal, qboolean flesh, int fleshEntityNum );
@@ -1802,7 +1854,7 @@ void CG_Bullet( vec3_t origin, int sourceEntityNum, vec3_t normal, qboolean fles
 void CG_RailTrail( playerInfo_t *pi, vec3_t start, vec3_t end );
 void CG_GrappleTrail( centity_t *ent, const weaponInfo_t *wi );
 void CG_AddViewWeapon (playerState_t *ps);
-void CG_AddPlayerWeapon( refEntity_t *parent, playerState_t *ps, centity_t *cent, int team );
+void CG_AddPlayerWeapon( refEntity_t *parent, playerState_t *ps, centity_t *cent, team_t team );
 void CG_DrawWeaponSelect( void );
 
 void CG_OutOfAmmoChange( int localPlayerNum );	// should this be in pmove?
@@ -1858,7 +1910,7 @@ void CG_Bleed( vec3_t origin, int entityNum );
 
 localEntity_t *CG_MakeExplosion( vec3_t origin, vec3_t dir,
 								qhandle_t hModel, qhandle_t shader, int msec,
-								qboolean isSprite );
+								float size, qboolean isSprite );
 
 //
 // cg_snapshot.c

@@ -530,7 +530,7 @@ void CG_DrawStringCommon( int x, int y, const char* str, int style, const fontIn
 	charh = font->pointSize;
 
 	if ( shadowOffset == 0 && ( style & UI_DROPSHADOW ) ) {
-		shadowOffset = 2;
+		shadowOffset = 1;	// 2;
 	}
 
 	if ( gradient == 0 && ( style & UI_GRADIENT ) ) {
@@ -668,12 +668,14 @@ CG_DrawStrlenCommon
 Returns draw width, skiping color escape codes
 =================
 */
-float CG_DrawStrlenCommon( const char *str, int style, const fontInfo_t *font, int maxchars ) {
+float CG_DrawStrlenCommon( const char *str, int style, const fontInfo_t *font, float scale, int maxchars ) {
 	int charh;
 
 	charh = font->pointSize;
 
-	if ( !( style & UI_NOSCALE ) && cg.cur_lc ) {
+	if ( scale > 0.0 ) {
+		charh *= scale;
+	} else if ( !(style & UI_NOSCALE) && cg.cur_lc ) {
 		if ( cg.numViewports != 1 ) {
 			charh *= cg_splitviewTextScale.value;
 		} else {
@@ -692,7 +694,7 @@ Returns draw width, skiping color escape codes
 =================
 */
 float CG_DrawStrlenMaxChars( const char *str, int style, int maxchars ) {
-	return CG_DrawStrlenCommon( str, style, CG_FontForStyle( style ), maxchars );
+	return CG_DrawStrlenCommon( str, style, CG_FontForStyle( style ), 0, maxchars );
 }
 
 /*
@@ -703,7 +705,7 @@ Returns draw width, skiping color escape codes
 =================
 */
 float CG_DrawStrlen( const char *str, int style ) {
-	return CG_DrawStrlenCommon( str, style, CG_FontForStyle( style ), 0 );
+	return CG_DrawStrlenCommon( str, style, CG_FontForStyle( style ), 0, 0 );
 }
 
 /*
@@ -717,9 +719,6 @@ int CG_DrawStringLineHeight( int style ) {
 	const fontInfo_t *font;
 	int lineHeight;
 	int charh;
-	int gap;
-
-	gap = 0;
 
 	switch (style & UI_FONTMASK)
 	{
@@ -729,18 +728,15 @@ int CG_DrawStringLineHeight( int style ) {
 
 		case UI_SMALLFONT:
 			font = &cgs.media.smallFont;
-			gap = 2;
 			break;
 
 		case UI_BIGFONT:
 		default:
 			font = &cgs.media.textFont;
-			gap = 2;
 			break;
 
 		case UI_GIANTFONT:
 			font = &cgs.media.bigFont;
-			gap = 6;
 			break;
 
 		case UI_NUMBERFONT:
@@ -749,20 +745,67 @@ int CG_DrawStringLineHeight( int style ) {
 
 		case UI_CONSOLEFONT:
 			font = &cgs.media.consoleFont;
-			if ( font->pointSize >= 16 ) {
-				gap = 2;
-			} else if ( font->pointSize >= 12 ) {
-				gap = 1;
-			} else {
-				gap = 0;
-			}
 			break;
 	}
 
 	charh = font->pointSize;
-	lineHeight = charh + gap;
+	lineHeight = charh * 1.125;
 
 	if ( !( style & UI_NOSCALE ) && cg.cur_lc ) {
+		if ( cg.numViewports != 1 ) {
+			lineHeight *= cg_splitviewTextScale.value;
+		} else {
+			lineHeight *= cg_hudTextScale.value;
+		}
+	}
+
+	return lineHeight;
+}
+
+/*
+=================
+CG_DrawStringLineHeightExt
+
+Returns draw height of text line for drawing multiple lines of text
+=================
+*/
+int CG_DrawStringLineHeightExt( int style, float scale ) {
+	const fontInfo_t* font;
+	int lineHeight;
+	int charh;
+
+	switch ( style & UI_FONTMASK ) {
+	case UI_TINYFONT:
+		font = &cgs.media.tinyFont;
+		break;
+
+	case UI_SMALLFONT:
+		font = &cgs.media.smallFont;
+		break;
+
+	case UI_BIGFONT:
+	default:
+		font = &cgs.media.textFont;
+		break;
+
+	case UI_GIANTFONT:
+		font = &cgs.media.bigFont;
+		break;
+
+	case UI_NUMBERFONT:
+		font = &cgs.media.numberFont;
+		break;
+
+	case UI_CONSOLEFONT:
+		font = &cgs.media.consoleFont;
+		break;
+	}
+
+	charh = font->pointSize;
+	if ( scale > 0 ) charh = 48.0f * scale;
+	lineHeight = charh * 1.125;
+
+	if ( !(style & UI_NOSCALE) && cg.cur_lc ) {
 		if ( cg.numViewports != 1 ) {
 			lineHeight *= cg_splitviewTextScale.value;
 		} else {
@@ -885,16 +928,51 @@ const vec4_t teamColor[TEAM_NUM_TEAMS] = {
 	{0.9f, 0.1f, 0.9f, 1},
 };
 
+#if 0
+float *CG_TeamColorsNormal( team_t team ) {
+	vec4_t col[TEAM_NUM_TEAMS] = {
+		{0.752f, 0.752f, 0.752f, 0.752f},
+		{0.752f, 0, 0, 0.752f},
+		{0, 0, 0.752f, 0.752f},
+		{0, 0.752f, 0, 0.752f},
+		{0.752f, 0.752f, 0, 0.752f},
+		{0, 0.752f, 0.752f, 0.752f},
+		{0.752f, 0, 0.752f, 0.752f},
+	};
 
-const vec4_t teamColorPlayers[TEAM_NUM_TEAMS] = {
-	{1, 1, 1, 1},
-	{1, 0, 0, 1},
-	{0, 0, 1, 1},
-	{0, 1, 0, 1},
-	{1, 1, 0, 1},
-	{0, 1, 1, 1},
-	{1, 0, 1, 1},
-};
+	if ( team < 0 || team >= TEAM_NUM_TEAMS ) {
+		CG_Printf( S_COLOR_YELLOW "Warning: invalid color\n" );
+		return NULL;
+	}
+
+	return (float *)(col[team]);
+}
+#endif
+
+void CG_TeamColors( team_t team, vec3_t c, char *source ) {
+	vec3_t col[TEAM_NUM_TEAMS] = {
+		{0.752f, 0.752f, 0.752f},
+		{0.752f, 0, 0},
+		{0, 0, 0.752f},
+		{0, 0.752f, 0},
+		{0.752f, 0.752f, 0},
+		{0, 0.752f, 0.752f},
+		{0.752f, 0, 0.752f},
+	};
+
+	if ( cg_disableRGBA.integer ) {
+		VectorSet( c, 0, 0, 0 );
+		return;
+	}
+
+	if ( team < 0 || team >= TEAM_NUM_TEAMS ) {
+		VectorSet( c, 0, 0, 0 );
+		CG_Printf( S_COLOR_YELLOW "Warning: invalid team for color (team=%i) (source=%s)\n", team, source[0] ? source : "" );
+		return;
+	}
+
+	VectorCopy( col[team], c );
+}
 
 
 /*
@@ -1057,45 +1135,45 @@ Return colorized name of player with white text escape at end. Easy way to add c
 ==================
 */
 char* CG_PlayerName( playerInfo_t *p, const qboolean clanTag ) {
-	return va( "%s%s", p->name, S_COLOR_WHITE );
+	return va( "%s%s", p->name, S_COLOR_CREAM );
 }
 
 
 /*
 ==================
-CG_GetIconName
+CG_GetIconHandle
 
 ==================
 */
-#if 0
-char* CG_GetIconName( char* in ) {
-	if ( !cg_highResImages.integer ) return in;
+qhandle_t CG_GetIconHandle( char* in ) {
+	qhandle_t hin = trap_R_RegisterShaderNoMip( in );
+
+	if ( !cg_highResIcons.integer ) return hin;
 	{
-		if ( cg_highResImages.integer > 0 ) {
-			char* name = va( "%s_%i", in, (1 << (cg_highResImages.integer + 5)) );
-			return trap_R_RegisterShader_Ext( name, qfalse, qtrue ) ? name : in;
+		if ( cg_highResIcons.integer > 0 ) {
+			qhandle_t hicon = trap_R_RegisterShaderNoMip( va( "%s_%i", in, (1 << (cg_highResIcons.integer + 5)) ) );
+			//CG_Printf( "GetIconName: iconImageSize=%i\n", cg.iconImageSize );
+			return hicon ? hicon : hin;
 		} else {
-			char* name = va( "%s%s", in, cg.iconImageSize ? va( "_%i", cg.iconImageSize ) : "" );
-			return trap_R_RegisterShader_Ext( name, qfalse, qtrue ) ? name : in;
+			qhandle_t hicon = trap_R_RegisterShaderNoMip( va( "%s%s", in, cg.iconImageSize ? va( "_%i", cg.iconImageSize ) : "" ) );
+			//CG_Printf( "GetIconName: iconImageSize=%i\n", cg.iconImageSize );
+			return hicon ? hicon : hin;
 		}
 	}
+
 }
 
-qhandle_t RegisterSimpleShader( const char* name ) {
-	return trap_R_RegisterShader_Ext( CG_GetIconName( (char*)name ), qfalse, qtrue );
-}
 
-qhandle_t RegisterSimpleShaderFB( const char* in, const char* fallback, const int multiplier ) {
-	if ( !cg_highResImages.integer ) return trap_R_RegisterShader_Ext( fallback, qfalse, qtrue );
-	{
-		if ( cg_highResImages.integer > 0 ) {
-			char* name = va( "%s_%i", in, (1 << (cg_highResImages.integer + 5 + (multiplier - 1))) );
-			//return trap_R_RegisterShader_Ext( CG_GetIconName((char*)name), qfalse, qtrue );
-			return trap_R_RegisterShader_Ext( name, qfalse, qtrue );
-		} else {
-			char* name = va( "%s%s", in, cg.iconImageSize ? va( "_%i", cg.iconImageSize * multiplier ) : "" );
-			return trap_R_RegisterShader_Ext( name, qfalse, qtrue );
-		}
-	}
+/*
+==================
+IsValidTeam
+
+Checks team index is valid
+==================
+*/
+qboolean CG_IsValidTeam( const team_t team ) {
+	if ( team < FIRST_TEAM ) return qfalse;
+	//if ( team >= TEAM_NUM_TEAMS ) return qfalse;
+	if ( team > cgs.numTeams ) return qfalse;
+	return qtrue;
 }
-#endif

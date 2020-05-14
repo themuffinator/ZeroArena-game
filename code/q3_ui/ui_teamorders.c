@@ -329,7 +329,7 @@ static void UI_TeamOrdersMenu_BuildBotList( void ) {
 	teamOrdersMenuInfo.numBots = 1;
 
 	trap_GetConfigString( CS_SERVERINFO, info, sizeof(info) );
-	numPlayers = atoi( Info_ValueForKey( info, "sv_maxclients" ) );
+	numPlayers = atoi( Info_ValueForKey( info, "sv_maxClients" ) );
 	teamOrdersMenuInfo.gametype = UI_RetrieveGametypeNumFromInfo( info );
 
 	trap_GetConfigString( CS_PLAYERS + cg.localPlayers[0].playerNum, info, MAX_INFO_STRING );

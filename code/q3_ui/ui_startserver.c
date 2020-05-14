@@ -96,6 +96,20 @@ typedef struct {
 
 static startserver_t s_startserver;
 
+static const char* gametype_items[] = {
+	"Free For All",
+	"Duel",
+	"Team Deathmatch",
+	"Capture The Flag",
+	"One Flag CTF",
+	"Overload",
+	"Harvester",
+	NULL
+};
+
+static int gametype_remap[] = { GT_FFA, GT_DUEL, GT_TEAM, GT_CTF, GT_1FCTF, GT_OVERLOAD, GT_HARVESTER };
+static int gametype_remap2[] = { 0, 2, 0, 1, 3, 0, 0, 0 };
+
 static void UI_ServerOptionsMenu( qboolean multiplayer );
 
 
@@ -119,9 +133,9 @@ static int GametypeBits( char* string ) {
 		}
 
 		for ( i = 0; i < GT_MAX_GAME_TYPE; i++ ) {
-			if ( Q_stricmp( token, gt[i].gtArenaRef ) ) {
+			if ( !Q_stricmp( token, gt[i].gtArenaRef ) ) {
 				bits |= (1 << gt[i].index);
-				break;
+				continue;
 			}
 		}
 	}
@@ -151,9 +165,18 @@ static void StartServer_Update( void ) {
 		info = UI_GetArenaInfoByNumber( s_startserver.maplist[top + i] );
 		Q_strncpyz( mapname, Info_ValueForKey( info, "map" ), MAX_NAMELENGTH );
 
-		Com_sprintf( picname[i], sizeof( picname[i] ), "levelshots/%s_small", mapname );
+		Com_sprintf( picname[i], sizeof( picname[i] ), "levelshots/preview/%s", mapname );
 		if ( !trap_R_RegisterShaderNoMip( picname[i] ) ) {
 			Com_sprintf( picname[i], sizeof( picname[i] ), "levelshots/%s", mapname );
+			if ( !trap_R_RegisterShaderNoMip( picname[i] ) ) {
+				Com_sprintf( picname[i], sizeof( picname[i] ), "levelshots/%s_small", mapname );
+				if ( !trap_R_RegisterShaderNoMip( picname[i] ) ) {
+					Com_sprintf( picname[i], sizeof( picname[i] ), "levelshots/16-9/%s", mapname );
+					if ( !trap_R_RegisterShaderNoMip( picname[i] ) ) {
+						strcpy( picname[i], ART_MAP_UNKNOWN );
+					}
+				}
+			}
 		}
 
 		s_startserver.mappics[i].generic.flags &= ~QMF_HIGHLIGHT;
@@ -236,7 +259,7 @@ static void StartServer_GametypeEvent( void* ptr, int event ) {
 	//matchbits = 1 << gametype_remap[s_startserver.gametype.curvalue];
 	matchbits = (1 << gt[s_startserver.gametype.curvalue].index);
 	if ( gt[s_startserver.gametype.curvalue].index == DEFAULT_GAMETYPE ) {
-		matchbits |= (1 << GT_SINGLE_PLAYER);
+		matchbits |= (1 << GT_CAMPAIGN);
 	}
 	for ( i = 0; i < count; i++ ) {
 		info = UI_GetArenaInfoByNumber( i );
@@ -408,7 +431,7 @@ static void StartServer_MenuInit( qboolean multiplayer ) {
 	s_startserver.gametype.generic.id = ID_GAMETYPE;
 	s_startserver.gametype.generic.x = 320 - 24;
 	s_startserver.gametype.generic.y = 368;
-	//s_startserver.gametype.itemnames		= gametype_items;
+	s_startserver.gametype.itemnames		= gametype_items;
 	//s_startserver.gametype.itemnames = gt[].longName;
 
 	for ( i = 0; i < MAX_MAPSPERPAGE; i++ ) {
@@ -560,10 +583,18 @@ void StartServer_Cache( void ) {
 			info = UI_GetArenaInfoByNumber( i );
 			Q_strncpyz( mapname, Info_ValueForKey( info, "map" ), MAX_NAMELENGTH );
 
-			Com_sprintf( picname, sizeof( picname ), "levelshots/%s_small", mapname );
+			Com_sprintf( picname, sizeof( picname ), "levelshots/preview/%s", mapname );
 			if ( !trap_R_RegisterShaderNoMip( picname ) ) {
 				Com_sprintf( picname, sizeof( picname ), "levelshots/%s", mapname );
-				trap_R_RegisterShaderNoMip( picname );
+				if ( !trap_R_RegisterShaderNoMip( picname ) ) {
+					Com_sprintf( picname, sizeof( picname ), "levelshots/%s_small", mapname );
+					if ( !trap_R_RegisterShaderNoMip( picname ) ) {
+						Com_sprintf( picname, sizeof( picname ), "levelshots/16-9/%s", mapname );
+						if ( !trap_R_RegisterShaderNoMip( picname ) ) {
+							strcpy( picname, ART_MAP_UNKNOWN );
+						}
+					}
+				}
 			}
 		}
 	}
@@ -807,7 +838,7 @@ static void ServerOptions_Start( void ) {
 		break;
 	}
 
-	trap_Cvar_SetValue( "sv_maxclients", Com_Clamp( 0, 12, maxplayers ) );
+	trap_Cvar_SetValue( "sv_maxClients", Com_Clamp( 0, 12, maxplayers ) );
 	if ( s_serveroptions.multiplayer ) {
 		trap_Cvar_SetValue( "ui_publicServer", Com_Clamp( 0, 1, publicserver ) );
 		trap_Cvar_SetValue( "sv_public", Com_Clamp( 0, 1, publicserver ) );
@@ -844,7 +875,7 @@ static void ServerOptions_Start( void ) {
 	if ( dedicated == 0 && (g.gtFlags & GTF_TEAMS) ) {
 		for ( n = 0; n < UI_MaxSplitView(); ++n ) {
 			if ( n == 0 || s_serveroptions.playerType[n].curvalue == PT_HUMAN ) {
-				trap_Cvar_Set( Com_LocalPlayerCvarName( n, "teampref" ), playerTeam_list[s_serveroptions.playerTeam[n].curvalue] );
+				trap_Cvar_Set( "teamPref", playerTeam_list[s_serveroptions.playerTeam[n].curvalue] );
 			}
 		}
 	}
@@ -901,17 +932,11 @@ static void ServerOptions_InitPlayerItems( void ) {
 
 	// if not a dedicated server, first slot is reserved for the human on the server
 	if ( s_serveroptions.dedicated.curvalue == 0 ) {
-		for ( n = 0; n < UI_MaxSplitView(); n++ ) {
-			trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName( n, "name" ), s_serveroptions.playerNameBuffers[n], sizeof( s_serveroptions.playerNameBuffers[n] ) );
-			Q_CleanStr( s_serveroptions.playerNameBuffers[n] );
+		trap_Cvar_VariableStringBuffer( "name", s_serveroptions.playerNameBuffers[n], sizeof( s_serveroptions.playerNameBuffers[n] ) );
+		Q_CleanStr( s_serveroptions.playerNameBuffers[n] );
 
-			s_serveroptions.playerType[n].curvalue = PT_OPEN;
-
-			if ( n == 0 ) {
-				// human
-				s_serveroptions.playerType[n].generic.flags |= QMF_INACTIVE;
-			}
-		}
+		s_serveroptions.playerType[0].curvalue = PT_OPEN;
+		s_serveroptions.playerType[0].generic.flags |= QMF_INACTIVE;
 	}
 
 	// init teams
@@ -1268,9 +1293,18 @@ static void ServerOptions_SetMenuItems( void ) {
 	info = UI_GetArenaInfoByNumber( s_startserver.maplist[s_startserver.currentmap] );
 	Q_strncpyz( mapname, Info_ValueForKey( info, "map" ), MAX_NAMELENGTH );
 
-	Com_sprintf( picname, sizeof( picname ), "levelshots/%s_small", mapname );
+	Com_sprintf( picname, sizeof( picname ), "levelshots/preview/%s", mapname );
 	if ( !trap_R_RegisterShaderNoMip( picname ) ) {
 		Com_sprintf( picname, sizeof( picname ), "levelshots/%s", mapname );
+		if ( !trap_R_RegisterShaderNoMip( picname ) ) {
+			Com_sprintf( picname, sizeof( picname ), "levelshots/%s_small", mapname );
+			if ( !trap_R_RegisterShaderNoMip( picname ) ) {
+				Com_sprintf( picname, sizeof( picname ), "levelshots/16-9/%s", mapname );
+				if ( !trap_R_RegisterShaderNoMip( picname ) ) {
+					strcpy( picname, ART_MAP_UNKNOWN );
+				}
+			}
+		}
 	}
 	s_serveroptions.mappic.generic.name = picname;
 

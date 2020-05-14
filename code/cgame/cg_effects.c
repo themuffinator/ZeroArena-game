@@ -431,7 +431,7 @@ void CG_ObeliskExplode( vec3_t org, int entityNum ) {
 	le = CG_MakeExplosion( origin, vec3_origin,
 						   cgs.media.dishFlashModel,
 						   cgs.media.rocketExplosionShader,
-						   600, qtrue );
+						   600, 24, qtrue );
 	le->light = 300;
 	le->lightColor[0] = 1;
 	le->lightColor[1] = 0.75;
@@ -519,7 +519,7 @@ CG_MakeExplosion
 */
 localEntity_t *CG_MakeExplosion( vec3_t origin, vec3_t dir, 
 								qhandle_t hModel, qhandle_t shader,
-								int msec, qboolean isSprite ) {
+								int msec, float size, qboolean isSprite ) {
 	float			ang;
 	localEntity_t	*ex;
 	int				offset;
@@ -538,7 +538,7 @@ localEntity_t *CG_MakeExplosion( vec3_t origin, vec3_t dir,
 
 		// randomly rotate sprite orientation
 		ex->refEntity.rotation = rand() % 360;
-		VectorScale( dir, 16, tmpVec );
+		VectorScale( dir, size ? size : 16, tmpVec );
 		VectorAdd( tmpVec, origin, newOrigin );
 	} else {
 		ex->leType = LE_EXPLOSION;
@@ -770,30 +770,30 @@ void CG_BigExplode( vec3_t playerOrigin ) {
 	velocity[0] = crandom()*EXP_VELOCITY;
 	velocity[1] = crandom()*EXP_VELOCITY;
 	velocity[2] = EXP_JUMP + crandom()*EXP_VELOCITY;
-	CG_LaunchExplode( origin, velocity, cgs.media.smoke2 );
+	CG_LaunchExplode( origin, velocity, cgs.media.shotgunBrassModel );
 
 	VectorCopy( playerOrigin, origin );
 	velocity[0] = crandom()*EXP_VELOCITY;
 	velocity[1] = crandom()*EXP_VELOCITY;
 	velocity[2] = EXP_JUMP + crandom()*EXP_VELOCITY;
-	CG_LaunchExplode( origin, velocity, cgs.media.smoke2 );
+	CG_LaunchExplode( origin, velocity, cgs.media.shotgunBrassModel );
 
 	VectorCopy( playerOrigin, origin );
 	velocity[0] = crandom()*EXP_VELOCITY*1.5;
 	velocity[1] = crandom()*EXP_VELOCITY*1.5;
 	velocity[2] = EXP_JUMP + crandom()*EXP_VELOCITY;
-	CG_LaunchExplode( origin, velocity, cgs.media.smoke2 );
+	CG_LaunchExplode( origin, velocity, cgs.media.shotgunBrassModel );
 
 	VectorCopy( playerOrigin, origin );
 	velocity[0] = crandom()*EXP_VELOCITY*2.0;
 	velocity[1] = crandom()*EXP_VELOCITY*2.0;
 	velocity[2] = EXP_JUMP + crandom()*EXP_VELOCITY;
-	CG_LaunchExplode( origin, velocity, cgs.media.smoke2 );
+	CG_LaunchExplode( origin, velocity, cgs.media.shotgunBrassModel );
 
 	VectorCopy( playerOrigin, origin );
 	velocity[0] = crandom()*EXP_VELOCITY*2.5;
 	velocity[1] = crandom()*EXP_VELOCITY*2.5;
 	velocity[2] = EXP_JUMP + crandom()*EXP_VELOCITY;
-	CG_LaunchExplode( origin, velocity, cgs.media.smoke2 );
+	CG_LaunchExplode( origin, velocity, cgs.media.shotgunBrassModel );
 }
 

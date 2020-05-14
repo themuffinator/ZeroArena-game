@@ -259,6 +259,12 @@ static const char *teamNames1[] = {
 static const char *teamNames2[] = {
 	"Red",
 	"Blue",
+#if 0
+	"Green",
+	"Yellow",
+	"Teal",
+	"Pink",
+#endif
 	NULL
 };
 
@@ -269,7 +275,7 @@ static void UI_AddBotsMenu_Init( void ) {
 	int		count;
 	char	info[MAX_INFO_STRING];
 
-	trap_GetConfigString(CS_SERVERINFO, info, MAX_INFO_STRING);   
+	trap_GetConfigString(CS_SERVERINFO, info, MAX_INFO_STRING);
 	gametype = UI_RetrieveGametypeNumFromInfo( info );
 
 	memset( &addBotsMenuInfo, 0 ,sizeof(addBotsMenuInfo) );

@@ -194,7 +194,7 @@ static void UI_RemoveBotsMenu_GetBots( void ) {
 	char	info[MAX_INFO_STRING];
 
 	trap_GetConfigString( CS_SERVERINFO, info, sizeof(info) );
-	numPlayers = atoi( Info_ValueForKey( info, "sv_maxclients" ) );
+	numPlayers = atoi( Info_ValueForKey( info, "sv_maxClients" ) );
 	removeBotsMenuInfo.numBots = 0;
 
 	for( n = 0; n < numPlayers; n++ ) {

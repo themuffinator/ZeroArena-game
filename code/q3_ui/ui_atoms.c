@@ -44,7 +44,7 @@ UI_MaxSplitView
 =================
 */
 int UI_MaxSplitView(void) {
-	return uis.maxSplitView;
+	return uis.maxSplitView = 1;	//muff TODO: get rid of split screen gameplay
 }
 
 /*
@@ -630,7 +630,7 @@ UI_DrawStrlen
 */
 float UI_DrawStrlen( const char *str, int style )
 {
-	return CG_DrawStrlenCommon( str, style, UI_FontForStyle( style ), 0 );
+	return CG_DrawStrlenCommon( str, style, UI_FontForStyle( style ), 0, 0 );
 }
 
 /*
@@ -867,8 +867,10 @@ consoleCommand_t	ui_commands[] = {
 	{ "iamamonkey", UI_SPUnlockMedals_f, 0 },
 	{ "levelselect", UI_SPLevelMenu_f, 0 },
 	{ "postgame", UI_SPPostgameMenu_f, CMD_INGAME },
+#if 0
 	{ "spdevmap", UI_SPMap_f, 0 },
 	{ "spmap", UI_SPMap_f, 0 },
+#endif
 	{ "ui_cache", UI_Cache_f, 0 },
 	{ "ui_cinematics", UI_CinematicsMenu_f, 0 },
 	{ "ui_teamOrders", UI_TeamOrdersMenu_f, CMD_INGAME }

@@ -361,7 +361,14 @@ qhandle_t trap_R_RegisterShader( const char *name ) {
 qhandle_t trap_R_RegisterShaderNoMip( const char *name ) {
 	return syscall( CG_R_REGISTERSHADERNOMIP, name );
 }
-
+//muff
+#if 0
+qhandle_t trap_R_RegisterShader_Ext( const char* name, const qboolean mipRawImage, const qboolean forceAlphaBlend ) {
+	//return syscall( CG_R_REGISTERSHADER_EXT, name, mipRawImage, forceAlphaBlend );
+	return syscall( CG_R_REGISTERSHADERNOMIP, name );
+}
+#endif
+//-muff
 void trap_R_RegisterFont(const char *fontName, int pointSize, float borderWidth, qboolean forceAutoHint, fontInfo_t *font) {
 	syscall( CG_R_REGISTERFONT, fontName, pointSize, PASSFLOAT( borderWidth ), forceAutoHint, font, sizeof ( fontInfo_t ) );
 }

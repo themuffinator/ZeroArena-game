@@ -200,13 +200,16 @@ Multiple identical looping sounds will just increase volume without any speed co
 "random"	wait variance, default is 0
 */
 void Use_Target_Speaker (gentity_t *ent, gentity_t *other, gentity_t *activator) {
+	if ( ent->volume ) {
+		//TODO
+	}
 	if (ent->spawnflags & 3) {	// looping sound toggles
 		if (ent->s.loopSound)
 			ent->s.loopSound = 0;	// turn it off
 		else
 			ent->s.loopSound = ent->noise_index;	// start it
 	}else {	// normal sound
-		if ( ent->spawnflags & 8 ) {
+		if ( ent->spawnflags & 8 || ent->attenuation < 0 ) {
 			G_AddEvent( activator, EV_GENERAL_SOUND, ent->noise_index );
 		} else if (ent->spawnflags & 4) {
 			G_AddEvent( ent, EV_GLOBAL_SOUND, ent->noise_index );
@@ -270,7 +273,7 @@ void SP_target_speaker( gentity_t *ent ) {
 
 	ent->use = Use_Target_Speaker;
 
-	if (ent->spawnflags & 4) {
+	if ( ent->spawnflags & 4 || ent->attenuation < 0 ) {
 		ent->r.svFlags |= SVF_BROADCAST;
 	}
 
@@ -342,9 +345,8 @@ void target_laser_think (gentity_t *self) {
 
 	if ( tr.entityNum != ENTITYNUM_NONE && g_entities[tr.entityNum].takedamage ) {
 		// hurt it if we can
-		G_Damage ( &g_entities[tr.entityNum], self, self->activator, self->movedir, 
-			tr.endpos, self->damage, DAMAGE_NO_KNOCKBACK, MOD_TARGET_LASER);
-		//G_Printf( "laser: entnum = %i, dmg = %i\n", tr.entityNum, self->damage );
+		G_Damage( &g_entities[tr.entityNum], self, self->activator, self->movedir, tr.endpos, self->damage,
+			DAMAGE_NO_KNOCKBACK | DAMAGE_ENERGY, MOD_TARGET_LASER, 0 );
 	}
 
 	VectorCopy (tr.endpos, self->s.origin2);
@@ -520,7 +522,7 @@ void SP_target_relay (gentity_t *self) {
 Kills the activator.
 */
 void target_kill_use( gentity_t *self, gentity_t *other, gentity_t *activator ) {
-	G_Damage ( activator, NULL, NULL, NULL, NULL, 100000, DAMAGE_NO_PROTECTION, MOD_TELEFRAG);
+	G_Damage( activator, NULL, NULL, NULL, NULL, 100000, DAMAGE_NO_PROTECTION, MOD_TELEFRAG, 0 );
 }
 
 void SP_target_kill( gentity_t *self ) {
@@ -573,10 +575,13 @@ Closest target_location in sight used for the location, if none
 in site, closest in distance
 */
 void SP_target_location( gentity_t *self ){
-	self->think = target_location_linkup;
-	self->nextthink = level.time + 200;  // Let them all spawn first
-
-	G_SetOrigin( self, self->s.origin );
+	if ( GTF( GTF_TEAMS ) ) {	//muff: only needed in team modes
+		self->think = target_location_linkup;
+		self->nextthink = level.time + 200;  // Let them all spawn first
+		G_SetOrigin( self, self->s.origin );
+	} else {
+		G_FreeEntity( self );
+	}
 }
 
 //q2

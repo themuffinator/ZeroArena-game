@@ -72,6 +72,10 @@ void CG_CheckAmmo( void ) {
 			total += cg.cur_ps->ammo[i] * 200;
 			break;
 		}
+		if ( cg.cur_ps->ammo[i] == AMMO_INFINITE ) {
+			cg.cur_lc->lowAmmoWarning = 0;
+			return;
+		}
 		if ( total >= 5000 ) {
 			cg.cur_lc->lowAmmoWarning = 0;
 			return;
@@ -424,6 +428,12 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 		reward = qtrue;
 		//Com_Printf("assist\n");
 	}
+	if ( ps->persistant[PERS_HOLYSHIT_COUNT] != ops->persistant[PERS_HOLYSHIT_COUNT] ) {
+		sfx = cgs.media.holyShitSound;
+		pushReward( sfx, cgs.media.medalHolyShit, ps->persistant[PERS_HOLYSHIT_COUNT] );
+		reward = qtrue;
+		//Com_Printf("holy shit\n");
+	}
 	// if any of the player event bits changed
 	if (ps->persistant[PERS_PLAYEREVENTS] != ops->persistant[PERS_PLAYEREVENTS]) {
 		if ((ps->persistant[PERS_PLAYEREVENTS] & PLAYEREVENT_DENIEDREWARD) !=
@@ -596,8 +606,14 @@ void CG_TransitionPlayerState( playerState_t *ps, playerState_t *ops ) {
 
 	// smooth the ducking viewheight change
 	if ( ps->viewheight != ops->viewheight ) {
-		cg.cur_lc->duckChange = ps->viewheight - ops->viewheight;
-		cg.cur_lc->duckTime = cg.time;
+		if ( ps->pm_flags & PMF_RESPAWNED ) {
+			//muff: if just respawned do no transition. avoids awkward spec to player transition
+			cg.cur_lc->duckChange = 0;
+			cg.cur_lc->duckTime = 0;
+		} else {
+			cg.cur_lc->duckChange = ps->viewheight - ops->viewheight;
+			cg.cur_lc->duckTime = cg.time;
+		}
 	}
 }
 

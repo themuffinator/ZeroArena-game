@@ -660,7 +660,7 @@ void G_KillBox( gentity_t* ent ) {
 
 		// nail it
 		G_Damage( hit, ent, ent, NULL, NULL,
-			100000, DAMAGE_NO_PROTECTION, MOD_TELEFRAG );
+			100000, DAMAGE_NO_PROTECTION, MOD_TELEFRAG, 0 );
 	}
 
 }
@@ -930,4 +930,106 @@ Return colorized name of player with white text escape at end. Easy way to add c
 */
 char* PlayerName( playerPersistant_t p ) {
 	return va( "%s%s", p.netname, S_COLOR_CREAM );	// S_COLOR_WHITE );
+}
+
+
+/*
+==================
+G_WeaponsTotalAccuracy
+
+Return accuracy percentage of all weapons
+==================
+*/
+int G_WeaponsTotalAccuracy( gplayer_t* cl ) {
+	return 0;
+#if 0
+	int i, num, accuracy;
+
+	accuracy = num = 0;
+	for ( i = WP_MACHINEGUN; i < WP_NUM_WEAPONS; i++ ) {
+		if ( i == WP_GRAPPLING_HOOK ) continue;
+
+		if ( cl->statsWeaponShots[i] ) {
+			accuracy += cl->statsWeaponHits[i] * 100 / cl->statsWeaponShots[i];
+			num++;
+		}
+	}
+	
+	return ( accuracy /= num );
+#endif
+}
+
+
+/*
+==================
+G_ClearMedals
+
+==================
+*/
+void G_ClearMedals( playerState_t* ps ) {
+	ps->eFlags &= ~(EF_AWARD_IMPRESSIVE | EF_AWARD_EXCELLENT | EF_AWARD_GAUNTLET | EF_AWARD_ASSIST | EF_AWARD_DEFEND | EF_AWARD_CAP | EF_AWARD_HOLYSHIT);
+}
+
+
+/*
+==================
+G_DropEntityToFloor
+
+==================
+*/
+void G_DropEntityToFloor( gentity_t* ent ) {
+	trace_t		tr;
+	vec3_t		dest;
+
+	// drop to floor
+	VectorSet( dest, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2] - 4096 );
+	trap_Trace( &tr, ent->s.origin, ent->s.mins, ent->s.maxs, dest, ent->s.number, MASK_SOLID );
+	if ( tr.startsolid ) {
+		G_Printf( "G_DropEntityToFloor: %s startsolid at %s\n", ent->classname, vtos( ent->s.origin ) );
+		G_FreeEntity( ent );
+		return;
+	}
+
+	// allow to ride movers
+	ent->s.groundEntityNum = tr.entityNum;
+
+	G_SetOrigin( ent, tr.endpos );
+}
+
+
+/*
+==================
+replace
+Replace substrings in a string. Source: Netocrat from bytes.com
+==================
+*/
+char* replace( const char* s, const char* old, const char* new ) {
+	char* ret;
+	int 	i, count = 0;
+
+	size_t newlen = strlen( new );
+	size_t oldlen = strlen( old );
+
+	for ( i = 0; s[i] != '\0'; i++ ) {
+		if ( strstr( &s[i], old ) == &s[i] ) {
+			count++;
+			i += oldlen - 1;
+		}
+	}
+
+	ret = trap_HeapMalloc( i + 1 + count * (newlen - oldlen) );
+	if ( ret == NULL ) return "";
+
+	i = 0;
+	while ( *s ) {
+		if ( strstr( s, old ) == s ) {
+			strcpy( &ret[i], new );
+			i += newlen;
+			s += oldlen;
+		} else
+			ret[i++] = *s++;
+	}
+	ret[i] = '\0';
+
+	return ret;
 }

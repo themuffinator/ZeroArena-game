@@ -129,6 +129,12 @@ field_t fields[] = {
 //q2
 	{"delay", FOFS( delay ), F_FLOAT},
 	{"killtarget", FOFS( killtarget ), F_STRING},
+	{"pathtarget", FOFS( pathtarget ), F_STRING},
+
+	{"item", FOFS( sitem ), F_STRING},
+
+	{"volume", FOFS( delay ), F_FLOAT},
+	{"attenuation", FOFS( delay ), F_INT},
 //-q2
 	{NULL}
 };
@@ -141,6 +147,7 @@ typedef struct {
 
 void SP_info_player_start (gentity_t *ent);
 void SP_info_player_deathmatch (gentity_t *ent);
+void SP_info_player_coop ( gentity_t* ent );
 void SP_info_player_intermission (gentity_t *ent);
 
 void SP_func_plat (gentity_t *ent);
@@ -235,6 +242,7 @@ spawn_t	spawns[] = {
 	// information for things controlled by other processes
 	{"info_player_start", SP_info_player_start},
 	{"info_player_deathmatch", SP_info_player_deathmatch},
+	{"info_player_coop", SP_info_player_coop},
 	{"info_player_intermission", SP_info_player_intermission},
 	{"info_null", SP_info_null},
 	{"info_notnull", SP_info_notnull},		// use target_position instead
@@ -363,6 +371,15 @@ qboolean G_CallSpawn( gentity_t *ent ) {
 		if ( !strcmp(item->classname, ent->classname) ) {
 			if ( g_instaGib.integer && item->giType != IT_TEAM ) {
 				// only spawn team play items in instagib mode
+				return qfalse;
+			}
+			if ( gt[g_gameType.integer].disableItems & (1 << item->giType) ) {
+				return qfalse;
+			}
+			if ( GTF( GTF_BASEOB ) && item->giType == IT_TEAM && item->giTag != PW_NEUTRALFLAG ) {
+				return qfalse;
+			}
+			if ( GTF( GTF_NEUTOB ) && item->giType == IT_TEAM && item->giTag == PW_NEUTRALFLAG ) {
 				return qfalse;
 			}
 			G_SpawnItem( ent, item );
@@ -499,18 +516,28 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 	spawnInfo.spawnString = G_SpawnString;
 
 	// check "notsingle", "notfree", "notteam", etc
-	if ( !BG_CheckSpawnEntity( &spawnInfo ) ) {
+	if ( !BG_CheckSpawnEntity( &spawnInfo, g_singlePlayerActive.integer ) ) {
 		ADJUST_AREAPORTAL();
 		G_FreeEntity( ent );
 		return;
 	}
 //muff q2
-	if (g_gameType.integer != GT_SINGLE_PLAYER && !Q_stricmpn(ent->classname, "monster_", 8)) {
-		ADJUST_AREAPORTAL();
+	if ( !GTF( GTF_CAMPAIGN ) && !Q_stricmpn(ent->classname, "monster_", 8) ) {
 		G_FreeEntity(ent);
 		return;
 	}
 //-muff
+	if ( !strcmp( ent->item->classname, "item_armor_green" ) ) {
+		strcpy( ent->item->classname, "item_armor_jacket" );
+	} else if ( !strcmp( ent->item->classname, "item_scout" ) ) {
+		strcpy( ent->item->classname, "rune_scout" );
+	} else if ( !strcmp( ent->item->classname, "item_guard" ) ) {
+		strcpy( ent->item->classname, "rune_resistance" );
+	} else if ( !strcmp( ent->item->classname, "item_doubler" ) ) {
+		strcpy( ent->item->classname, "rune_strength" );
+	} else if ( !strcmp( ent->item->classname, "item_ammoregen" ) ) {
+		strcpy( ent->item->classname, "rune_armament" );
+	}
 
 	// move editor origin to pos
 	VectorCopy( ent->s.origin, ent->s.pos.trBase );
@@ -665,7 +692,7 @@ void SP_worldspawn( void ) {
 	if ( g_restarted.integer ) {
 		trap_Cvar_SetValue( "g_restarted", 0 );
 		level.warmupTime = 0;
-	} else if ( g_doWarmup.integer && g_gameType.integer > GT_SINGLE_PLAYER ) { // Turn it on
+	} else if ( g_doWarmup.integer && !GTF( GTF_CAMPAIGN ) && !g_singlePlayerActive.integer ) { // Turn it on
 		level.warmupTime = -1;
 		trap_SetConfigstring( CS_WARMUP, va("%i", level.warmupTime) );
 		G_LogPrintf( "Warmup:\n" );

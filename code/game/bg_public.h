@@ -63,7 +63,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define	DEFAULT_GRAVITY		800
 #define	GIB_HEALTH			-60	//-40
 #define	ARMOR_PROTECTION	0.66
-#define AMMO_INFINITE		-1
+#define AMMO_INFINITE		999
 
 #define	MAX_LOCATIONS		64
 
@@ -112,6 +112,8 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define OBELISK_TARGET_HEIGHT	56
 
 #define MAX_DLIGHT_CONFIGSTRINGS 128
+
+#define GRENADE_FUSE_TIME	2500
 
 //muff: q2 compatibility
 #define	SPAWNFLAG_NOT_EASY			0x00000100
@@ -195,7 +197,7 @@ typedef enum {
 } warmupStates_t;
 
 typedef enum {
-	GT_SINGLE_PLAYER,	// single player
+	GT_CAMPAIGN,	// single player
 	GT_FFA,				// free for all
 	GT_DUEL,		// one on one tournament
 
@@ -247,6 +249,8 @@ typedef struct bggametypes_s {
 	int			gtFlags;		// enable specific gametype characteristics
 	int			elimLives;		// enables elimination, sets number of lives to give players
 	gtLimit_t	gtGoal;			// primary method for winning the game
+
+	int			disableItems;	// flags to disable IT_* types
 } bggametypes_t;
 extern bggametypes_t gt[GT_MAX_GAME_TYPE];
 
@@ -339,7 +343,10 @@ typedef struct entityState_s {
 	int		team;
 
 	int		density;            // for particle effects
-
+#if 0
+	int		clientNum;
+	int		spawnTime;
+#endif
 	// for players
 	int		powerups;		// bit flags
 	int		weapon;			// determines weapon and flash model, etc
@@ -355,8 +362,10 @@ typedef struct entityState_s {
 // array limits (engine will only network arrays <= 1024 elements)
 #define	MAX_STATS				16
 #define	MAX_PERSISTANT			16
+#define MAX_UNLOCK_KEYS			16
 #define	MAX_POWERUPS			32		//16 // entityState_t::powerups bit field limits this to <= 32.
 #define	MAX_WEAPONS				(1<<WEAPONNUM_BITS) // playerState_t::stats[STAT_WEAPONS] bit field limits this to <= 16.
+
 
 //#define MAX_CARRIED_SKULLS		16
 
@@ -457,6 +466,7 @@ typedef struct playerState_s {
 	//int			persistant[MAX_PERSISTANT];	// stats that aren't cleared on death
 	int			powerups[MAX_POWERUPS];	// level.time that the powerup runs out
 	int			ammo[MAX_WEAPONS];
+	int			keys[MAX_UNLOCK_KEYS];
 
 	int			skulls;			// harvester skulls
 	//int			skull[MAX_CARRIED_SKULLS];		//harvester skull slots - set to team of each, to replace token
@@ -589,6 +599,11 @@ typedef struct {
 	int			pmove_fixed;
 	int			pmove_msec;
 
+	// q2 physics dev cvars
+	qboolean	pmove_q2;
+	qboolean	pmove_q2slide;
+	qboolean	pmove_q2air;
+
 	// callbacks to test the world
 	// these will be different functions during game and cgame
 	void		(*trace)( trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentMask );
@@ -597,7 +612,7 @@ typedef struct {
 
 // if a full pmove isn't done on the client, you can just update the angles
 void PM_UpdateViewAngles( playerState_t *ps, const usercmd_t *cmd );
-void Pmove( pmove_t *pmove, const int dmFlags );
+void Pmove( pmove_t *pmove, const int dmFlags, const int warmupState );
 
 //===================================================================================
 
@@ -613,9 +628,8 @@ typedef enum {
 	STAT_DEAD_YAW,					// look this direction when dead (FIXME: get rid of?)
 	STAT_MAX_HEALTH,				// health / armor limit, changeable by handicap
 	STAT_CLIENTS_READY,
-//#ifdef MISSIONPACK
-	STAT_PERSISTANT_POWERUP
-//#endif
+	STAT_PARMOR_ACTIVE,
+	STAT_RUNE
 } statIndex_t;
 
 
@@ -628,7 +642,6 @@ typedef enum {
 	PERS_HITS,						// total points damage inflicted so damage beeps can sound on change
 	PERS_RANK,						// player rank or team rank
 	PERS_TEAM,						// player team
-	PERS_PLAYSTATE,					// playing state for client - spectating, free or in a team
 	PERS_SPAWN_COUNT,				// incremented every respawn
 	PERS_PLAYEREVENTS,				// 16 bits that can be flipped for events
 	PERS_ATTACKER,					// playerNum of last damage inflicter
@@ -640,7 +653,8 @@ typedef enum {
 	PERS_DEFEND_COUNT,				// defend awards
 	PERS_ASSIST_COUNT,				// assist awards
 	PERS_GAUNTLET_FRAG_COUNT,		// kills with the guantlet
-	PERS_CAPTURES					// captures
+	PERS_CAPTURES,					// captures
+	PERS_HOLYSHIT_COUNT				// holy shit awards
 } persEnum_t;
 
 
@@ -672,6 +686,8 @@ typedef enum {
 
 #define EF_GIBBED			0x00100000		// player has been gibbed, client only renders player if com_blood or cg_gibs is 0
 
+#define EF_AWARD_HOLYSHIT	0x00200000		// holy shit reward
+
 // NOTE: may not have more than MAX_POWERUPS
 typedef enum {
 	PW_NONE,
@@ -682,6 +698,12 @@ typedef enum {
 	PW_INVIS,
 	PW_REGEN,
 	PW_FLIGHT,
+	PW_VAMPIRE,
+	PW_INVULN,
+	PW_BREATHER,	// set as last true 'powerup' in list, anything after is unconventional
+
+	PW_PSCREEN,
+	PW_PSHIELD,
 	// team items arranged by team index, do not change
 	PW_NEUTRALFLAG,
 	PW_REDFLAG,
@@ -692,14 +714,41 @@ typedef enum {
 	PW_PINKFLAG,
 
 	PW_SCOUT,
-	PW_GUARD,
-	PW_DOUBLER,
-	PW_AMMOREGEN,
-	PW_INVULNERABILITY,
+	PW_RESISTANCE,
+	PW_STRENGTH,
+	PW_ARMAMENT,
+	PW_TENACITY,
+	PW_PARASITE,
 
+	PW_INVULNERABILITY,
 	PW_NUM_POWERUPS
 
 } powerup_t;
+
+typedef enum {
+	MI_ANCIENT,
+	MI_ADREN,
+	MI_BANDO,
+	MI_APACK,
+
+	MI_NUM_INSTANT
+} miscInstant_t;
+
+typedef enum {
+	UKEY_BLUE,
+	UKEY_RED,
+	UKEY_GOLD,
+	UKEY_SILVER,
+	UKEY_POWER,
+	UKEY_DATACD,
+	UKEY_DATASPINNER,
+	UKEY_PYRAMID,
+	UKEY_PASS,
+	UKEY_AIRSTRIKE,
+	UKEY_CHEAD,
+
+	UKEY_NUM_KEYS
+} unlockKeys_t;
 
 //multiteam index
 #define PW_FLAGS_INDEX PW_NEUTRALFLAG
@@ -712,6 +761,9 @@ typedef enum {
 	HI_KAMIKAZE,
 	HI_PORTAL,
 	HI_INVULNERABILITY,
+
+	HI_PSCREEN,
+	HI_PSHIELD,
 
 	HI_NUM_HOLDABLE
 } holdable_t;
@@ -859,6 +911,16 @@ typedef enum {
 	EV_POWERUP_QUAD,
 	EV_POWERUP_BATTLESUIT,
 	EV_POWERUP_REGEN,
+	EV_POWERUP_INVULN,
+	EV_POWERUP_VAMPIRE,
+
+	EV_PARMOR_SCREEN,
+	EV_PARMOR_SHIELD,
+
+	EV_PARMOR_SCREEN_ON,
+	EV_PARMOR_SCREEN_OFF,
+	EV_PARMOR_SHIELD_ON,
+	EV_PARMOR_SHIELD_OFF,
 
 	EV_SCOREPLUM,			// score plum
 
@@ -872,7 +934,9 @@ typedef enum {
 	EV_JUICED,				// invulnerability juiced effect
 	EV_LIGHTNINGBOLT,		// lightning bolt bounced of invulnerability sphere
 //#endif
-
+//muff
+	EV_REGISTER_ITEM,
+//-muff
 	EV_DEBUG_LINE,
 	EV_STOPLOOPINGSOUND,
 	EV_TAUNT,
@@ -1116,6 +1180,7 @@ typedef enum {
 	MOD_TARGET_LASER,
 	MOD_TRIGGER_HURT,
 	MOD_BLASTER,
+	MOD_TREASON,
 #ifdef MISSIONPACK
 	MOD_KAMIKAZE,
 	MOD_JUICED,
@@ -1123,6 +1188,16 @@ typedef enum {
 	MOD_SUICIDE_TEAM_CHANGE
 } meansOfDeath_t;
 
+
+// damage flags
+#define DAMAGE_RADIUS				0x00000001	// damage was indirect
+#define DAMAGE_NO_ARMOR				0x00000002	// armour does not protect from this damage
+#define DAMAGE_NO_KNOCKBACK			0x00000004	// do not affect velocity, just view angles
+#define DAMAGE_NO_PROTECTION		0x00000008  // armor, shields, invulnerability, and godmode have no effect
+#ifdef MISSIONPACK
+#define DAMAGE_NO_TEAM_PROTECTION	0x00000010  // armor, shields, invulnerability, and godmode have no effect
+#endif
+#define DAMAGE_ENERGY				0x00000010	// high energy damage (ie: plasma, bfg)
 
 //---------------------------------------------------------
 typedef struct gitem_health_s {
@@ -1134,9 +1209,10 @@ extern	gitem_health_t bghealth[3][HEALTH_NUM];
 
 //muff: tiered armor
 typedef enum {
-	ARR_NONE,
+	ARR_ZERO,
 	ARR_QW,
 	ARR_Q2,
+	ARR_Q3,
 	ARR_COUNT
 } armorRules_t;
 
@@ -1148,14 +1224,49 @@ typedef struct gitem_armor_s {
 	float	energy_protection;
 } gitem_armor_t;
 extern	gitem_armor_t	bgarmor[ARR_COUNT][ARMOR_NUM];
+
+typedef enum {
+	WPR_ZERO,
+	WPR_GEN1,
+	WPR_GEN2,
+	WPR_GEN3,
+	WPR_COUNT
+} weaponRules_t;
+
+typedef struct bgammo_s {
+	int			max;
+	int			valueBox;
+	int			valueWeapon;
+	int			valueStartingWeapon;
+} bgammo_t;
+typedef struct bgweapon_s {
+	bgammo_t	am;
+	int			missileVelocity;
+	qboolean	missileGravity;
+	int			shotCount;
+	int			damage;
+	int			splashDamage;
+	int			splashRadius;
+	int			reload;
+	int			mod;
+	int			modSplash;
+	int			dmgFlags;
+} bgweapon_t;
+
+typedef struct bgWeaponRules_s {
+	int			respawnAmmoTime;
+	int			respawnWeaponTime;
+	int			respawnWeaponTDMTime;
+	qboolean	ammoDiscounting;
+	int			startingWeapons;
+
+	bgweapon_t	wp[WP_NUM_WEAPONS];
+} bgWeaponRules_t;
+extern	bgWeaponRules_t	bgWeaponRules[WPR_COUNT];
 //-muff
 
-typedef struct gitem_weapons_s {
-	int		ammoMax;
-	int		ammoBoxValue;
-	int		weaponAmmoValue;
-	int		missile_velocity;
-} gitem_weapons_t;
+extern const char* weaponNames[WP_NUM_WEAPONS];
+extern const char* weaponNamesShort[WP_NUM_WEAPONS];
 
 // gitem_t->type
 typedef enum {
@@ -1168,8 +1279,10 @@ typedef enum {
 							// EFX: rotate + external ring that rotates
 	IT_HOLDABLE,			// single use, holdable item
 							// EFX: rotate + bob
-	IT_PERSISTANT_POWERUP,
-	IT_TEAM
+	IT_MISC,				// misc instant items
+	IT_KEY,					// holdable keys
+	IT_TEAM,
+	IT_RUNE,
 } itemType_t;
 
 #define MAX_ITEM_MODELS 4
@@ -1195,15 +1308,19 @@ extern	gitem_t	bg_itemlist[];
 extern	int		bg_numItems;
 
 gitem_t	*BG_FindItem( const char *pickupName );
+gitem_t* BG_FindItemByClassname( const char* className );
+qboolean BG_ItemIsAnyFlag( const int index );
+qboolean BG_ItemIsTeamFlag( const int index );
 gitem_t	*BG_FindItemForWeapon( weapon_t weapon );
 gitem_t	*BG_FindItemForAmmo( weapon_t weapon );
 gitem_t	*BG_FindItemForPowerup( powerup_t pw );
+gitem_t* BG_FindItemForUnlockKey( unlockKeys_t key );
 gitem_t	*BG_FindItemForHoldable( holdable_t pw );
 #define	BG_NumItems() (bg_numItems)
 #define	BG_ItemForItemNum(x) (&bg_itemlist[(x)])
 #define	BG_ItemNumForItem(x) ((x)-bg_itemlist)
 
-qboolean	BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const playerState_t *ps, const int dmFlags, const int tieredArmor );
+qboolean BG_CanItemBeGrabbed( gametype_t gameType, const entityState_t* ent, const playerState_t* ps, const int dmFlags, const int armorRules, const int time, const int warmupState );
 int			BG_CarryingCapturableFlag( const playerState_t* ps, const gametype_t gametype );
 
 // g_dmFlags->integer flags
@@ -1345,6 +1462,7 @@ void	SnapVectorTowards( vec3_t v, vec3_t to );
 #define UI_NOSCALE		0x00040000 // fixed size with other UI elements, don't change it's scale
 #define UI_INMOTION		0x00080000 // use for scrolling / moving text to fix uneven scrolling caused by aligning to pixel boundary
 
+
 typedef struct
 {
   const char *name;
@@ -1363,7 +1481,7 @@ typedef struct
 
 } bgEntitySpawnInfo_t;
 
-qboolean BG_CheckSpawnEntity( const bgEntitySpawnInfo_t *info );
+qboolean BG_CheckSpawnEntity( const bgEntitySpawnInfo_t *info, const qboolean singlePlayer );
 
 
 #define MAX_MAP_SIZE 65536

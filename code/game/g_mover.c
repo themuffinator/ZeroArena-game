@@ -431,7 +431,7 @@ qboolean G_MoverPush( gentity_t *pusher, vec3_t move, vec3_t amove, gentity_t **
 
 		// bobbing entities are instant-kill and never get blocked
 		if ( pusher->s.pos.trType == TR_SINE || pusher->s.apos.trType == TR_SINE ) {
-			G_Damage( check, pusher, pusher, NULL, NULL, 99999, 0, MOD_CRUSH );
+			G_Damage( check, pusher, pusher, NULL, NULL, 99999, 0, MOD_CRUSH, 0 );
 			continue;
 		}
 
@@ -1131,7 +1131,7 @@ void Blocked_Door( gentity_t *ent, gentity_t *other ) {
 //-muff
 
 	if ( ent->damage ) {
-		G_Damage( other, ent, ent, NULL, NULL, ent->damage, 0, MOD_CRUSH );
+		G_Damage( other, ent, ent, NULL, NULL, ent->damage, 0, MOD_CRUSH, 0 );
 	}
 	if ( ent->spawnflags & DOOR_CRUSHER ) {
 		return;		// crushers don't reverse
@@ -1282,7 +1282,7 @@ void SP_func_door (gentity_t *ent) {
 
 	ent->sound1to2 = ent->sound2to1 = G_SoundIndex("sound/movers/doors/dr1_strt.wav");
 	ent->soundPos1 = ent->soundPos2 = G_SoundIndex("sound/movers/doors/dr1_end.wav");
-	ent->soundLoop = G_SoundIndex("sound/movers/doors/dr1_mid.wav");
+	ent->soundLoop = G_SoundIndex("sound/movers/doors/dr1_mid.ogg");
 
 	ent->blocked = Blocked_Door;
 
@@ -1376,7 +1376,7 @@ check either the X_AXIS or Y_AXIS box to change that.
 void SP_func_door_rotating( gentity_t *ent ) {
 	ent->sound1to2 = ent->sound2to1 = G_SoundIndex( "sound/movers/doors/dr1_strt.wav" );
 	ent->soundPos1 = ent->soundPos2 = G_SoundIndex( "sound/movers/doors/dr1_end.wav" );
-	ent->soundLoop = G_SoundIndex( "sound/movers/doors/dr1_mid.wav" );
+	ent->soundLoop = G_SoundIndex( "sound/movers/doors/dr1_mid.ogg" );
 
 	ent->blocked = Blocked_Door;
 
@@ -1565,9 +1565,9 @@ Plats are always drawn in the extended position so they will light correctly.
 void SP_func_plat (gentity_t *ent) {
 	float		lip, height;
 
-	ent->sound1to2 = ent->sound2to1 = G_SoundIndex("sound/movers/plats/pt1_strt.wav");
-	ent->soundPos1 = ent->soundPos2 = G_SoundIndex("sound/movers/plats/pt1_end.wav");
-	ent->soundLoop = G_SoundIndex("sound/movers/plats/pt1_mid.wav");
+	ent->sound1to2 = ent->sound2to1 = G_SoundIndex("sound/movers/plats/pt1_strt.ogg");
+	ent->soundPos1 = ent->soundPos2 = G_SoundIndex("sound/movers/plats/pt1_end.ogg");
+	ent->soundLoop = G_SoundIndex("sound/movers/plats/pt1_mid.ogg");
 
 	VectorClear (ent->s.angles);
 
@@ -1951,7 +1951,7 @@ void SP_func_train (gentity_t *self) {
 		G_FreeEntity( self );
 		return;
 	}
-
+	
 	G_SetBrushModel( self, self->model );
 	InitMover( self );
 

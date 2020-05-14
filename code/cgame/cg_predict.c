@@ -360,7 +360,7 @@ static void CG_TouchItem( centity_t *cent ) {
 		return;
 	}
 
-	if ( !BG_CanItemBeGrabbed( cgs.gameType, &cent->currentState, &cg.cur_lc->predictedPlayerState, cgs.dmFlags, cgs.tieredArmor ) ) {
+	if ( !BG_CanItemBeGrabbed( cgs.gameType, &cent->currentState, &cg.cur_lc->predictedPlayerState, cgs.dmFlags, cgs.armorRules, cg.time, cg.warmupState ) ) {
 		return;		// can't hold it
 	}
 
@@ -680,7 +680,7 @@ void CG_PredictPlayerState( void ) {
 			cg_pmove.cmd.serverTime = ((cg_pmove.cmd.serverTime + pmove_msec.integer-1) / pmove_msec.integer) * pmove_msec.integer;
 		}
 
-		Pmove( &cg_pmove, cgs.dmFlags );
+		Pmove( &cg_pmove, cgs.dmFlags, cg.warmupState );
 
 		moved = qtrue;
 

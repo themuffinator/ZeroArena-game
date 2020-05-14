@@ -37,12 +37,15 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define ART_BACK0			"menu/art/back_0"
 #define ART_BACK1			"menu/art/back_1"
 #define ART_FX_BASE			"menu/art/fx_base"
+#if 0
 #define ART_FX_BLUE			"menu/art/fx_blue"
 #define ART_FX_CYAN			"menu/art/fx_cyan"
 #define ART_FX_GREEN		"menu/art/fx_grn"
 #define ART_FX_RED			"menu/art/fx_red"
 #define ART_FX_TEAL			"menu/art/fx_teal"
+#endif
 #define ART_FX_WHITE		"menu/art/fx_white"
+#if 0
 #define ART_FX_YELLOW		"menu/art/fx_yel"
 #define ART_FX_ORANGE		"menu/art/fx_orange"
 #define ART_FX_LIME			"menu/art/fx_lime"
@@ -50,7 +53,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define ART_FX_LIGHTBLUE	"menu/art/fx_lightblue"
 #define ART_FX_PURPLE		"menu/art/fx_purple"
 #define ART_FX_PINK			"menu/art/fx_pink"
-
+#endif
 #define NUM_COLOR_EFFECTS 26	//13
 
 #define ID_NAME			10
@@ -61,6 +64,7 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define ID_EFFECTS2		15
 
 #define MAX_NAMELENGTH	MAX_NAME_LENGTH	//20
+#define MAX_CLANLENGTH	MAX_CLAN_LENGTH
 
 
 typedef struct {
@@ -72,8 +76,9 @@ typedef struct {
 	menubitmap_s		player;
 
 	menufield_s			name;
+	menufield_s			clan;
 	menulist_s			handicap;
-	menulist_s			effects;
+	menulist_s			effects1;
 	menulist_s			effects2;
 
 	menubitmap_s		back;
@@ -93,8 +98,9 @@ typedef struct {
 
 static playersettings_t	s_playersettings;
 
-static int gamecodetoui[NUM_COLOR_EFFECTS] = {8,4,6,0,10,2,12,1,3,5,7,9,11};
-static int uitogamecode[NUM_COLOR_EFFECTS] = {4,8,6,9,2,10,3,11,1,12,5,13,7};
+//static int gamecodetoui[NUM_COLOR_EFFECTS] = {8,4,6,0,10,2,12,1,3,5,7,9,11};
+//static int gamecodetoui[NUM_COLOR_EFFECTS] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26};
+//static int uitogamecode[NUM_COLOR_EFFECTS] = {4,8,6,9,2,10,3,11,1,12,5,13,7};
 
 static const char *handicap_items[] = {
 	"None",
@@ -166,6 +172,49 @@ static void PlayerSettings_DrawName( void *self ) {
 
 /*
 =================
+PlayerSettings_DrawClan
+=================
+*/
+static void PlayerSettings_DrawClan( void* self ) {
+	menufield_s* f;
+	qboolean		focus;
+	int				style;
+	float* color;
+	int				x, y;
+	char			clan[16];
+
+	f = (menufield_s*)self;
+	x = f->generic.x;
+	y = f->generic.y;
+	focus = (f->generic.parent->cursor == f->generic.menuPosition);
+
+	style = UI_LEFT | UI_SMALLFONT;
+	color = text_color_normal;
+	if ( focus ) {
+		style |= UI_PULSE;
+		color = text_color_highlight;
+	}
+
+	UI_DrawProportionalString( x, y, "Clan Tag", style, color );
+
+	// draw the actual clan tag
+	x += 64;
+	y += PROP_HEIGHT;
+
+	if ( focus ) {
+		style |= UI_FORCECOLOR;
+	}
+	UI_MField_Draw( &f->field, x, y, style, colorWhite, focus );
+
+	// draw at bottom also using proportional font
+	Q_strncpyz( clan, MField_Buffer( &f->field ), sizeof( clan ) );
+	Q_CleanStr( clan );
+	UI_DrawProportionalString( 320, 440, clan, UI_CENTER | UI_BIGFONT, text_color_normal );
+}
+
+
+/*
+=================
 PlayerSettings_DrawHandicap
 =================
 */
@@ -217,7 +266,7 @@ static void PlayerSettings_DrawEffects( void *self ) {
 	}
 
 	if ( item->generic.id == ID_EFFECTS ) {
-		UI_DrawProportionalString( item->generic.x, item->generic.y, "Weapon Colors", style, color );
+		UI_DrawProportionalString( item->generic.x, item->generic.y, "Colors", style, color );
 	}
 
 	xOffset = 128.0f / (NUM_COLOR_EFFECTS + 1);
@@ -233,7 +282,10 @@ static void PlayerSettings_DrawEffects( void *self ) {
 		if ( !colorShader )
 			colorShader = uis.whiteShader;
 			*/
-		CG_PlayerColorFromIndex( uitogamecode[item->curvalue], picColor );
+		//CG_PlayerColorFromIndex( uitogamecode[item->curvalue], picColor );
+		picColor[0] = colorTable[item->curvalue + 10][0];
+		picColor[1] = colorTable[item->curvalue + 10][1];
+		picColor[2] = colorTable[item->curvalue + 10][2];
 		picColor[3] = 1;
 		trap_R_SetColor( picColor );
 	}
@@ -267,8 +319,8 @@ static void PlayerSettings_DrawPlayer( void *self ) {
 	vec3_t			viewangles;
 	char			model[MAX_QPATH], headModel[MAX_QPATH];
 
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "model"), model, sizeof( model ) );
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "headModel"), headModel, sizeof ( headModel ) );
+	trap_Cvar_VariableStringBuffer( "model", model, sizeof( model ) );
+	trap_Cvar_VariableStringBuffer( "headModel", headModel, sizeof ( headModel ) );
 	if ( strcmp( model, s_playersettings.playerModel ) != 0 || strcmp( headModel, s_playersettings.playerHead ) != 0 ) {
 		UI_PlayerInfo_SetModel( &s_playersettings.playerinfo, model, headModel, NULL );
 		strcpy( s_playersettings.playerModel, model );
@@ -292,16 +344,16 @@ PlayerSettings_SaveChanges
 */
 static void PlayerSettings_SaveChanges( void ) {
 	// name
-	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "name"),
-			MField_Buffer( &s_playersettings.name.field ) );
+	trap_Cvar_Set( "name", MField_Buffer( &s_playersettings.name.field ) );
+	// clan tag
+	trap_Cvar_Set( "clan", MField_Buffer( &s_playersettings.clan.field ) );
 
 	// handicap
-	trap_Cvar_SetValue( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "handicap"),
-			100 - s_playersettings.handicap.curvalue * 5 );
+	trap_Cvar_SetValue( "handicap", 100 - s_playersettings.handicap.curvalue * 5 );
 
 	// effects color
-	trap_Cvar_SetValue( "color1", uitogamecode[s_playersettings.effects.curvalue] );
-	trap_Cvar_SetValue( "color2", uitogamecode[s_playersettings.effects2.curvalue] );
+	trap_Cvar_SetValue( "color1", s_playersettings.effects1.curvalue );
+	trap_Cvar_SetValue( "color2", s_playersettings.effects2.curvalue );
 }
 
 
@@ -330,21 +382,23 @@ static void PlayerSettings_SetMenuItems( void ) {
 	char	model[MAX_QPATH], headModel[MAX_QPATH];
 
 	// name
-	MField_SetText( &s_playersettings.name.field, CG_Cvar_VariableString(
-			Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "name")) );
+	MField_SetText( &s_playersettings.name.field, CG_Cvar_VariableString( "name" ) );
+
+	// clan
+	MField_SetText( &s_playersettings.clan.field, CG_Cvar_VariableString( "clan" ) );
 
 	// effects color
-	c = trap_Cvar_VariableValue( "color1" ) - 1;
-	if( c < 0 || c > NUM_COLOR_EFFECTS-1 ) {
+	c = trap_Cvar_VariableValue( "color1" );	// -1;
+	if( c < 1 || c > NUM_COLOR_EFFECTS ) {
 		c = NUM_COLOR_EFFECTS-1;
 	}
-	s_playersettings.effects.curvalue = gamecodetoui[c];
+	s_playersettings.effects1.curvalue = c;	// gamecodetoui[c];
 
-	c = trap_Cvar_VariableValue( "color2" ) - 1;
-	if( c < 0 || c > NUM_COLOR_EFFECTS-1 ) {
-		c = NUM_COLOR_EFFECTS-1;
+	c = trap_Cvar_VariableValue( "color2" );	// -1;
+	if( c < 1 || c > NUM_COLOR_EFFECTS ) {
+		c = NUM_COLOR_EFFECTS;
 	}
-	s_playersettings.effects2.curvalue = gamecodetoui[c];
+	s_playersettings.effects2.curvalue = c;	// gamecodetoui[c];
 
 	// model/skin
 	memset( &s_playersettings.playerinfo, 0, sizeof(uiPlayerInfo_t) );
@@ -353,14 +407,14 @@ static void PlayerSettings_SetMenuItems( void ) {
 	viewangles[PITCH] = 0;
 	viewangles[ROLL]  = 0;
 
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "model"), model, sizeof( model ) );
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "headModel"), headModel, sizeof ( headModel ) );
+	trap_Cvar_VariableStringBuffer( "model", model, sizeof( model ) );
+	trap_Cvar_VariableStringBuffer( "headModel", headModel, sizeof ( headModel ) );
 
 	UI_PlayerInfo_SetModel( &s_playersettings.playerinfo, model, headModel, NULL );
 	UI_PlayerInfo_SetInfo( &s_playersettings.playerinfo, LEGS_IDLE, TORSO_STAND, viewangles, vec3_origin, WP_MACHINEGUN, qfalse );
 
 	// handicap
-	h = Com_Clamp( 5, 100, trap_Cvar_VariableValue(Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "handicap")) );
+	h = Com_Clamp( 5, 100, trap_Cvar_VariableValue("handicap" ) );
 	s_playersettings.handicap.curvalue = 20 - h / 5;
 }
 
@@ -377,13 +431,13 @@ static void PlayerSettings_MenuEvent( void* ptr, int event ) {
 
 	switch( ((menucommon_s*)ptr)->id ) {
 	case ID_HANDICAP:
-		trap_Cvar_Set( Com_LocalPlayerCvarName(s_playersettings.localPlayerNum, "handicap"),
-				va( "%i", 100 - 25 * s_playersettings.handicap.curvalue ) );
+		trap_Cvar_Set( "handicap", va( "%i", 100 - 25 * s_playersettings.handicap.curvalue ) );
 		break;
 
 	case ID_EFFECTS:
 		PlayerSettings_SaveChanges();
 		UI_PlayerInfo_UpdateColor( &s_playersettings.playerinfo );
+		UI_PlayerInfo_UpdateColor2( &s_playersettings.playerinfo );
 		break;
 
 	case ID_MODEL:
@@ -411,10 +465,10 @@ static void PlayerSettings_StatusBar( void *ptr ) {
 		UI_DrawString( 320, 420, "giving you more of a challenge", UI_CENTER|UI_SMALLFONT, colorWhite );
 		break;
 	case ID_EFFECTS:
-		UI_DrawString( 320, 410, "Color of railgun core", UI_CENTER|UI_SMALLFONT, colorWhite );
+		UI_DrawString( 320, 410, "Color of weapons", UI_CENTER|UI_SMALLFONT, colorWhite );
 		break;
 	case ID_EFFECTS2:
-		UI_DrawString( 320, 410, "Color of railgun disks", UI_CENTER|UI_SMALLFONT, colorWhite );
+		UI_DrawString( 320, 410, "Color of player", UI_CENTER|UI_SMALLFONT, colorWhite );
 		break;
 	default:
 		break;
@@ -489,6 +543,19 @@ static void PlayerSettings_MenuInit( int localPlayerNum )
 	s_playersettings.name.generic.bottom		= y + 2 * PROP_HEIGHT;
 
 	y += 3 * PROP_HEIGHT;
+	s_playersettings.clan.generic.type = MTYPE_FIELD;
+	s_playersettings.clan.generic.flags = QMF_NODEFAULTINIT;
+	s_playersettings.clan.generic.ownerdraw = PlayerSettings_DrawClan;
+	s_playersettings.clan.field.widthInChars = MAX_CLANLENGTH;
+	s_playersettings.clan.field.maxchars = MAX_CLANLENGTH;
+	s_playersettings.clan.generic.x = 192;
+	s_playersettings.clan.generic.y = y;
+	s_playersettings.clan.generic.left = 192 - 8;
+	s_playersettings.clan.generic.top = y - 8;
+	s_playersettings.clan.generic.right = 192 + 200;
+	s_playersettings.clan.generic.bottom = y + 2 * PROP_HEIGHT;
+
+	y += 3 * PROP_HEIGHT;
 	s_playersettings.handicap.generic.type		= MTYPE_SPINCONTROL;
 	s_playersettings.handicap.generic.flags		= QMF_NODEFAULTINIT;
 	s_playersettings.handicap.generic.id		= ID_HANDICAP;
@@ -503,19 +570,19 @@ static void PlayerSettings_MenuInit( int localPlayerNum )
 	s_playersettings.handicap.numitems			= 20;
 
 	y += 3 * PROP_HEIGHT;
-	s_playersettings.effects.generic.type		= MTYPE_SPINCONTROL;
-	s_playersettings.effects.generic.flags		= QMF_NODEFAULTINIT;
-	s_playersettings.effects.generic.id			= ID_EFFECTS;
-	s_playersettings.effects.generic.callback	= PlayerSettings_MenuEvent;
-	s_playersettings.effects.generic.ownerdraw	= PlayerSettings_DrawEffects;
-	s_playersettings.effects.generic.statusbar  = PlayerSettings_StatusBar;
-	s_playersettings.effects.generic.x			= 192;
-	s_playersettings.effects.generic.y			= y;
-	s_playersettings.effects.generic.left		= 192 - 8;
-	s_playersettings.effects.generic.top		= y - 8;
-	s_playersettings.effects.generic.right		= 192 + 200;
-	s_playersettings.effects.generic.bottom		= y + 2* PROP_HEIGHT;
-	s_playersettings.effects.numitems			= NUM_COLOR_EFFECTS;
+	s_playersettings.effects1.generic.type		= MTYPE_SPINCONTROL;
+	s_playersettings.effects1.generic.flags		= QMF_NODEFAULTINIT;
+	s_playersettings.effects1.generic.id			= ID_EFFECTS;
+	s_playersettings.effects1.generic.callback	= PlayerSettings_MenuEvent;
+	s_playersettings.effects1.generic.ownerdraw	= PlayerSettings_DrawEffects;
+	s_playersettings.effects1.generic.statusbar  = PlayerSettings_StatusBar;
+	s_playersettings.effects1.generic.x			= 192;
+	s_playersettings.effects1.generic.y			= y;
+	s_playersettings.effects1.generic.left		= 192 - 8;
+	s_playersettings.effects1.generic.top		= y - 8;
+	s_playersettings.effects1.generic.right		= 192 + 200;
+	s_playersettings.effects1.generic.bottom		= y + 2* PROP_HEIGHT;
+	s_playersettings.effects1.numitems			= NUM_COLOR_EFFECTS;
 
 	y += 1 * PROP_HEIGHT;
 	s_playersettings.effects2.generic.type		= MTYPE_SPINCONTROL;
@@ -574,7 +641,7 @@ static void PlayerSettings_MenuInit( int localPlayerNum )
 
 	Menu_AddItem( &s_playersettings.menu, &s_playersettings.name );
 	Menu_AddItem( &s_playersettings.menu, &s_playersettings.handicap );
-	Menu_AddItem( &s_playersettings.menu, &s_playersettings.effects );
+	Menu_AddItem( &s_playersettings.menu, &s_playersettings.effects1 );
 	Menu_AddItem( &s_playersettings.menu, &s_playersettings.effects2 );
 	Menu_AddItem( &s_playersettings.menu, &s_playersettings.model );
 	Menu_AddItem( &s_playersettings.menu, &s_playersettings.back );

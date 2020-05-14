@@ -119,6 +119,7 @@ vmCvar_t	g_playerCapsule;
 vmCvar_t	g_instaGib;
 
 vmCvar_t	g_botEnable;
+vmCvar_t	g_dropFlags;
 
 vmCvar_t	gt_frags_limit;
 vmCvar_t	gt_frags_timelimit;
@@ -141,8 +142,13 @@ vmCvar_t	g_teamSize_min;
 vmCvar_t	g_teamTotal_max;
 vmCvar_t	g_teamTotal_min;
 
-vmCvar_t	g_armorTiered;
+vmCvar_t	g_treasonDamage;
+
+vmCvar_t	g_ammoRules;
+vmCvar_t	g_armorRules;
 vmCvar_t	g_classicItemRespawns;
+
+vmCvar_t	g_forceWeaponColors;
 
 vmCvar_t	g_doReady;
 
@@ -151,6 +157,12 @@ vmCvar_t	g_warmupReadyPercentage;
 vmCvar_t	g_warmupWeaponSet;
 
 vmCvar_t	g_intermissionForceExitTime;
+vmCvar_t	g_gunyoffset;
+vmCvar_t	g_gunzoffset;
+
+vmCvar_t	pmove_q2;
+vmCvar_t	pmove_q2slide;
+vmCvar_t	pmove_q2air;
 
 static cvarTable_t		gameCvarTable[] = {
 	// don't override the cheat state set by the system
@@ -162,10 +174,10 @@ static cvarTable_t		gameCvarTable[] = {
 	{ &g_restarted, "g_restarted", "0", CVAR_ROM, 0, RANGE_ALL },
 
 	// latched vars
-	{ &g_gameType, "g_gameType", "0", CVAR_SERVERINFO | CVAR_USERINFO | CVAR_LATCH, GCF_DO_RESTART, RANGE_INT( 0, GT_MAX_GAME_TYPE - 1 )  },
+	{ &g_gameType, "g_gameType", "1", CVAR_SERVERINFO | CVAR_USERINFO | CVAR_LATCH, GCF_DO_RESTART, RANGE_INT( 0, GT_MAX_GAME_TYPE - 1 )  },
 	{ &g_instaGib, "g_instaGib", "0", CVAR_LATCH, GCF_DO_RESTART, RANGE_BOOL },
 
-	{ &g_maxClients, "sv_maxclients", "8", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, RANGE_ALL, "maximum number of clients connected to server" },
+	{ &g_maxClients, "sv_maxClients", "8", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, RANGE_ALL, "maximum number of clients connected to server" },
 	{ &g_maxGameClients, "g_maxGameClients", "0", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, RANGE_INT( 0, MAX_CLIENTS - 1 ) },
 
 	// change anytime vars
@@ -175,7 +187,7 @@ static cvarTable_t		gameCvarTable[] = {
 
 	{ &g_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO, 0, RANGE_BOOL },
 
-	{ &g_friendlyFire, "g_friendlyFire", "0", CVAR_ARCHIVE, GCF_TRACK_CHANGE, RANGE_BOOL, "team members can damage each other" },
+	{ &g_friendlyFire, "g_friendlyFire", "1", CVAR_ARCHIVE, GCF_TRACK_CHANGE, RANGE_BOOL, "team members can damage each other" },
 
 	{ &g_teamAutoJoin, "g_teamAutoJoin", "0", CVAR_ARCHIVE, 0, RANGE_BOOL, "players can automatically join a team" },
 	{ &g_teamForceBalance, "g_teamForceBalance", "0", CVAR_ARCHIVE, 0, RANGE_BOOL, "try to balance teams by player numbers" },
@@ -234,6 +246,8 @@ static cvarTable_t		gameCvarTable[] = {
 
 	{ &g_botEnable, "bot_enable", "", CVAR_SERVERINFO | CVAR_ROM, 0, RANGE_ALL },
 
+	{ &g_dropFlags, "g_dropFlags", "0", CVAR_ARCHIVE, GCF_TRACK_CHANGE, RANGE_ALL },
+
 	{ &gt_frags_limit, "gt_frags_limit", "50", CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT( 0, 10000 ) },
 	{ &gt_frags_timelimit, "gt_frags_timelimit", "15", CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT( 0, 1000 ) },
 	{ &gt_duel_frags_limit, "gt_duel_frags_limit", "0", CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT( 0, 10000 ) },
@@ -242,6 +256,7 @@ static cvarTable_t		gameCvarTable[] = {
 	{ &gt_teams_frags_mercylimit, "gt_teams_frags_mercylimit", "50", CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT( 0, 1000 ) },
 	{ &gt_teams_frags_timelimit, "gt_teams_frags_timelimit", "20", CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT( 0, 1000 ) },
 	{ &gt_teams_captures_limit, "gt_teams_captures_limit", "8", CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT( 0, 10000 ) },
+	{ &gt_teams_captures_timelimit, "gt_teams_captures_timelimit", "20", CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT( 0, 10000 ) },
 	{ &gt_elimination_lives_limit, "gt_elimination_lives_limit", "3", CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT( 0, 1000 ) },
 	{ &gt_elimination_timelimit, "gt_elimination_timelimit", "20", CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT( 0, 1000 ) },
 	{ &gt_points_limit, "gt_points_limit", "20", CVAR_ARCHIVE | CVAR_NORESTART, GCF_TRACK_CHANGE, RANGE_INT( 0, 10000 ) },
@@ -254,8 +269,13 @@ static cvarTable_t		gameCvarTable[] = {
 	{ &g_teamTotal_max, "g_teamTotal_max", "2", CVAR_SERVERINFO | CVAR_LATCH, GCF_DO_RESTART, RANGE_INT( 2, TOTAL_TEAMS ) },
 	{ &g_teamTotal_min, "g_teamTotal_min", "2", CVAR_SERVERINFO | CVAR_LATCH, GCF_DO_RESTART, RANGE_INT( 2, TOTAL_TEAMS ) },
 
-	{ &g_armorTiered, "g_armorTiered", "0", CVAR_SERVERINFO, 0, RANGE_INT( 0, 2 ) },
+	{ &g_treasonDamage, "g_treasonDamage", "0.5", CVAR_SERVERINFO, GCF_TRACK_CHANGE, RANGE_FLOAT( 0, 2 ) },
+
+	{ &g_ammoRules, "g_ammoRules", "0", CVAR_SERVERINFO, 0, RANGE_INT( 0, ARR_COUNT-1 ) },
+	{ &g_armorRules, "g_armorRules", "3", CVAR_SERVERINFO, 0, RANGE_INT( 0, WPR_COUNT-1 ) },
 	{ &g_classicItemRespawns, "g_classicItemRespawns", "0", 0, 0, RANGE_BOOL },
+
+	{ &g_forceWeaponColors, "g_forceWeaponColors", "0", CVAR_SERVERINFO, 0, RANGE_INT( 0, 3 ) }, //0 = user defined, &1 = force default colors, &2 = force team colors in team games
 
 	{ &g_doReady, "g_doReady", "1", 0, 0, RANGE_BOOL },
 
@@ -264,7 +284,13 @@ static cvarTable_t		gameCvarTable[] = {
 	{ &g_warmupWeaponSet, "g_warmupWeaponSet", "1", 0, 0, RANGE_BOOL },
 
 	{ &g_intermissionForceExitTime, "g_intermissionForceExitTime", "20", 0, 0, RANGE_INT( 0, 60 ) },
-	
+	{ &g_gunyoffset, "g_gunyoffset", "0", CVAR_CHEAT, 0, RANGE_ALL },
+	{ &g_gunzoffset, "g_gunzoffset", "-8", CVAR_CHEAT, 0, RANGE_ALL },
+
+	{ &pmove_q2, "pmove_q2", "0", CVAR_SYSTEMINFO|CVAR_CHEAT, 0, RANGE_BOOL },
+	{ &pmove_q2slide, "pmove_q2slide", "0", CVAR_SYSTEMINFO | CVAR_CHEAT, 0, RANGE_BOOL },
+	{ &pmove_q2air, "pmove_q2air", "0", CVAR_SYSTEMINFO | CVAR_CHEAT, 0, RANGE_BOOL },
+
 	{ &g_rankings, "g_rankings", "0", 0, 0, RANGE_ALL }
 
 };
@@ -481,14 +507,16 @@ void G_RegisterCvars( void ) {
 		G_RemapTeamShaders();
 	}
 
+	//muff: allow co-op mode...
+#if 0
 	// Don't allow single player gametype to be used in multiplayer.
-	if ( g_gameType.integer == GT_SINGLE_PLAYER && !g_singlePlayerActive.integer ) {
+	if ( g_gameType.integer == GT_CAMPAIGN && !g_singlePlayerActive.integer ) {
 		trap_Cvar_SetValue( "g_gameType", DEFAULT_GAMETYPE );
 		trap_Cvar_Update( &g_gameType );
 	}
-
+#endif
 	// Don't allow instagib in single player mode.
-	if ( g_singlePlayerActive.integer && g_instaGib.integer ) {
+	if ( ( g_singlePlayerActive.integer || GTF(GTF_CAMPAIGN) ) && g_instaGib.integer ) {
 		trap_Cvar_SetValue( "g_instaGib", 0 );
 		trap_Cvar_Update( &g_instaGib );
 	}
@@ -574,7 +602,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 
 	gravity_modcount = g_gravity.modificationCount;
 
-	if ( g_gameType.integer != GT_SINGLE_PLAYER && g_logFile.string[0] ) {
+	if ( !g_singlePlayerActive.integer && g_logFile.string[0] ) {
 		if ( g_logFileSync.integer ) {
 			trap_FS_FOpenFile( g_logFile.string, &level.logFile, FS_APPEND_SYNC );
 		} else {
@@ -724,7 +752,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 
 	G_DPrintf( "-----------------------------------\n" );
 
-	if ( g_gameType.integer == GT_SINGLE_PLAYER || trap_Cvar_VariableIntegerValue( "com_buildScript" ) ) {
+	if ( ( g_singlePlayerActive.integer && !GTF(GTF_TEAMS) && !GTF(GTF_CAMPAIGN) ) || trap_Cvar_VariableIntegerValue( "com_buildScript" ) ) {
 		G_ModelIndex( SP_PODIUM_MODEL );
 	}
 
@@ -1327,7 +1355,7 @@ void CalculateRanks( void ) {
 				level.players[level.sortedPlayers[i]].ps.persistant[PERS_RANK] = rank | RANK_TIED_FLAG;
 			}
 			score = newScore;
-			if ( g_gameType.integer == GT_SINGLE_PLAYER && level.numPlayingPlayers == 1 ) {
+			if ( g_singlePlayerActive.integer && level.numPlayingPlayers == 1 ) {
 				level.players[level.sortedPlayers[i]].ps.persistant[PERS_RANK] = rank | RANK_TIED_FLAG;
 			}
 		}
@@ -1493,7 +1521,7 @@ void BeginIntermission( void ) {
 	}
 #else
 	// if single player game
-	if ( g_gameType.integer == GT_SINGLE_PLAYER ) {
+	if ( g_singlePlayerActive.integer && !GTF( GTF_TEAMS ) && !GTF( GTF_CAMPAIGN ) ) {
 		UpdateTournamentInfo();
 		SpawnModelsOnVictoryPads();
 	}
@@ -1719,9 +1747,7 @@ void CheckIntermissionExit( void ) {
 	gplayer_t* cl;
 	clientList_t	readyList;
 
-	if ( g_gameType.integer == GT_SINGLE_PLAYER ) {
-		return;
-	}
+	if ( g_singlePlayerActive.integer ) return;
 
 	// see which players are ready
 	ready = notReady = 0;
@@ -1859,6 +1885,11 @@ void CheckExitRules( void ) {
 		return;
 	}
 
+	// campaigns don't consider score
+	if ( GTF( GTF_CAMPAIGN ) ) {
+		return;
+	}
+
 	// check for sudden death
 	if ( ScoreIsTied() ) {
 		// always wait for sudden death
@@ -1867,12 +1898,16 @@ void CheckExitRules( void ) {
 
 	if ( g_timeLimit.integer && !level.warmupTime ) {
 		if ( level.time - level.startTime >= g_timeLimit.integer * 60000 ) {
-			AP( "print \"" S_COLOR_CREAM "Time Limit hit.\n\"" );
+			if ( GTF( GTF_TEAMS ) ) {
+				AP( va( "print \"%s wins!" S_COLOR_GREY " (Time Limit hit)\n\"", G_PlayerTeamName( level.sortedTeams[1] ) ) );
+			} else {
+				AP( va( "print \"%s wins!" S_COLOR_GREY " (Time Limit hit)\n\"", PlayerName( g_entities[level.sortedPlayers[0]].player->pers ) ) );
+			}
 			LogExit( "Time Limit hit." );
 			return;
 		}
 	}
-
+	
 	if ( GTL( GTL_FRAGS ) && g_scoreLimit.integer ) {
 		if ( GTF( GTF_TEAMS ) ) {
 			if ( level.teamScores[level.sortedTeams[1]] >= g_scoreLimit.integer ) {
@@ -1951,8 +1986,8 @@ qboolean CheckReadyStart( void ) {
 	int			readyMask;
 	int			i;
 
-	// stop if in mission mode
-	if ( g_gameType.integer == GT_SINGLE_PLAYER ) return qtrue;
+	// stop if in mission mode or single player
+	if ( GTF(GTF_CAMPAIGN) || g_singlePlayerActive.integer ) return qtrue;
 	// don't check ready players when disabled
 	if ( !g_doReady.integer ) return qtrue;
 
@@ -2128,7 +2163,7 @@ void CheckWarmup( void ) {
 
 	// return if minimum delay hasn't been reached yet
 	if ( (g_warmupDelay.integer * 1000) > level.time ) {
-		if ( !level.warmupState ) {
+		if ( level.warmupState != WARMUP_DELAYED ) {
 			level.warmupTime = -1;
 			level.warmupState = WARMUP_DELAYED;
 			trap_SetConfigstring( CS_WARMUP, va( "%i", level.warmupTime ) );
@@ -2179,6 +2214,7 @@ void CheckWarmup( void ) {
 	// if the warmup time has counted down, restart
 	if ( level.time > level.warmupTime ) {
 		level.warmupTime += g_warmupCountdownTime.integer;
+		level.warmupState = WARMUP_DEFAULT;
 		trap_Cvar_Set( "g_restarted", "1" );
 		trap_Cmd_ExecuteText( EXEC_APPEND, "map_restart 0\n" );
 		level.restarted = qtrue;

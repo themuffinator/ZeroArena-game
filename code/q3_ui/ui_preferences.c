@@ -61,10 +61,11 @@ enum {
 	ID_FORCEMODEL,
 	ID_DRAWTEAMOVERLAY,
 	ID_ALLOWDOWNLOAD,
+#if 0
 	ID_SPLITVERTICAL,
 	ID_SPLITTEXTSIZE,
 	ID_THIRDSIZE,
-
+#endif
 	ID_NUM_ITEMS,
 
 	ID_BACK
@@ -93,12 +94,14 @@ typedef struct {
 	menuradiobutton_s	forcemodel;
 	menulist_s			drawteamoverlay;
 	menuradiobutton_s	allowdownload;
+#if 0
 	menulist_s			splitvertical;
 	menulist_s			splittextsize;
 	menulist_s			thirdsize;
+#endif
 	menubitmap_s		back;
 
-	qhandle_t			crosshairShader[NUM_CROSSHAIRS];
+	qhandle_t			crosshairShader;	// [NUM_CROSSHAIRS] ;
 } preferences_t;
 
 static preferences_t s_preferences;
@@ -111,7 +114,7 @@ static const char *teamoverlay_names[] =
 	"lower left",
 	NULL
 };
-
+#if 0
 static const char *splitvertical_names[] =
 {
 	"horizontal",
@@ -133,10 +136,8 @@ static const char *thirdsize_names[] =
 	"quarter of screen",
 	NULL
 };
-
+#endif
 static void Preferences_SetMenuItems( void ) {
-	float textScale;
-
 	s_preferences.crosshair.curvalue		= (int)trap_Cvar_VariableValue( "cg_drawCrosshair" ) % NUM_CROSSHAIRS;
 	s_preferences.crosshairhealth.curvalue	= trap_Cvar_VariableValue( "cg_crosshairHealth" ) != 0;
 	s_preferences.viewbob.curvalue			= trap_Cvar_VariableValue( "cg_viewBobScale" ) != 0;
@@ -150,6 +151,7 @@ static void Preferences_SetMenuItems( void ) {
 	s_preferences.forcemodel.curvalue		= trap_Cvar_VariableValue( "cg_forcemodel" ) != 0;
 	s_preferences.drawteamoverlay.curvalue	= Com_Clamp( 0, 3, trap_Cvar_VariableValue( "cg_drawTeamOverlay" ) );
 	s_preferences.allowdownload.curvalue	= trap_Cvar_VariableValue( "cl_allowDownload" ) != 0;
+#if 0
 	s_preferences.splitvertical.curvalue	= trap_Cvar_VariableValue( "cg_splitviewVertical" ) != 0;
 
 	textScale = trap_Cvar_VariableValue( "cg_splitviewTextScale" );
@@ -162,6 +164,7 @@ static void Preferences_SetMenuItems( void ) {
 	}
 
 	s_preferences.thirdsize.curvalue		= trap_Cvar_VariableValue( "cg_splitviewThirdEqual" ) != 0;
+#endif
 }
 
 
@@ -226,7 +229,7 @@ static void Preferences_Event( void* ptr, int notification ) {
 		trap_Cvar_SetValue( "cl_allowDownload", s_preferences.allowdownload.curvalue );
 		trap_Cvar_SetValue( "sv_allowDownload", s_preferences.allowdownload.curvalue );
 		break;
-
+#if 0
 	case ID_SPLITVERTICAL:
 		trap_Cvar_SetValue( "cg_splitviewVertical", s_preferences.splitvertical.curvalue );
 		break;
@@ -238,7 +241,7 @@ static void Preferences_Event( void* ptr, int notification ) {
 	case ID_THIRDSIZE:
 		trap_Cvar_SetValue( "cg_splitviewThirdEqual", s_preferences.thirdsize.curvalue );
 		break;
-
+#endif
 	case ID_BACK:
 		UI_PopMenu();
 		break;
@@ -301,7 +304,9 @@ static void Crosshair_Draw( void *self ) {
 	}
 	crosshairColor[3] = 1;
 
-	CG_DrawPicColor( x + SMALLCHAR_WIDTH, y - 4, 24, 24, s_preferences.crosshairShader[s->curvalue], crosshairColor );
+	//CG_DrawPicColor( x + SMALLCHAR_WIDTH, y - 4, 24, 24, s_preferences.crosshairShader[s->curvalue], crosshairColor );
+	//s_preferences.crosshairShader = trap_R_RegisterShaderNoMip( va( "gfx/2d/ch032_%2i", s->curvalue ) );
+	CG_DrawPicColor( x + SMALLCHAR_WIDTH, y - 4, 24, 24, trap_R_RegisterShaderNoMip( va( "gfx/2d/ch032_%02i", s->curvalue ) ), crosshairColor );
 }
 
 
@@ -461,7 +466,7 @@ static void Preferences_MenuInit( void ) {
 	s_preferences.allowdownload.generic.id       = ID_ALLOWDOWNLOAD;
 	s_preferences.allowdownload.generic.x	       = PREFERENCES_X_POS;
 	s_preferences.allowdownload.generic.y	       = y;
-
+#if 0
 	y += BIGCHAR_HEIGHT+2;
 	s_preferences.splitvertical.generic.type		= MTYPE_SPINCONTROL;
 	s_preferences.splitvertical.generic.name		= "Splitscreen Mode:";
@@ -491,7 +496,7 @@ static void Preferences_MenuInit( void ) {
 	s_preferences.thirdsize.generic.x				= PREFERENCES_X_POS;
 	s_preferences.thirdsize.generic.y				= y;
 	s_preferences.thirdsize.itemnames				= thirdsize_names;
-
+#endif
 	s_preferences.back.generic.type	    = MTYPE_BITMAP;
 	s_preferences.back.generic.name     = ART_BACK0;
 	s_preferences.back.generic.flags    = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS;
@@ -520,10 +525,11 @@ static void Preferences_MenuInit( void ) {
 	Menu_AddItem( &s_preferences.menu, &s_preferences.forcemodel );
 	Menu_AddItem( &s_preferences.menu, &s_preferences.drawteamoverlay );
 	Menu_AddItem( &s_preferences.menu, &s_preferences.allowdownload );
+#if 0
 	Menu_AddItem( &s_preferences.menu, &s_preferences.splitvertical );
 	Menu_AddItem( &s_preferences.menu, &s_preferences.splittextsize );
 	Menu_AddItem( &s_preferences.menu, &s_preferences.thirdsize );
-
+#endif
 	Menu_AddItem( &s_preferences.menu, &s_preferences.back );
 
 	Preferences_SetMenuItems();
@@ -536,15 +542,17 @@ Preferences_Cache
 ===============
 */
 void Preferences_Cache( void ) {
-	int		n;
+	//int		n;
 
 	trap_R_RegisterShaderNoMip( ART_FRAMEL );
 	trap_R_RegisterShaderNoMip( ART_FRAMER );
 	trap_R_RegisterShaderNoMip( ART_BACK0 );
 	trap_R_RegisterShaderNoMip( ART_BACK1 );
+#if 0
 	for( n = 0; n < NUM_CROSSHAIRS; n++ ) {
 		s_preferences.crosshairShader[n] = trap_R_RegisterShaderNoMip( va("gfx/2d/ch032_%2i", 'a' + n ) );
 	}
+#endif
 }
 
 

@@ -181,6 +181,8 @@ vmCvar_t	ui_menuFont;
 vmCvar_t	ui_menuFontProp;
 vmCvar_t	ui_menuFontBanner;
 
+vmCvar_t	ui_singlePlayerActive;
+
 static cvarTable_t		cvarTable[] = {
 	/*
 	{ &ui_ffa_fraglimit, "ui_ffa_fraglimit", "20", CVAR_ARCHIVE },
@@ -274,7 +276,7 @@ static cvarTable_t		cvarTable[] = {
 	{ &ui_browserShowBots, "ui_browserShowBots", "1", CVAR_ARCHIVE },
 	{ &ui_browserSeparateMasters, "ui_browserSeparateMasters", "0", CVAR_ARCHIVE },
 
-	{ &ui_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE },
+	{ &ui_brassTime, "cg_brassTime", "5000", CVAR_ARCHIVE },
 	{ &ui_drawCrosshair, "cg_drawCrosshair", "4", CVAR_ARCHIVE },
 	{ &ui_drawCrosshairNames, "cg_drawCrosshairNames", "1", CVAR_ARCHIVE },
 	{ &ui_marks, "cg_impactMarks", "1", CVAR_ARCHIVE },
@@ -301,6 +303,8 @@ static cvarTable_t		cvarTable[] = {
 	{ &ui_menuFont, "ui_menuFont", "fonts/LiberationSans-Bold.ttf", CVAR_ARCHIVE | CVAR_LATCH },
 	{ &ui_menuFontProp, "ui_menuFontProp", "", CVAR_ARCHIVE | CVAR_LATCH },
 	{ &ui_menuFontBanner, "ui_menuFontBanner", "", CVAR_ARCHIVE | CVAR_LATCH },
+
+	{ &ui_singlePlayerActive, "ui_singlePlayerActive", "0", CVAR_SYSTEMINFO | CVAR_ROM },
 };
 
 static int cvarTableSize = ARRAY_LEN( cvarTable );
@@ -342,10 +346,31 @@ UI_RetrieveGametypeNum
 */
 int UI_RetrieveGametypeNum( void ) {
 	int num = (int)trap_Cvar_VariableValue( "g_gameType" );
-#if 0
-	if ( num < 0 ) num = 0;
-	else if ( num >= GT_MAX_GAME_TYPE ) num = GT_MAX_GAME_TYPE - 1;
-#endif
+
+	return num;
+}
+
+
+/*
+=================
+UI_RetrieveMaxTeamsNum
+=================
+*/
+int UI_RetrieveMaxTeamsNum( void ) {
+	int num = (int)trap_Cvar_VariableValue( "g_teamTotal_max" );
+
+	return num;
+}
+
+
+/*
+=================
+UI_RetrieveMaxTeamsFromInfo
+=================
+*/
+int UI_RetrieveMaxTeamsFromInfo( char info[MAX_INFO_STRING] ) {
+	int num = atoi( Info_ValueForKey( info, "g_teamTotal_max" ) );
+
 	return num;
 }
 
@@ -357,9 +382,6 @@ UI_RetrieveGametypeNumFromInfo
 */
 int UI_RetrieveGametypeNumFromInfo( char info[MAX_INFO_STRING] ) {
 	int num = atoi( Info_ValueForKey( info, "g_gameType" ) );
-#if 0
-	if ( num < 0 ) num = 0;
-	else if ( num >= GT_MAX_GAME_TYPE ) num = GT_MAX_GAME_TYPE - 1;
-#endif
+
 	return num;
 }

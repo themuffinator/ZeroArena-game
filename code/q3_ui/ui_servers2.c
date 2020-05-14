@@ -132,6 +132,7 @@ static const char *master_items[] = {
 
 static const char *mod_desc_items[] = {
 	"All",
+#if 0
 	"Quake 3",
 	"Team Arena",
 	"OpenArena",
@@ -139,11 +140,13 @@ static const char *mod_desc_items[] = {
 	"Quake 3 (Demo)",
 	"Team Arena (Demo)",
 	"Other",
+#endif
 	NULL
 };
 
 static const char *mod_dir_items[] = {
 	"",
+#if 0
 	"baseq3",
 	"missionpack",
 	"baseoa",
@@ -151,15 +154,16 @@ static const char *mod_dir_items[] = {
 	"demoq3",
 	"tademo",
 	"other",
+#endif
 	NULL
 };
 
 static const char *servertype_items[] = {
 	"All",
-	"Free for All",
+	"Free For All",
 	"Duel",
 	"Team Deathmatch",
-	"Capture the Flag",
+	"Capture The Flag",
 	"One Flag CTF",
 	"Overload",
 	"Harvester",
@@ -445,9 +449,9 @@ static void ArenaServers_UpdatePicture( void ) {
 	else {
 		servernodeptr = g_arenaservers.table[g_arenaservers.list.curvalue].servernode;
 
-		Com_sprintf( picname, sizeof(picname), "levelshots/%s_small", servernodeptr->mapname );
+		Com_sprintf( picname, sizeof(picname), "levelshots/preview/%s", servernodeptr->mapname );
 		if ( !trap_R_RegisterShaderNoMip( picname ) ) {
-			Com_sprintf( picname, sizeof(picname), "levelshots/%s", servernodeptr->mapname );
+			Com_sprintf( picname, sizeof(picname), "levelshots/16-9/%s", servernodeptr->mapname );
 		}
 
 		g_arenaservers.mappic.generic.name = picname;
@@ -717,8 +721,8 @@ static void ArenaServers_Insert( char* adrstr, char* info, int pingtime )
 	Q_CleanStr( servernodeptr->mapname );
 
 	servernodeptr->numclients = atoi( Info_ValueForKey( info, "clients") );
-	servernodeptr->humanplayers = atoi( Info_ValueForKey( info, "g_humanplayers") );
-	servernodeptr->maxclients = atoi( Info_ValueForKey( info, "sv_maxclients") );
+	servernodeptr->humanplayers = atoi( Info_ValueForKey( info, "g_humanPlayers") );
+	servernodeptr->maxclients = atoi( Info_ValueForKey( info, "sv_maxClients") );
 	servernodeptr->pingtime   = pingtime;
 	servernodeptr->minPing    = atoi( Info_ValueForKey( info, "minPing") );
 	servernodeptr->maxPing    = atoi( Info_ValueForKey( info, "maxPing") );

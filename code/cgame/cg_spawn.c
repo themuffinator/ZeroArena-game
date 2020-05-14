@@ -240,7 +240,7 @@ void CG_ParseEntityFromSpawnVars( void ) {
 	spawnInfo.spawnString = CG_SpawnString;
 
 	// check "notsingle", "notfree", "notteam", etc
-	if ( !BG_CheckSpawnEntity( &spawnInfo ) ) {
+	if ( !BG_CheckSpawnEntity( &spawnInfo, cg_singlePlayer.integer ) ) {
 		return;
 	}
 

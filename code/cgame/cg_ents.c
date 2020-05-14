@@ -397,6 +397,7 @@ static void CG_Item( centity_t *cent ) {
 	float			frac;
 	float			scale;
 	weaponInfo_t	*wi;
+	qboolean		forceSimple;
 
 	es = &cent->currentState;
 	if ( es->modelindex >= BG_NumItems() ) {
@@ -409,7 +410,13 @@ static void CG_Item( centity_t *cent ) {
 	}
 
 	item = BG_ItemForItemNum( es->modelindex );
-	if ( cg_simpleItems.integer && item->giType != IT_TEAM ) {
+	//muff: draw simple items for models we still need to create
+	//TODO: models!
+	forceSimple = cg_placeholderSimpleItems.integer && (item->giType != IT_TEAM && ( item->giType == IT_MISC || item->giType == IT_KEY
+		|| (item->giType == IT_POWERUP && (item->giTag == PW_VAMPIRE || item->giTag == PW_INVULN || item->giTag == PW_BREATHER))
+		|| (item->giType == IT_HOLDABLE && (item->giTag == PW_PSHIELD || item->giTag == PW_PSCREEN)) ) ) ? qtrue : qfalse;
+
+	if ( cg_simpleItems.integer || forceSimple ) {
 		memset( &ent, 0, sizeof( ent ) );
 		ent.reType = RT_SPRITE;
 		VectorCopy( cent->lerpOrigin, ent.origin );
@@ -424,13 +431,32 @@ static void CG_Item( centity_t *cent ) {
 	}
 
 	// items bob up and down continuously
-	scale = 0.005 + cent->currentState.number * 0.00001;
-	cent->lerpOrigin[2] += 4 + cos( ( cg.time + 1000 ) *  scale ) * 4;
-
+	if ( !((GTF( GTF_CAMPAIGN ) && item->giType == IT_AMMO)) && (cg_itemFX.integer != 1) ) {
+		scale = 0.005 + cent->currentState.number * 0.00001;
+		cent->lerpOrigin[2] += 4 + cos( (cg.time + 1000) * scale ) * 4;
+	} else if ( item->giType != IT_AMMO ) {
+		cent->lerpOrigin[2] += 4;
+	}
 	memset (&ent, 0, sizeof(ent));
 
-	// autorotate at one of two speeds
-	if ( item->giType == IT_HEALTH ) {
+	// autorotate
+	if ( cg_itemFX.integer == 1 || GTF( GTF_CAMPAIGN ) ) {
+		if ( item->giType != IT_AMMO ) {
+			VectorCopy( cg.autoAnglesClassic, cent->lerpAngles );
+			AxisCopy( cg.autoAxisClassic, ent.axis );
+		} else {
+			/*
+			vec3_t ang;
+			ang[0] = ang[1] = ang[2] = 0;
+			VectorCopy( ang, cent->lerpAngles );
+			AxisCopy( ang, ent.axis );
+			*/
+
+			AnglesToAxis( cent->currentState.angles, ent.axis );
+			VectorCopy( cent->lerpOrigin, ent.origin );
+			VectorCopy( cent->lerpOrigin, ent.oldorigin );
+		}
+	} else if ( item->giType == IT_HEALTH ) {
 		VectorCopy( cg.autoAnglesFast, cent->lerpAngles );
 		AxisCopy( cg.autoAxisFast, ent.axis );
 	} else {
@@ -460,10 +486,29 @@ static void CG_Item( centity_t *cent ) {
 
 		cent->lerpOrigin[2] += 8;	// an extra height boost
 
-		ent.shaderRGBA[0] = 0xff * wi->weaponColor[0];
-		ent.shaderRGBA[1] = 0xff * wi->weaponColor[1];
-		ent.shaderRGBA[2] = 0xff * wi->weaponColor[2];
-		ent.shaderRGBA[3] = 0xff;
+		if ( item->giTag == WP_RAILGUN ) {
+			ent.shaderRGBA[0] = 0x00;	// *wi->colorExplosion[0];
+			ent.shaderRGBA[1] = 0xff;	// * wi->colorExplosion[1];
+			ent.shaderRGBA[2] = 0x00;	// * wi->colorExplosion[2];
+			ent.shaderRGBA[3] = 0xff;
+		} else if ( item->giTag == WP_PLASMAGUN ) {
+			ent.shaderRGBA[0] = 0x58;	// *wi->colorExplosion[0];	0.345f
+			ent.shaderRGBA[1] = 0xa8;	// * wi->colorExplosion[1];	0.658f
+			ent.shaderRGBA[2] = 0xff;	// * wi->colorExplosion[2]; 1
+			ent.shaderRGBA[3] = 0xff;
+		}
+	} else if ( item->giType == IT_TEAM ) {
+		// colorize team flags
+		if ( BG_ItemIsTeamFlag( item->giTag ) ) {
+			vec3_t col;
+			CG_TeamColors( (team_t)(item->giTag - PW_FLAGS_INDEX), col, "item" );
+			ent.shaderRGBA[0] = 0xff * col[0];
+			ent.shaderRGBA[1] = 0xff * col[1];
+			ent.shaderRGBA[2] = 0xff * col[2];
+			ent.shaderRGBA[3] = 0xff;
+		}
+	} else if ( (GTF(GTF_CAMPAIGN) && item->giType == IT_AMMO) || (cg_itemFX.integer && item->giType == IT_AMMO) ) {
+		cent->lerpOrigin[2] -= 5.7;	//cg_temp_itemHeight_ammo.integer;
 	}
 
 	ent.hModel = cg_items[es->modelindex].models[0];
@@ -475,7 +520,7 @@ static void CG_Item( centity_t *cent ) {
 
 	// if just respawned, slowly scale up
 	msec = cg.time - cent->miscTime;
-	if ( msec >= 0 && msec < ITEM_SCALEUP_TIME ) {
+	if ( cg_itemFX.integer != 1 && msec >= 0 && msec < ITEM_SCALEUP_TIME ) {
 		frac = (float)msec / ITEM_SCALEUP_TIME;
 		VectorScale( ent.axis[0], frac, ent.axis[0] );
 		VectorScale( ent.axis[1], frac, ent.axis[1] );
@@ -494,6 +539,13 @@ static void CG_Item( centity_t *cent ) {
 #ifdef MISSIONPACK
 		trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.weaponHoverSound );
 #endif
+	}
+	// decrease the size of the ammo when they are presented as items
+	else if ( item->giType == IT_AMMO ) {
+		VectorScale( ent.axis[0], 0.875, ent.axis[0] );
+		VectorScale( ent.axis[1], 0.875, ent.axis[1] );
+		VectorScale( ent.axis[2], 0.875, ent.axis[2] );
+		ent.nonNormalizedAxes = qtrue;
 	}
 
 #ifdef MISSIONPACK
@@ -578,41 +630,54 @@ CG_Missile
 static void CG_Missile( centity_t *cent ) {
 	refEntity_t				ent;
 	entityState_t			*s1;
-	const weaponInfo_t		*weapon;
-
+	const weaponInfo_t		*w;
+	vec3_t					col;
+	
 	s1 = &cent->currentState;
 	if ( s1->weapon >= WP_NUM_WEAPONS ) {
 		s1->weapon = 0;
 	}
-
-	if ( s1->weapon <= 0 ) {	// not a conventional weapon (ie: blaster shooter)
+	//cent->currentState.
+	if ( s1->weapon <= 0 ) {	//TODO: not a conventional weapon (ie: blaster shooter)
 		CG_AltMissile( s1 );
 		return;
 	}
-	weapon = &cg_weapons[s1->weapon];
+	w = &cg_weapons[s1->weapon];
 
 	// calculate the axis
 	VectorCopy( s1->angles, cent->lerpAngles);
 
 	// add trails
-	if ( weapon->missileTrailFunc ) 
-	{
-		weapon->missileTrailFunc( cent, weapon );
-	}
+	if ( w->missileTrailFunc ) w->missileTrailFunc( cent, w );
 
 	// add dynamic light
-	if ( weapon->missileDlight ) {
-		trap_R_AddLightToScene(cent->lerpOrigin, weapon->missileDlight, 1.0f,
-			weapon->missileDlightColor[0], weapon->missileDlightColor[1], weapon->missileDlightColor[2], 0 );
+	if ( w->missileDlight ) {
+//#if 0
+		if ( s1->weapon == WP_PLASMAGUN ) {
+#if 0
+			trap_R_AddLightToScene( cent->lerpOrigin, w->missileDlight, 0.8f,
+				0x58, 0xa8, 0xff, 0 );
+#endif
+			if ( s1->modelindex2 >= 0 && s1->modelindex2 < cgs.maxplayers ) {
+				CG_GetWeaponColorFloat( &cgs.playerinfo[s1->modelindex2], s1->weapon, col, NULL );
+			}
+
+			trap_R_AddLightToScene( cent->lerpOrigin, w->missileDlight, 0.8f,
+				col[0], col[1], col[2], 0 );
+		} else {
+//#endif
+			trap_R_AddLightToScene( cent->lerpOrigin, w->missileDlight, 0.8f,
+				w->colorExplosion[0], w->colorExplosion[1], w->colorExplosion[2], 0 );
+		}
 	}
 
 	// add missile sound
-	if ( weapon->missileSound ) {
+	if ( w->missileSound ) {
 		vec3_t	velocity;
 
 		BG_EvaluateTrajectoryDelta( &cent->currentState.pos, cg.time, velocity, cgs.gravity );
 
-		trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, velocity, weapon->missileSound );
+		trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, velocity, w->missileSound );
 	}
 
 	if ( cent->currentState.weapon == WP_GRAPPLING_HOOK && !cg_drawGrappleHook.integer ) {
@@ -623,19 +688,45 @@ static void CG_Missile( centity_t *cent ) {
 	memset (&ent, 0, sizeof(ent));
 	VectorCopy( cent->lerpOrigin, ent.origin);
 	VectorCopy( cent->lerpOrigin, ent.oldorigin);
-
+//#if 0
+	if ( s1->weapon == WP_PLASMAGUN ) {
+		ent.shaderRGBA[0] = 0xff * col[0];
+		ent.shaderRGBA[1] = 0xff * col[1];
+		ent.shaderRGBA[2] = 0xff * col[2];
+		ent.shaderRGBA[3] = 0xff;
+#if 0
+		ent.shaderRGBA[0] = 0x58 *col[0];
+		ent.shaderRGBA[1] = 0xa8 * col[1];
+		ent.shaderRGBA[2] = 0xff * col[2];
+		ent.shaderRGBA[3] = 0xff;
+#endif
+#if 0
+		if ( s1->weapon == WP_GRENADE_LAUNCHER && s1->spawnTime && s1->spawnTime + GRENADE_FUSE_TIME - 500 < cg.time ) {
+			ent.shaderRGBA[3] = (((cg.time - s1->spawnTime) / 100) % 4) ? 0x10 : 0xff;
+		} else {
+			ent.shaderRGBA[3] = 0xff;
+		}
+#endif
+	} else if ( s1->weapon == WP_GRENADE_LAUNCHER ) {
+		CG_GetWeaponColorFloat( &cgs.playerinfo[s1->modelindex2], s1->weapon, col, NULL );
+		ent.shaderRGBA[0] = 0xff *col[0];
+		ent.shaderRGBA[1] = 0xff * col[1];
+		ent.shaderRGBA[2] = 0xff * col[2];
+	}
+//#endif
 	if ( cent->currentState.weapon == WP_PLASMAGUN ) {
 		ent.reType = RT_SPRITE;
 		ent.radius = 16;
 		ent.rotation = 0;
 		ent.customShader = cgs.media.plasmaBallShader;
-		CG_AddRefEntityWithMinLight( &ent );
+		//CG_AddRefEntityWithMinLight( &ent );
+		CG_AddRefEntityWithMinLightCol( &ent, ent.shaderRGBA );
 		return;
 	}
 
 	// flicker between two skins
 	ent.skinNum = cg.clientFrame & 1;
-	ent.hModel = weapon->missileModel;
+	ent.hModel = w->missileModel;
 	ent.renderfx = RF_NOSHADOW;
 
 #ifdef MISSIONPACK
@@ -1034,8 +1125,9 @@ static void CG_TeamBase( centity_t *cent ) {
 	vec3_t angles;
 	int t, h;
 	float c;
+	vec3_t col;
 
-	if ( GTL(GTL_CAPTURES) ) {
+	if ( GTF(GTF_CTF) ) {
 		// show the flag base
 		memset(&model, 0, sizeof(model));
 		model.reType = RT_MODEL;
@@ -1044,11 +1136,11 @@ static void CG_TeamBase( centity_t *cent ) {
 		AnglesToAxis( cent->currentState.angles, model.axis );
 		model.hModel = cgs.media.flagBaseModel;
 		t = TEAM_FREE;		//multiteam TODO
-
-		model.shaderRGBA[0] = teamColor[t][0] * 0xff;
-		model.shaderRGBA[1] = teamColor[t][1] * 0xff;
-		model.shaderRGBA[2] = teamColor[t][2] * 0xff;
-		model.shaderRGBA[3] = teamColor[t][3] * 0xff;
+		CG_TeamColors( t, col, "item2" );
+		model.shaderRGBA[0] = col[0] * 0xff;
+		model.shaderRGBA[1] = col[1] * 0xff;
+		model.shaderRGBA[2] = col[2] * 0xff;
+		model.shaderRGBA[3] = 0xff;
 		CG_AddRefEntityWithMinLight( &model );
 	}
 	else if ( cgs.gameType == GT_OVERLOAD ) {
@@ -1067,8 +1159,8 @@ static void CG_TeamBase( centity_t *cent ) {
 			// modelindex2 is the health value of the obelisk
 			c = cent->currentState.modelindex2;
 			model.shaderRGBA[0] = 0xff;
-			model.shaderRGBA[1] = c;
-			model.shaderRGBA[2] = c;
+			model.shaderRGBA[1] = 0xff * (c / 100);
+			model.shaderRGBA[2] = 0xff * (c / 100);
 			model.shaderRGBA[3] = 0xff;
 			//
 			model.hModel = cgs.media.overloadEnergyModel;
@@ -1145,7 +1237,7 @@ static void CG_TeamBase( centity_t *cent ) {
 			CG_AddRefEntityWithMinLight( &model );
 		}
 	}
-	else if ( cgs.gameType == GT_HARVESTER ) {
+	else if ( cgs.gameType == GT_HARVESTER || cgs.gameType == GT_1FCTF ) {
 		// show harvester model
 		memset(&model, 0, sizeof(model));
 		model.reType = RT_MODEL;
@@ -1162,11 +1254,13 @@ static void CG_TeamBase( centity_t *cent ) {
 			model.shaderRGBA[3] = 0xff;
 		} else {
 			team_t t = cent->currentState.modelindex;
+			
+			CG_TeamColors( t, col, "teambase" );
 			model.hModel = cgs.media.baseRecepticleModel;
-			model.shaderRGBA[0] = teamColor[t][0] * 0xff;
-			model.shaderRGBA[1] = teamColor[t][1] * 0xff;
-			model.shaderRGBA[2] = teamColor[t][2] * 0xff;
-			model.shaderRGBA[3] = teamColor[t][3] * 0xff;
+			model.shaderRGBA[0] = col[0] * 0xff;
+			model.shaderRGBA[1] = col[1] * 0xff;
+			model.shaderRGBA[2] = col[2] * 0xff;
+			model.shaderRGBA[3] = 0xff;
 			//model.customSkin = CG_AddSkinToFrame( &cgs.media.baseRecepticleSkin );
 		}
 		CG_AddRefEntityWithMinLight( &model );
@@ -1328,12 +1422,17 @@ void CG_AddPacketEntities( void ) {
 	cg.autoAngles[1] = ( cg.time & 2047 ) * 360 / 2048.0;
 	cg.autoAngles[2] = 0;
 
+	cg.autoAnglesClassic[0] = 0;
+	cg.autoAnglesClassic[1] = AngleMod( cg.time / 10 );
+	cg.autoAnglesClassic[2] = 0;
+
 	cg.autoAnglesFast[0] = 0;
 	cg.autoAnglesFast[1] = ( cg.time & 1023 ) * 360 / 1024.0f;
 	cg.autoAnglesFast[2] = 0;
 
 	AnglesToAxis( cg.autoAngles, cg.autoAxis );
 	AnglesToAxis( cg.autoAnglesFast, cg.autoAxisFast );
+	AnglesToAxis( cg.autoAnglesClassic, cg.autoAxisClassic );
 
 	// generate and add the entity from the playerstate
 	for ( num = 0 ; num < CG_MaxSplitView() ; num++ ) {

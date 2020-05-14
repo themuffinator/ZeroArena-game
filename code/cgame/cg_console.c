@@ -443,14 +443,14 @@ void CG_RunConsole( connstate_t state ) {
 
 
 void Con_PageUp( void ) {
-	con.display -= 2;
+	con.display -= 8;
 	if ( con.current - con.display >= con.topline ) {
 		con.display = con.current - con.topline + 1;
 	}
 }
 
 void Con_PageDown( void ) {
-	con.display += 2;
+	con.display += 8;
 	if (con.display > con.current) {
 		con.display = con.current;
 	}

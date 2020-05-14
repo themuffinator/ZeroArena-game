@@ -53,15 +53,31 @@ void SP_info_player_deathmatch( gentity_t *ent ) {
 	if ( i ) {
 		ent->flags |= FL_NO_HUMANS;
 	}
+	if ( ent->spawnflags & 0x01 ) {
+		ent->classname = "info_player_start";
+	}
+
+	G_DropEntityToFloor( ent );
 }
 
 /*QUAKED info_player_start (1 0 0) (-16 -16 -24) (16 16 32)
 equivalent to info_player_deathmatch
 */
 void SP_info_player_start(gentity_t *ent) {
-	ent->classname = "info_player_deathmatch";
-	ent->spawnflags |= 1;
-	SP_info_player_deathmatch( ent );
+	//ent->classname = "info_player_deathmatch";
+	//ent->spawnflags |= 0x01;
+	//SP_info_player_deathmatch( ent );
+
+	G_DropEntityToFloor( ent );
+}
+
+/*QUAKED info_player_coop (1 0 0) (-16 -16 -24) (16 16 32)
+co-op player spawn point
+*/
+void SP_info_player_coop( gentity_t* ent ) {
+	//SP_info_player_deathmatch( ent );
+
+	G_DropEntityToFloor( ent );
 }
 
 /*QUAKED info_player_intermission (1 0 1) (-16 -16 -24) (16 16 32)
@@ -252,7 +268,7 @@ gentity_t *SelectRandomFurthestSpawnPoint ( vec3_t avoidPoint, vec3_t origin, ve
 			G_Error( "Couldn't find a spawn point" );
 
 		VectorCopy (spot->s.origin, origin);
-		origin[2] += 9;
+		//origin[2] += 9;
 		VectorCopy (spot->s.angles, angles);
 		return spot;
 	}
@@ -315,26 +331,37 @@ use normal spawn selection.
 
 ============
 */
-gentity_t *SelectInitialSpawnPoint( vec3_t origin, vec3_t angles, qboolean isbot ) {
+gentity_t *SelectInitialSpawnPoint( vec3_t origin, vec3_t angles, qboolean isbot, qboolean coop ) {
 	gentity_t	*spot;
 
 	spot = NULL;
-	
-	while ((spot = G_Find (spot, FOFS(classname), "info_player_deathmatch")) != NULL)
-	{
-		if(((spot->flags & FL_NO_BOTS) && isbot) ||
-		   ((spot->flags & FL_NO_HUMANS) && !isbot))
-		{
-			continue;
+	if ( coop ) {
+		while ( (spot = G_Find( spot, FOFS( classname ), "info_player_coop" )) != NULL ) {
+			if ( ((spot->flags & FL_NO_BOTS) && isbot) ||
+				((spot->flags & FL_NO_HUMANS) && !isbot) ) {
+				continue;
+			}
+
+			if ( !spot->targetname && GTF( GTF_CAMPAIGN ) )		//TODO q2 sp spawn
+				break;
+			else break;
 		}
-		
-		if ( (spot->spawnflags & 0x01) ) {
-			if ( !spot->targetname )		// q2 sp spawn TODO
+	}
+	if ( !spot || SpotWouldTelefrag( spot ) ) {
+		while ( (spot = G_Find( spot, FOFS( classname ), "info_player_start" )) != NULL ) {
+			if ( ((spot->flags & FL_NO_BOTS) && isbot) ||
+				((spot->flags & FL_NO_HUMANS) && !isbot) ) {
+				continue;
+			}
+
+			if ( !spot->targetname && GTF( GTF_CAMPAIGN ) )		//TODO q2 sp spawn
+				break;
+			if ( !GTF( GTF_CAMPAIGN ) && !SpotWouldTelefrag( spot ) )
 				break;
 		}
 	}
 
-	if (!spot || SpotWouldTelefrag(spot))
+	if ( !spot )
 		return SelectSpawnPoint(vec3_origin, origin, angles, isbot);
 
 	VectorCopy (spot->s.origin, origin);
@@ -668,7 +695,7 @@ team_t PickTeam( int ignorePlayerNum ) {
 PlayerCleanName
 ============
 */
-static void PlayerCleanName(const char *in, char *out, int outSize)
+static void PlayerCleanName( const char *in, char *out, int outSize, qboolean allowEmpty )
 {
 	int outpos = 0, colorlessLen = 0, spaces = 0;
 
@@ -715,11 +742,11 @@ static void PlayerCleanName(const char *in, char *out, int outSize)
 		
 		outpos++;
 	}
-
+	
 	out[outpos] = '\0';
 
 	// don't allow empty names
-	if( *out == '\0' || colorlessLen == 0)
+	if ( !allowEmpty  && (*out == '\0' || colorlessLen == 0) )
 		Q_strncpyz(out, DEFAULT_PLAYER_NAME, outSize );
 }
 
@@ -760,11 +787,11 @@ if desired.
 */
 void PlayerUserinfoChanged( int playerNum ) {
 	gentity_t *ent;
-	int		teamTask, teamLeader;
+	int		teamLeader;
 	char	*s;
 	char	model[MAX_QPATH];
 	char	headModel[MAX_QPATH];
-	char	oldname[MAX_STRING_CHARS];
+	char	oldname[MAX_STRING_CHARS], oldclan[MAX_STRING_CHARS];
 	gplayer_t	*player;
 	char	c1[MAX_INFO_STRING];
 	char	c2[MAX_INFO_STRING];
@@ -797,7 +824,16 @@ void PlayerUserinfoChanged( int playerNum ) {
 	// set name
 	Q_strncpyz ( oldname, player->pers.netname, sizeof( oldname ) );
 	s = Info_ValueForKey (userinfo, "name");
-	PlayerCleanName( s, player->pers.netname, sizeof(player->pers.netname) );
+	PlayerCleanName( s, player->pers.netname, sizeof(player->pers.netname), qfalse );
+
+	// set clan tag
+	Q_strncpyz( oldclan, player->pers.netclan, sizeof( oldclan ) );
+	s = Info_ValueForKey( userinfo, "clan" );
+	PlayerCleanName( s, player->pers.netclan, sizeof( player->pers.netclan ), qtrue );
+
+	// set handedness
+	s = Info_ValueForKey( userinfo, "cg_drawGun" );
+	player->pers.handedness = atoi( s );
 
 	if ( player->sess.sessionTeam == TEAM_SPECTATOR ) {
 		if ( player->sess.spectatorState == SPECTATOR_SCOREBOARD ) {
@@ -812,15 +848,12 @@ void PlayerUserinfoChanged( int playerNum ) {
 	}
 
 	// set max health
-#ifdef MISSIONPACK
-	if (player->ps.powerups[PW_GUARD]) {
+	if ( player->ps.powerups[PW_RESISTANCE] ) {
 		player->pers.maxHealth = 200;
 	} else {
 		player->pers.maxHealth = PlayerHandicap( player );
 	}
-#else
-	player->pers.maxHealth = PlayerHandicap( player );
-#endif
+
 	player->ps.stats[STAT_MAX_HEALTH] = player->pers.maxHealth;
 
 	// set model
@@ -845,8 +878,6 @@ void PlayerUserinfoChanged( int playerNum ) {
 	}
 	*/
 
-	// team task (0 = none, 1 = offence, 2 = defence)
-	teamTask = atoi(Info_ValueForKey(userinfo, "teamTask"));
 	// team Leader (1 = leader, 0 is normal player)
 	teamLeader = player->sess.teamLeader;
 
@@ -858,16 +889,16 @@ void PlayerUserinfoChanged( int playerNum ) {
 	// print scoreboards, display models, and play custom sounds
 	if (ent->r.svFlags & SVF_BOT)
 	{
-		s = va("n\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\hc\\%i\\w\\%i\\l\\%i\\skill\\%s\\tt\\%d\\tl\\%d",
+		s = va("n\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\hc\\%i\\w\\%i\\l\\%i\\skill\\%s\\tl\\%d",
 			player->pers.netname, player->sess.sessionTeam, model, headModel, c1, c2, 
 			player->pers.maxHealth, player->sess.wins, player->sess.losses,
-			Info_ValueForKey( userinfo, "skill" ), teamTask, teamLeader );
+			Info_ValueForKey( userinfo, "skill" ), teamLeader );
 	}
 	else
 	{
-		s = va("n\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\hc\\%i\\w\\%i\\l\\%i\\tt\\%d\\tl\\%d",
-			player->pers.netname, player->sess.sessionTeam, model, headModel, c1, c2, 
-			player->pers.maxHealth, player->sess.wins, player->sess.losses, teamTask, teamLeader);
+		s = va("n\\%s\\cn\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\hc\\%i\\w\\%i\\l\\%i\\tl\\%d",
+			player->pers.netname, player->pers.netclan, player->sess.sessionTeam, model, headModel, c1, c2,
+			player->pers.maxHealth, player->sess.wins, player->sess.losses, teamLeader);
 	}
 
 	trap_SetConfigstring( CS_PLAYERS+playerNum, s );
@@ -1101,7 +1132,8 @@ void PlayerSpawn(gentity_t *ent) {
 	int		flags;
 	int		savedPing;
 //	char	*savedAreaBits;
-	int		accuracy_hits, accuracy_shots;
+	//int		statsWeaponHits[WP_NUM_WEAPONS], statsWeaponShots[WP_NUM_WEAPONS];
+	//int		statsWeaponDmgD[WP_NUM_WEAPONS], statsWeaponDmgR[WP_NUM_WEAPONS];
 	int		eventSequence;
 
 	index = ent - g_entities;
@@ -1126,17 +1158,15 @@ void PlayerSpawn(gentity_t *ent) {
 	else
 	{
 		// the first spawn should be at a good looking spot
-		if ( player->pers.initialSpawn && player->pers.localClient && GTF(GTF_CAMPAIGN) )
+		if ( (player->pers.initialSpawn && player->pers.localClient) || GTF( GTF_CAMPAIGN ) || (player->pers.initialSpawn && g_singlePlayerActive.integer && !GTF(GTF_TEAMS) ) )
 		{
-			spawnPoint = SelectInitialSpawnPoint(spawn_origin, spawn_angles,
-							     !!(ent->r.svFlags & SVF_BOT));
+			spawnPoint = SelectInitialSpawnPoint( spawn_origin, spawn_angles,
+							     !!(ent->r.svFlags & SVF_BOT), (GTF( GTF_CAMPAIGN ) && !g_singlePlayerActive.integer) );
 		}
 		else
 		{
 			// don't spawn near existing origin if possible
-			spawnPoint = SelectSpawnPoint ( 
-				player->ps.origin, 
-				spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
+			spawnPoint = SelectSpawnPoint ( player->ps.origin, spawn_origin, spawn_angles, !!(ent->r.svFlags & SVF_BOT));
 		}
 	}
 	player->pers.teamState.state = TEAM_ACTIVE;
@@ -1155,8 +1185,12 @@ void PlayerSpawn(gentity_t *ent) {
 	savedSess = player->sess;
 	savedPing = player->ps.ping;
 //	savedAreaBits = player->areabits;
-	accuracy_hits = player->accuracy_hits;
-	accuracy_shots = player->accuracy_shots;
+#if 0
+	memcpy( statsWeaponHits, player->statsWeaponHits, sizeof( statsWeaponHits ) );
+	memcpy( statsWeaponShots, player->statsWeaponShots, sizeof( statsWeaponShots ) );
+	memcpy( statsWeaponDmgD, player->statsWeaponDmgD, sizeof( statsWeaponDmgD ) );
+	memcpy( statsWeaponDmgR, player->statsWeaponDmgR, sizeof( statsWeaponDmgR ) );
+#endif
 	for ( i = 0 ; i < MAX_PERSISTANT ; i++ ) {
 		persistant[i] = player->ps.persistant[i];
 	}
@@ -1168,8 +1202,12 @@ void PlayerSpawn(gentity_t *ent) {
 	player->sess = savedSess;
 	player->ps.ping = savedPing;
 //	player->areabits = savedAreaBits;
-	player->accuracy_hits = accuracy_hits;
-	player->accuracy_shots = accuracy_shots;
+#if 0
+	memcpy( player->statsWeaponHits, statsWeaponHits, sizeof( player->statsWeaponHits ) );
+	memcpy( player->statsWeaponShots, statsWeaponShots, sizeof( player->statsWeaponShots ) );
+	memcpy( player->statsWeaponDmgD, statsWeaponDmgD, sizeof( player->statsWeaponDmgD ) );
+	memcpy( player->statsWeaponDmgR, statsWeaponDmgR, sizeof( player->statsWeaponDmgR ) );
+#endif
 	player->lastkilled_player = -1;
 
 	for ( i = 0 ; i < MAX_PERSISTANT ; i++ ) {
@@ -1224,8 +1262,8 @@ void PlayerSpawn(gentity_t *ent) {
 	}
 
 	player->ps.stats[STAT_WEAPONS] |= ( 1 << WP_GAUNTLET );
-	player->ps.ammo[WP_GAUNTLET] = -1;
-	player->ps.ammo[WP_GRAPPLING_HOOK] = -1;
+	player->ps.ammo[WP_GAUNTLET] = AMMO_INFINITE;
+	player->ps.ammo[WP_GRAPPLING_HOOK] = AMMO_INFINITE;
 
 	// health will count down towards max_health
 	ent->health = player->ps.stats[STAT_HEALTH] = player->ps.stats[STAT_MAX_HEALTH] + 25;
@@ -1354,7 +1392,7 @@ qboolean PlayerDisconnect( int playerNum, qboolean force ) {
 		// Especially important for stuff like CTF flags
 		TossPlayerItems( ent );
 #ifdef MISSIONPACK
-		TossPlayerPersistantPowerups( ent );
+		ResetPlayerRune( ent );
 #endif
 		if ( g_gameType.integer == GT_HARVESTER ) {
 			TossPlayerSkulls( ent );

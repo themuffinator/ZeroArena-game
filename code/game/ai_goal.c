@@ -837,8 +837,7 @@ int BotGetLevelItemGoal(int index, char *name, bot_goal_t *goal)
 	} //end for
 	for (; li; li = li->next)
 	{
-		//
-		if (g_gameType.integer == GT_SINGLE_PLAYER) {
+		if ( g_singlePlayerActive.integer ) {
 			if (li->flags & IFL_NOTSINGLE) continue;
 		}
 		if (TeamPlayIsOn()) {
@@ -1058,7 +1057,7 @@ void BotUpdateEntityItems(void)
 			//if this level item is already linked
 			if (li->entitynum) continue;
 			//
-			if (g_gameType.integer == GT_SINGLE_PLAYER) {
+			if ( g_singlePlayerActive.integer ) {
 				if (li->flags & IFL_NOTSINGLE) continue;
 			}
 			if (TeamPlayIsOn()) {
@@ -1289,7 +1288,7 @@ int BotChooseLTGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 	//go through the items in the level
 	for (li = levelitems; li; li = li->next)
 	{
-		if (g_gameType.integer == GT_SINGLE_PLAYER) {
+		if ( g_singlePlayerActive.integer ) {
 			if (li->flags & IFL_NOTSINGLE)
 				continue;
 		}
@@ -1458,7 +1457,7 @@ int BotChooseNBGItem(int goalstate, vec3_t origin, int *inventory, int travelfla
 	//go through the items in the level
 	for (li = levelitems; li; li = li->next)
 	{
-		if (g_gameType.integer == GT_SINGLE_PLAYER) {
+		if ( g_singlePlayerActive.integer ) {
 			if (li->flags & IFL_NOTSINGLE)
 				continue;
 		}

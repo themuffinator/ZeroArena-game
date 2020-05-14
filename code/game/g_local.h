@@ -78,7 +78,10 @@ typedef enum {
 	ROTATOR_POS1,
 	ROTATOR_POS2,
 	ROTATOR_1TO2,
-	ROTATOR_2TO1
+	ROTATOR_2TO1,
+//-muff
+//muff: trains
+	TRAIN_TOP,
 //-muff
 } moverState_t;
 
@@ -204,6 +207,12 @@ struct gentity_s {
 //q2
 	float		delay;
 	char		*killtarget;
+	char		*pathtarget;
+
+	char		*sitem;			// for trigger_key
+
+	float		volume;			// for target_speaker
+	int			attenuation;	// for target_speaker
 //-q2
 
 	// dlights
@@ -269,6 +278,7 @@ typedef struct {
 
 //
 #define MAX_NETNAME			36
+#define MAX_NETCLAN			16
 #define	MAX_VOTE_COUNT		3
 
 // player data that stays across multiple respawns, but is cleared
@@ -284,13 +294,16 @@ typedef struct {
 	qboolean	pmoveFixed;			//
 	int			antiLag;			// based on cg_antiLag userinfo
 	char		netname[MAX_NETNAME];
+	char		netclan[MAX_NETNAME];
 	int			maxHealth;			// for handicapping
 	int			enterTime;			// level.time the player entered the game
 	playerTeamState_t teamState;	// status in teamplay games
 	int			voteCount;			// to prevent people from constantly calling votes
 	qboolean	teamInfo;			// send team overlay updates?
-
-	qboolean	readyToBegin;
+//muff
+	qboolean	readyToBegin;		// ready to start match
+	int			handedness;			// cg_drawGun value for muzzle origin
+//-muff
 } playerPersistant_t;
 
 #define MAX_PLAYER_MARKERS 17
@@ -344,10 +357,12 @@ struct gplayer_s {
 	qboolean	damage_fromWorld;	// if true, don't use the damage_from vector
 
 	int			accurateCount;		// for "impressive" reward sound
-
-	int			accuracy_shots;		// total number of shots
-	int			accuracy_hits;		// total number of hits
-
+#if 0
+	int			statsWeaponShots[WP_NUM_WEAPONS];		// total number of shots per weapon
+	int			statsWeaponHits[WP_NUM_WEAPONS];		// total number of hits per weapon
+	int			statsWeaponDmgD[WP_NUM_WEAPONS];		// total damage dealt per weapon
+	int			statsWeaponDmgR[WP_NUM_WEAPONS];		// total damage received per weapon
+#endif
 	//
 	int			lastkilled_player;	// last player that this player killed
 	int			lasthurt_player;	// last player that damaged this player
@@ -360,6 +375,9 @@ struct gplayer_s {
 	int			rewardTime;			// clear the EF_AWARD_IMPRESSIVE, etc when time > this
 
 	int			airOutTime;
+//muff
+	int			treasonDmg;
+//-muff
 
 	int			lastKillTime;		// for multiple kill rewards
 
@@ -372,10 +390,10 @@ struct gplayer_s {
 	// like health / armor countdowns and regeneration
 	int			timeResidual;
 
-#ifdef MISSIONPACK
 	gentity_t	*persistantPowerup;
-	int			portalID;
 	int			ammoTimes[WP_NUM_WEAPONS];
+#ifdef MISSIONPACK
+	int			portalID;
 	int			invulnerabilityTime;
 #endif
 
@@ -493,6 +511,9 @@ typedef struct {
 	int			total_secrets;
 //-q2
 
+//muff
+	float		miscTimer[TEAM_NUM_TEAMS];		// for gametype speficic timing - flag capture times etc etc
+//-muff
 	//map
 	int			mapWeapons;
 
@@ -591,33 +612,26 @@ extern char* g_teamShortNames[TEAM_NUM_TEAMS];
 extern char* G_TeamName( team_t team );
 extern qboolean	IsValidTeam( const team_t team );
 extern char* PlayerName( playerPersistant_t p );
-
 char* G_PlayerTeamName( team_t team );
+int G_WeaponsTotalAccuracy( gplayer_t* cl );
+void G_ClearMedals( playerState_t* ps );
+void G_DropEntityToFloor( gentity_t* ent );
+char* replace( const char* s, const char* old, const char* new );
 
 //
 // g_combat.c
 //
 qboolean CanDamage (gentity_t *targ, vec3_t origin);
-void G_Damage (gentity_t *targ, gentity_t *inflictor, gentity_t *attacker, vec3_t dir, vec3_t point, int damage, int dflags, int mod);
-qboolean G_RadiusDamage (vec3_t origin, gentity_t *attacker, float damage, float radius, gentity_t *ignore, int mod);
+void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker, vec3_t dir, vec3_t point, int damage, int dflags, int mod, weapon_t weapon );
+qboolean G_RadiusDamage( vec3_t origin, gentity_t *attacker, float damage, float radius, gentity_t *ignore, const int dFlags, const int mod, const weapon_t weapon );
 int G_InvulnerabilityEffect( gentity_t *targ, vec3_t dir, vec3_t point, vec3_t impactpoint, vec3_t bouncedir );
 void body_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int meansOfDeath );
 void TossPlayerItems( gentity_t *self );
 void TossPlayerGametypeItems( gentity_t *self );
 #ifdef MISSIONPACK
-void TossPlayerPersistantPowerups( gentity_t *self );
+void ResetPlayerRune( gentity_t *self );
 #endif
 void TossPlayerSkulls( gentity_t *self );
-
-// damage flags
-#define DAMAGE_RADIUS				0x00000001	// damage was indirect
-#define DAMAGE_NO_ARMOR				0x00000002	// armour does not protect from this damage
-#define DAMAGE_NO_KNOCKBACK			0x00000004	// do not affect velocity, just view angles
-#define DAMAGE_NO_PROTECTION		0x00000008  // armor, shields, invulnerability, and godmode have no effect
-#ifdef MISSIONPACK
-#define DAMAGE_NO_TEAM_PROTECTION	0x00000010  // armor, shields, invulnerability, and godmode have no effect
-#endif
-#define DAMAGE_ENERGY				0x00000010	// high energy damage (ie: plasma, bfg)
 
 //
 // g_missile.c
@@ -877,6 +891,8 @@ extern	vmCvar_t	pmove_fixed;
 extern	vmCvar_t	pmove_msec;
 extern	vmCvar_t	pmove_overBounce;
 
+extern	vmCvar_t	g_dropFlags;
+
 extern	vmCvar_t	gt_frags_limit;
 extern	vmCvar_t	gt_frags_timelimit;
 extern	vmCvar_t	gt_duel_frags_limit;
@@ -898,8 +914,13 @@ extern	vmCvar_t	g_teamSize_min;
 extern	vmCvar_t	g_teamTotal_max;
 extern	vmCvar_t	g_teamTotal_min;
 
-extern	vmCvar_t	g_armorTiered;
+extern	vmCvar_t	g_treasonDamage;
+
+extern	vmCvar_t	g_ammoRules;
+extern	vmCvar_t	g_armorRules;
 extern	vmCvar_t	g_classicItemRespawns;
+
+extern	vmCvar_t	g_forceWeaponColors;
 
 extern	vmCvar_t	g_doReady;
 
@@ -908,3 +929,10 @@ extern	vmCvar_t	g_warmupReadyPercentage;
 extern	vmCvar_t	g_warmupWeaponSet;
 
 extern	vmCvar_t	g_intermissionForceExitTime;
+extern	vmCvar_t	g_gunyoffset;
+extern	vmCvar_t	g_gunzoffset;
+
+extern	vmCvar_t	pmove_q2;
+extern	vmCvar_t	pmove_q2slide;
+extern	vmCvar_t	pmove_q2air;
+

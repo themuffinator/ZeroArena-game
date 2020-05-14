@@ -122,28 +122,28 @@ typedef int intptr_t;
 #include <limits.h>
 
 #ifdef _MSC_VER
-  #include <io.h>
+#include <io.h>
 
-  typedef __int64 int64_t;
-  typedef __int32 int32_t;
-  typedef __int16 int16_t;
-  typedef __int8 int8_t;
-  typedef unsigned __int64 uint64_t;
-  typedef unsigned __int32 uint32_t;
-  typedef unsigned __int16 uint16_t;
-  typedef unsigned __int8 uint8_t;
+typedef __int64 int64_t;
+typedef __int32 int32_t;
+typedef __int16 int16_t;
+typedef __int8 int8_t;
+typedef unsigned __int64 uint64_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int16 uint16_t;
+typedef unsigned __int8 uint8_t;
 #else
-  #include <stdint.h>
+#include <stdint.h>
 #endif
 
 #ifdef _WIN32
   // vsnprintf is ISO/IEC 9899:1999
   // abstracting this to make it portable
-  int Q_vsnprintf(char *str, size_t size, const char *format, va_list ap);
+int Q_vsnprintf( char* str, size_t size, const char* format, va_list ap );
 
-  #define rint(x) (floor(x)+0.5f)
+#define rint(x) (floor(x)+0.5f)
 #else
-  #define Q_vsnprintf vsnprintf
+#define Q_vsnprintf vsnprintf
 #endif
 
 #endif
@@ -155,7 +155,7 @@ typedef int intptr_t;
 
 typedef unsigned char 		byte;
 
-typedef enum {qfalse, qtrue}	qboolean;
+typedef enum { qfalse, qtrue }	qboolean;
 
 typedef union {
 	float f;
@@ -221,13 +221,14 @@ typedef int		clipHandle_t;
 #endif
 
 #define	MAX_NAME_LENGTH		32		// max length of a player name
+#define	MAX_CLAN_LENGTH		16		// max length of a player clan tag
 
 // parameters for command buffer stuffing
 typedef enum {
 	EXEC_NOW,			// don't return until completed, a VM should NEVER use this,
 						// because some commands might cause the VM to be unloaded...
-	EXEC_INSERT,		// insert at current position, but don't run yet
-	EXEC_APPEND			// add to end of the command buffer (normal case)
+						EXEC_INSERT,		// insert at current position, but don't run yet
+						EXEC_APPEND			// add to end of the command buffer (normal case)
 } cbufExec_t;
 
 
@@ -260,11 +261,11 @@ typedef enum {
 
 
 #if !defined(NDEBUG) && !defined(BSPC)
-	#define ZONE_DEBUG
+#define ZONE_DEBUG
 #endif
 
 #if !defined(NDEBUG) && !defined(BSPC)
-	#define HUNK_DEBUG
+#define HUNK_DEBUG
 #endif
 
 typedef enum {
@@ -275,14 +276,14 @@ typedef enum {
 
 #ifdef HUNK_DEBUG
 #define Hunk_Alloc( size, preference )				Hunk_AllocDebug(size, preference, #size, __FILE__, __LINE__)
-void *Hunk_AllocDebug( int size, ha_pref preference, char *label, char *file, int line );
+void* Hunk_AllocDebug( int size, ha_pref preference, char* label, char* file, int line );
 #else
-void *Hunk_Alloc( int size, ha_pref preference );
+void* Hunk_Alloc( int size, ha_pref preference );
 #endif
 
 #define Com_Memset memset
 #define Com_Memcpy memcpy
-void Com_Memcpy2( void *dst, int dstSize, const void *src, int srcSize );
+void Com_Memcpy2( void* dst, int dstSize, const void* src, int srcSize );
 
 #define CIN_system	1
 #define CIN_loop	2
@@ -336,7 +337,7 @@ extern	vec4_t		colorDkGrey;
 #define Q_IsColorString(p)	( p && *(p) == Q_COLOR_ESCAPE && *((p)+1) && *((p)+1) != Q_COLOR_ESCAPE )
 
 extern const vec4_t colorTable[];
-extern const float* ColorFromChar(char ccode);
+extern const float* ColorFromChar( char ccode );
 
 #define COLOR_BLACK		'0'
 #define COLOR_RED		'1'
@@ -429,33 +430,33 @@ extern	vec3_t	axisDefault[3];
 
 #define	IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
-int Q_isnan(float x);
+int Q_isnan( float x );
 
 #if idx64
-  extern long qftolsse(float f);
-  extern int qvmftolsse(void);
-  extern void qsnapvectorsse(vec3_t vec);
+extern long qftolsse( float f );
+extern int qvmftolsse( void );
+extern void qsnapvectorsse( vec3_t vec );
 
-  #define Q_ftol qftolsse
-  #define Q_SnapVector qsnapvectorsse
+#define Q_ftol qftolsse
+#define Q_SnapVector qsnapvectorsse
 
-  extern int (*Q_VMftol)(void);
+extern int (*Q_VMftol)(void);
 #elif id386
-  extern long QDECL qftolx87(float f);
-  extern long QDECL qftolsse(float f);
-  extern int QDECL qvmftolx87(void);
-  extern int QDECL qvmftolsse(void);
-  extern void QDECL qsnapvectorx87(vec3_t vec);
-  extern void QDECL qsnapvectorsse(vec3_t vec);
+extern long QDECL qftolx87( float f );
+extern long QDECL qftolsse( float f );
+extern int QDECL qvmftolx87( void );
+extern int QDECL qvmftolsse( void );
+extern void QDECL qsnapvectorx87( vec3_t vec );
+extern void QDECL qsnapvectorsse( vec3_t vec );
 
-  extern long (QDECL *Q_ftol)(float f);
-  extern int (QDECL *Q_VMftol)(void);
-  extern void (QDECL *Q_SnapVector)(vec3_t vec);
+extern long (QDECL* Q_ftol)(float f);
+extern int (QDECL* Q_VMftol)(void);
+extern void (QDECL* Q_SnapVector)(vec3_t vec);
 #else
   // Q_ftol must expand to a function name so the pluggable renderer can take
   // its address
-  #define Q_ftol lrintf
-  #define Q_SnapVector(vec)\
+#define Q_ftol lrintf
+#define Q_SnapVector(vec)\
 	do\
 	{\
 		vec3_t *temp = (vec);\
@@ -486,22 +487,22 @@ int Q_isnan(float x);
 #if idppc
 
 static ID_INLINE float Q_rsqrt( float number ) {
-		float x = 0.5f * number;
-                float y;
+	float x = 0.5f * number;
+	float y;
 #ifdef __GNUC__            
-                asm("frsqrte %0,%1" : "=f" (y) : "f" (number));
+	asm( "frsqrte %0,%1" : "=f" (y) : "f" (number) );
 #else
-		y = __frsqrte( number );
+	y = __frsqrte( number );
 #endif
-		return y * (1.5f - (x * y * y));
-	}
+	return y * (1.5f - (x * y * y));
+}
 
 #ifdef __GNUC__            
-static ID_INLINE float Q_fabs(float x) {
-    float abs_x;
-    
-    asm("fabs %0,%1" : "=f" (abs_x) : "f" (x));
-    return abs_x;
+static ID_INLINE float Q_fabs( float x ) {
+	float abs_x;
+
+	asm( "fabs %0,%1" : "=f" (abs_x) : "f" (x) );
+	return abs_x;
 }
 #else
 #define Q_fabs __fabsf
@@ -568,8 +569,8 @@ void _VectorCopy( const vec3_t in, vec3_t out );
 void _VectorScale( const vec3_t in, float scale, vec3_t out );
 void _VectorMA( const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc );
 
-unsigned ColorBytes3 (float r, float g, float b);
-unsigned ColorBytes4 (float r, float g, float b, float a);
+unsigned ColorBytes3( float r, float g, float b );
+unsigned ColorBytes4( float r, float g, float b, float a );
 
 float NormalizeColor( const vec3_t in, vec3_t out );
 
@@ -579,61 +580,59 @@ void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs );
 
 #if !defined( Q3_VM ) || ( defined( Q3_VM ) && defined( __Q3_VM_MATH ) )
 static ID_INLINE int VectorEmpty( const vec3_t v ) {
-	if (v[0] != 0 || v[1] != 0 || v[2] != 0) {
+	if ( v[0] != 0 || v[1] != 0 || v[2] != 0 ) {
 		return 0;
 	}
 	return 1;
 }
 
 static ID_INLINE int VectorCompare( const vec3_t v1, const vec3_t v2 ) {
-	if (v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2]) {
+	if ( v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2] ) {
 		return 0;
-	}			
+	}
 	return 1;
 }
 
 static ID_INLINE int VectorCompareEpsilon(
-		const vec3_t v1, const vec3_t v2, float epsilon )
-{
+	const vec3_t v1, const vec3_t v2, float epsilon ) {
 	vec3_t d;
 
 	VectorSubtract( v1, v2, d );
-	d[ 0 ] = fabs( d[ 0 ] );
-	d[ 1 ] = fabs( d[ 1 ] );
-	d[ 2 ] = fabs( d[ 2 ] );
+	d[0] = fabs( d[0] );
+	d[1] = fabs( d[1] );
+	d[2] = fabs( d[2] );
 
-	if( d[ 0 ] > epsilon || d[ 1 ] > epsilon || d[ 2 ] > epsilon )
+	if ( d[0] > epsilon || d[1] > epsilon || d[2] > epsilon )
 		return 0;
 
 	return 1;
 }
 
 static ID_INLINE vec_t VectorLength( const vec3_t v ) {
-	return (vec_t)sqrt (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+	return (vec_t)sqrt( v[0] * v[0] + v[1] * v[1] + v[2] * v[2] );
 }
 
 static ID_INLINE vec_t VectorLengthSquared( const vec3_t v ) {
-	return (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+	return (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 }
 
 static ID_INLINE vec_t Distance( const vec3_t p1, const vec3_t p2 ) {
 	vec3_t	v;
 
-	VectorSubtract (p2, p1, v);
+	VectorSubtract( p2, p1, v );
 	return VectorLength( v );
 }
 
 static ID_INLINE vec_t DistanceSquared( const vec3_t p1, const vec3_t p2 ) {
 	vec3_t	v;
 
-	VectorSubtract (p2, p1, v);
-	return v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+	VectorSubtract( p2, p1, v );
+	return v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
 }
 
 // fast vector normalize routine that does not check to make sure
 // that length != 0, nor does it return length, uses rsqrt approximation
-static ID_INLINE void VectorNormalizeFast( vec3_t v )
-{
+static ID_INLINE void VectorNormalizeFast( vec3_t v ) {
 	float ilength;
 
 	ilength = Q_rsqrt( DotProduct( v, v ) );
@@ -643,16 +642,16 @@ static ID_INLINE void VectorNormalizeFast( vec3_t v )
 	v[2] *= ilength;
 }
 
-static ID_INLINE void VectorInverse( vec3_t v ){
+static ID_INLINE void VectorInverse( vec3_t v ) {
 	v[0] = -v[0];
 	v[1] = -v[1];
 	v[2] = -v[2];
 }
 
 static ID_INLINE void CrossProduct( const vec3_t v1, const vec3_t v2, vec3_t cross ) {
-	cross[0] = v1[1]*v2[2] - v1[2]*v2[1];
-	cross[1] = v1[2]*v2[0] - v1[0]*v2[2];
-	cross[2] = v1[0]*v2[1] - v1[1]*v2[0];
+	cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
+	cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
+	cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
 }
 
 static ID_INLINE int FloatAsInt( float f ) {
@@ -693,64 +692,64 @@ int FloatAsInt( float f );
 float IntAsFloat( int i );
 #endif
 
-vec_t VectorNormalize (vec3_t v);		// returns vector length
+vec_t VectorNormalize( vec3_t v );		// returns vector length
 vec_t VectorNormalize2( const vec3_t v, vec3_t out );
 void Vector4Scale( const vec4_t in, vec_t scale, vec4_t out );
 void VectorRotate( vec3_t in, vec3_t matrix[3], vec3_t out );
-int Q_log2(int val);
+int Q_log2( int val );
 
-int		Q_rand( int *seed );
-float	Q_random( int *seed );
-float	Q_crandom( int *seed );
+int		Q_rand( int* seed );
+float	Q_random( int* seed );
+float	Q_crandom( int* seed );
 
 #define random()	((rand () & 0x7fff) / ((float)0x7fff))
 #define crandom()	(2.0 * (random() - 0.5))
 
-void vectoangles( const vec3_t value1, vec3_t angles);
+void vectoangles( const vec3_t value1, vec3_t angles );
 void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
 
 void AxisClear( vec3_t axis[3] );
 void AxisCopy( vec3_t in[3], vec3_t out[3] );
-int AxisEmpty( vec3_t *axis );
+int AxisEmpty( vec3_t* axis );
 
-void SetPlaneSignbits( struct cplane_s *out );
-int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
+void SetPlaneSignbits( struct cplane_s* out );
+int BoxOnPlaneSide( vec3_t emins, vec3_t emaxs, struct cplane_s* plane );
 
-qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs,
-		const vec3_t mins2, const vec3_t maxs2);
-qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs,
-		const vec3_t origin, vec_t radius);
-qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs,
-		const vec3_t origin);
+qboolean BoundsIntersect( const vec3_t mins, const vec3_t maxs,
+	const vec3_t mins2, const vec3_t maxs2 );
+qboolean BoundsIntersectSphere( const vec3_t mins, const vec3_t maxs,
+	const vec3_t origin, vec_t radius );
+qboolean BoundsIntersectPoint( const vec3_t mins, const vec3_t maxs,
+	const vec3_t origin );
 
-float	AngleMod(float a);
-float	LerpAngle (float from, float to, float frac);
+float	AngleMod( float a );
+float	LerpAngle( float from, float to, float frac );
 float	AngleSubtract( float a1, float a2 );
 void	AnglesSubtract( vec3_t v1, vec3_t v2, vec3_t v3 );
 
-float AngleNormalize360 ( float angle );
-float AngleNormalize180 ( float angle );
-float AngleDelta ( float angle1, float angle2 );
+float AngleNormalize360( float angle );
+float AngleNormalize180( float angle );
+float AngleDelta( float angle1, float angle2 );
 
 qboolean PlaneFromPoints( vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t c );
 void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal );
 void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees );
 void RotateAroundDirection( vec3_t axis[3], float yaw );
-float Q_acos(float c);
-float Q_asin(float c);
+float Q_acos( float c );
+float Q_asin( float c );
 void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up );
 // perpendicular vector could be replaced by this
 
 //int	PlaneTypeForNormal (vec3_t normal);
 
-void MatrixMultiply(float in1[3][3], float in2[3][3], float out[3][3]);
-void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
+void MatrixMultiply( float in1[3][3], float in2[3][3], float out[3][3] );
+void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up );
 void PerpendicularVector( vec3_t dst, const vec3_t src );
 
 vec_t DistanceBetweenLineSegmentsSquared(
 	const vec3_t sP0, const vec3_t sP1,
 	const vec3_t tP0, const vec3_t tP1,
-	float *s, float *t );
+	float* s, float* t );
 
 #ifndef MAX
 #define MAX(x,y) ((x)>(y)?(x):(y))
@@ -764,21 +763,21 @@ vec_t DistanceBetweenLineSegmentsSquared(
 
 float Com_Clamp( float min, float max, float value );
 
-char	*COM_SkipPath( char *pathname );
-const char	*COM_GetExtension( const char *name );
-void	COM_StripExtension(const char *in, char *out, int destsize);
-qboolean COM_CompareExtension(const char *in, const char *ext);
-void	COM_DefaultExtension( char *path, int maxSize, const char *extension );
-void	COM_SetExtension(char *path, int maxSize, const char *extension);
+char* COM_SkipPath( char* pathname );
+const char* COM_GetExtension( const char* name );
+void	COM_StripExtension( const char* in, char* out, int destsize );
+qboolean COM_CompareExtension( const char* in, const char* ext );
+void	COM_DefaultExtension( char* path, int maxSize, const char* extension );
+void	COM_SetExtension( char* path, int maxSize, const char* extension );
 
-void	COM_BeginParseSession( const char *name );
+void	COM_BeginParseSession( const char* name );
 int		COM_GetCurrentParseLine( void );
-char	*COM_Parse( char **data_p );
-char	*COM_ParseExt( char **data_p, qboolean allowLineBreaks );
-char	*COM_ParseExt2( char **data_p, qboolean allowLineBreaks, char delimiter );
-int		COM_Compress( char *data_p );
-void	COM_ParseError( char *format, ... ) __attribute__ ((format (printf, 1, 2)));
-void	COM_ParseWarning( char *format, ... ) __attribute__ ((format (printf, 1, 2)));
+char* COM_Parse( char** data_p );
+char* COM_ParseExt( char** data_p, qboolean allowLineBreaks );
+char* COM_ParseExt2( char** data_p, qboolean allowLineBreaks, char delimiter );
+int		COM_Compress( char* data_p );
+void	COM_ParseError( char* format, ... ) __attribute__( (format( printf, 1, 2 )) );
+void	COM_ParseWarning( char* format, ... ) __attribute__( (format( printf, 1, 2 )) );
 //int		COM_ParseInfos( char *buf, int max, char infos[][MAX_INFO_STRING] );
 
 #define MAX_TOKENLENGTH		1024
@@ -877,8 +876,7 @@ void	COM_ParseWarning( char *format, ... ) __attribute__ ((format (printf, 1, 2)
 //		the length of the name
 #endif
 
-typedef struct pc_token_s
-{
+typedef struct pc_token_s {
 	int type;
 	int subtype;
 	int intvalue;
@@ -888,37 +886,36 @@ typedef struct pc_token_s
 
 // data is an in/out parm, returns a parsed out token
 
-void	COM_MatchToken( char**buf_p, char *match );
+void	COM_MatchToken( char** buf_p, char* match );
 
-qboolean SkipBracedSection (char **program, int depth);
-void SkipRestOfLine ( char **data );
-void SkipRestOfLineUntilBrace ( char **data );
+qboolean SkipBracedSection( char** program, int depth );
+void SkipRestOfLine( char** data );
+void SkipRestOfLineUntilBrace( char** data );
 
-void Parse1DMatrix (char **buf_p, int x, float *m);
-void Parse2DMatrix (char **buf_p, int y, int x, float *m);
-void Parse3DMatrix (char **buf_p, int z, int y, int x, float *m);
-int Com_HexStrToInt( const char *str );
+void Parse1DMatrix( char** buf_p, int x, float* m );
+void Parse2DMatrix( char** buf_p, int y, int x, float* m );
+void Parse3DMatrix( char** buf_p, int z, int y, int x, float* m );
+int Com_HexStrToInt( const char* str );
 
-int QDECL Com_sprintf (char *dest, int size, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
+int QDECL Com_sprintf( char* dest, int size, const char* fmt, ... ) __attribute__( (format( printf, 3, 4 )) );
 
-char *Com_SkipTokens( char *s, int numTokens, char *sep );
-char *Com_SkipCharset( char *s, char *sep );
+char* Com_SkipTokens( char* s, int numTokens, char* sep );
+char* Com_SkipCharset( char* s, char* sep );
 
-void Com_RandomBytes( byte *string, int len );
+void Com_RandomBytes( byte* string, int len );
 
-typedef struct 
-{
+typedef struct {
 	unsigned int hi;
 	unsigned int lo;
 } clientList_t;
 
-qboolean Com_ClientListContains( const clientList_t *list, int clientNum );
-void Com_ClientListAdd( clientList_t *list, int clientNum );
-void Com_ClientListRemove( clientList_t *list, int clientNum );
-void Com_ClientListClear( clientList_t *list );
-void Com_ClientListAll( clientList_t *list );
-char *Com_ClientListString( const clientList_t *list );
-void Com_ClientListParse( clientList_t *list, const char *s );
+qboolean Com_ClientListContains( const clientList_t* list, int clientNum );
+void Com_ClientListAdd( clientList_t* list, int clientNum );
+void Com_ClientListRemove( clientList_t* list, int clientNum );
+void Com_ClientListClear( clientList_t* list );
+void Com_ClientListAll( clientList_t* list );
+char* Com_ClientListString( const clientList_t* list );
+void Com_ClientListParse( clientList_t* list, const char* s );
 
 // mode parm for FS_FOpenFile
 typedef enum {
@@ -940,34 +937,33 @@ int Q_isprint( int c );
 int Q_islower( int c );
 int Q_isupper( int c );
 int Q_isalpha( int c );
-qboolean Q_isanumber( const char *s );
+qboolean Q_isanumber( const char* s );
 qboolean Q_isintegral( float f );
 
 // portable case insensitive compare
-int		Q_stricmp (const char *s1, const char *s2);
-int		Q_strncmp (const char *s1, const char *s2, int n);
-int		Q_stricmpn (const char *s1, const char *s2, int n);
-char	*Q_strlwr( char *s1 );
-char	*Q_strupr( char *s1 );
-const char	*Q_stristr( const char *s, const char *find);
+int		Q_stricmp( const char* s1, const char* s2 );
+int		Q_strncmp( const char* s1, const char* s2, int n );
+int		Q_stricmpn( const char* s1, const char* s2, int n );
+char* Q_strlwr( char* s1 );
+char* Q_strupr( char* s1 );
+const char* Q_stristr( const char* s, const char* find );
 
 // buffer size safe library replacements
-void	Q_strncpyz( char *dest, const char *src, int destsize );
-void	Q_strcat( char *dest, int size, const char *src );
+void	Q_strncpyz( char* dest, const char* src, int destsize );
+void	Q_strcat( char* dest, int size, const char* src );
 
 // strlen that discounts Quake color sequences
-int Q_PrintStrlen( const char *string );
+int Q_PrintStrlen( const char* string );
 // removes color sequences from string
-char *Q_CleanStr( char *string );
+char* Q_CleanStr( char* string );
 // Count the number of char tocount encountered in string
-int Q_CountChar(const char *string, char tocount);
+int Q_CountChar( const char* string, char tocount );
 
 //=============================================
 
 // 64-bit integers for global rankings interface
 // implemented as a struct for qvm compatibility
-typedef struct
-{
+typedef struct {
 	byte	b0;
 	byte	b1;
 	byte	b2;
@@ -980,43 +976,43 @@ typedef struct
 
 //=============================================
 #ifdef Q3_PORTABLE_ENDIAN
-short	BigShort(short l);
-short	LittleShort(short l);
-int		BigLong (int l);
-int		LittleLong (int l);
-qint64  BigLong64 (qint64 l);
-qint64  LittleLong64 (qint64 l);
-float	BigFloatPtr (const float *l);
-float	LittleFloatPtr (const float *l);
+short	BigShort( short l );
+short	LittleShort( short l );
+int		BigLong( int l );
+int		LittleLong( int l );
+qint64  BigLong64( qint64 l );
+qint64  LittleLong64( qint64 l );
+float	BigFloatPtr( const float* l );
+float	LittleFloatPtr( const float* l );
 
 #define BigFloat(x) BigFloatPtr(&x)
 #define LittleFloat(x) LittleFloatPtr(&x)
 
-void	Swap_Init (void);
+void	Swap_Init( void );
 #endif
 
-char	* QDECL va(char *format, ...) __attribute__ ((format (printf, 1, 2)));
+char* QDECL va( char* format, ... ) __attribute__( (format( printf, 1, 2 )) );
 
 #define TRUNCATE_LENGTH	64
-void Com_TruncateLongString( char *buffer, const char *s );
+void Com_TruncateLongString( char* buffer, const char* s );
 
 //=============================================
 
 //
 // key / value info strings
 //
-char *Info_ValueForKey( const char *s, const char *key );
-void Info_RemoveKey( char *s, const char *key );
-void Info_RemoveKey_Big( char *s, const char *key );
-void Info_SetValueForKey( char *s, const char *key, const char *value );
-void Info_SetValueForKey_Big( char *s, const char *key, const char *value );
-qboolean Info_Validate( const char *s );
-void Info_NextPair( const char **s, char *key, char *value );
+char* Info_ValueForKey( const char* s, const char* key );
+void Info_RemoveKey( char* s, const char* key );
+void Info_RemoveKey_Big( char* s, const char* key );
+void Info_SetValueForKey( char* s, const char* key, const char* value );
+void Info_SetValueForKey_Big( char* s, const char* key, const char* value );
+qboolean Info_Validate( const char* s );
+void Info_NextPair( const char** s, char* key, char* value );
 
 // this is only here so the functions in q_shared.c and bg_*.c can link
-void	QDECL Com_Error( int level, const char *error, ... ) __attribute__ ((noreturn, format(printf, 2, 3)));
-void	QDECL Com_Printf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
-void	QDECL Com_DPrintf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
+void	QDECL Com_Error( int level, const char* error, ... ) __attribute__( (noreturn, format( printf, 2, 3 )) );
+void	QDECL Com_Printf( const char* msg, ... ) __attribute__( (format( printf, 1, 2 )) );
+void	QDECL Com_DPrintf( const char* msg, ... ) __attribute__( (format( printf, 1, 2 )) );
 
 
 /*
@@ -1030,38 +1026,35 @@ default values.
 ==========================================================
 */
 
-#define	CVAR_ARCHIVE		0x00000001	// set to cause it to be saved to vars.rc
+#define	CVAR_ARCHIVE		0x0001	// set to cause it to be saved to vars.rc
 										// used for system variables, not for player
 										// specific configurations
-#define	CVAR_USERINFO		0x00000002	// sent to server on connect or change
-#define	CVAR_SERVERINFO		0x00000004	// sent in response to front end requests
-#define	CVAR_SYSTEMINFO		0x00000008	// these cvars will be duplicated on all clients
-#define	CVAR_INIT			0x00000010	// don't allow change from console at all,
+#define	CVAR_USERINFO		0x0002	// sent to server on connect or change
+#define	CVAR_SERVERINFO		0x0004	// sent in response to front end requests
+#define	CVAR_SYSTEMINFO		0x0008	// these cvars will be duplicated on all clients
+#define	CVAR_INIT		0x0010	// don't allow change from console at all,
 										// but can be set from the command line
-#define	CVAR_LATCH			0x00000020	// will only change when C code next does
+#define	CVAR_LATCH		0x0020	// will only change when C code next does
 										// a Cvar_Get(), so it can't be changed
 										// without proper initialization.  modified
 										// will be set, even though the value hasn't
 										// changed yet
-#define	CVAR_ROM			0x00000040	// display only, cannot be set by user at all
-#define	CVAR_USER_CREATED	0x00000080	// created by a set command
-#define	CVAR_TEMP			0x00000100	// can be set even when cheats are disabled, but is not archived
-#define CVAR_CHEAT			0x00000200	// can not be changed if cheats are disabled
-#define CVAR_NORESTART		0x00000400	// do not clear when a cvar_restart is issued
+#define	CVAR_ROM		0x0040	// display only, cannot be set by user at all
+#define	CVAR_USER_CREATED	0x0080	// created by a set command
+#define	CVAR_TEMP		0x0100	// can be set even when cheats are disabled, but is not archived
+#define CVAR_CHEAT		0x0200	// can not be changed if cheats are disabled
+#define CVAR_NORESTART		0x0400	// do not clear when a cvar_restart is issued
 
-#define CVAR_SERVER_CREATED	0x00000800	// cvar was created by a server the client connected to.
-#define CVAR_VM_CREATED		0x00001000	// cvar was created exclusively in one of the VMs.
-#define CVAR_PROTECTED		0x00002000	// prevent modifying this var from VMs or the server
-#define CVAR_USERINFO2		0x00004000	// userinfo for second local player
-#define CVAR_USERINFO3		0x00008000	// userinfo for third local player
-#define CVAR_USERINFO4		0x00010000	// userinfo for fourth local player
-#define CVAR_CUSTOM_RESET	0x00020000	// uses a custom game-specific reset string
-//muff
-#define CVAR_DEV			0x00040000	// can only be changed/listed in developer mode
-//-muff
+#define CVAR_SERVER_CREATED	0x0800	// cvar was created by a server the client connected to.
+#define CVAR_VM_CREATED		0x1000	// cvar was created exclusively in one of the VMs.
+#define CVAR_PROTECTED		0x2000	// prevent modifying this var from VMs or the server
+#define CVAR_USERINFO2		0x4000 // userinfo for second local player
+#define CVAR_USERINFO3		0x8000 // userinfo for third local player
+#define CVAR_USERINFO4		0x10000 // userinfo for fourth local player
+#define CVAR_CUSTOM_RESET	0x20000 // uses a custom game-specific reset string
 // These flags are only returned by the Cvar_Flags() function
-#define CVAR_MODIFIED		0x00080000	// Cvar was modified
-#define CVAR_NONEXISTENT	0x00100000	// Cvar doesn't exist.
+#define CVAR_MODIFIED		0x40000000	// Cvar was modified
+#define CVAR_NONEXISTENT	0x80000000	// Cvar doesn't exist.
 
 #define CVAR_USERINFO_ALL	(CVAR_USERINFO|CVAR_USERINFO2|CVAR_USERINFO3|CVAR_USERINFO4)
 
@@ -1069,11 +1062,11 @@ default values.
 typedef struct cvar_s cvar_t;
 
 struct cvar_s {
-	char			*name;
-	char			*string;
-	char			*resetString;		// cvar_restart will reset to this value
-	char			*overriddenResetString;	// the reset string as defined by code, set when resetString is overridden by Cvar_SetDefault
-	char			*latchedString;		// for CVAR_LATCH vars
+	char* name;
+	char* string;
+	char* resetString;		// cvar_restart will reset to this value
+	char* overriddenResetString;	// the reset string as defined by code, set when resetString is overridden by Cvar_SetDefault
+	char* latchedString;		// for CVAR_LATCH vars
 	int				flags;
 	qboolean	explicitSet;		// cvar has been explicitly set
 	qboolean	modified;			// set each time the cvar is changed
@@ -1084,12 +1077,12 @@ struct cvar_s {
 	qboolean	integral;
 	float			min;
 	float			max;
-	char			*description;
+	char* description;
 
-	cvar_t *next;
-	cvar_t *prev;
-	cvar_t *hashNext;
-	cvar_t *hashPrev;
+	cvar_t* next;
+	cvar_t* prev;
+	cvar_t* hashNext;
+	cvar_t* hashPrev;
 	int			hashIndex;
 };
 
@@ -1304,7 +1297,7 @@ typedef struct sharedPlayerState_s {
 // Max players for splitscreen
 // Also see CL_MAX_SPLITVIEW in client.h for lowering max supported splitview
 // clients in client/renderer, while still keep network and mod compatibility.
-#define MAX_SPLITVIEW 4
+#define MAX_SPLITVIEW 1	//4 muff TODO get rid of splitscreen gameplay
 
 //====================================================================
 
@@ -1359,9 +1352,9 @@ typedef enum {
 	CA_CINEMATIC		// playing a cinematic or a static pic, not connected to a server
 } connstate_t;
 
-char *Com_LocalPlayerCvarName(int localPlayerNum, const char *in_cvarName);
-int Com_LocalPlayerForCvarName(const char *in_cvarName);
-const char *Com_LocalPlayerBaseCvarName(const char *in_cvarName);
+char* Com_LocalPlayerCvarName( int localPlayerNum, const char* in_cvarName );
+int Com_LocalPlayerForCvarName( const char* in_cvarName );
+const char* Com_LocalPlayerBaseCvarName( const char* in_cvarName );
 
 #define Square(x) ((x)*(x))
 

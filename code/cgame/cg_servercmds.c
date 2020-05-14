@@ -34,6 +34,74 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 #include "cg_local.h"
 
+
+
+void CG_PrintPlayerWeaponStats( void ) {
+#if 0
+	//char pstr[1024];
+	int i;
+	playerStats_t *s = &cg.pstats;
+
+	CG_Printf( "Weapon Stats (per weapon):\n" );
+	//CG_Printf( "%c%c<weapon>: <dmgD> <dmgR> <DRatio> <shots> <hits> <accuracy>\n\n", Q_COLOR_ESCAPE, COLOR_CREAM );
+	CG_Printf( "%c%c<weapon>: <dmgD> <dmgR> <shots> <hits>\n\n", Q_COLOR_ESCAPE, COLOR_CREAM );
+	for ( i = WP_MACHINEGUN; i < WP_NUM_WEAPONS; i++ ) {
+		if ( WP_GRAPPLING_HOOK ) continue;
+
+		//Com_sprintf( pstr, sizeof(pstr), "%c%c%s%c%c: %i %i %.2f %i %i %.2f", Q_COLOR_ESCAPE, COLOR_YELLOW, weaponNamesShort[i], Q_COLOR_ESCAPE, COLOR_CREAM,
+			//s->statsWeaponDmgD[i], s->statsWeaponDmgR[i], s->statsWeaponDamageRatio[i], s->statsWeaponShots[i], s->statsWeaponHits[i], s->statsWeaponAccuracy[i] );
+		CG_Printf( "%c%c%s%c%c: %i %i %i %i", Q_COLOR_ESCAPE, COLOR_YELLOW, weaponNamesShort[i], Q_COLOR_ESCAPE, COLOR_CREAM,
+			s->statsWeaponDmgD[i], s->statsWeaponDmgR[i], s->statsWeaponShots[i], s->statsWeaponHits[i] );
+		//CG_Printf( "%s", pstr );
+	}
+#endif
+#if 0
+	CG_Printf( "\n" );
+	CG_Printf( "Weapon Stats (totals):\n" );
+	CG_Printf( "%c%cShots / Hits: %c%c%i / %i (%.2f %%)\n", Q_COLOR_ESCAPE, COLOR_CREAM, Q_COLOR_ESCAPE, COLOR_YELLOW, s->statsWeaponTotalShots, s->statsWeaponTotalHits, s->statsWeaponTotalAccuracy );
+	CG_Printf( "%c%cDamage Delivered / Received: %c%c%i / %i (%.2f %%)\n", Q_COLOR_ESCAPE, COLOR_CREAM, Q_COLOR_ESCAPE, COLOR_YELLOW, s->statsWeaponTotalDmgD, s->statsWeaponTotalDmgR, s->statsWeaponTotalDamageRatio );
+#endif
+}
+
+/*
+=================
+CG_ParsePlayerWeaponStats
+
+=================
+*/
+static void CG_ParsePlayerWeaponStats( int start ) {
+#if 0
+	int				i, j;
+	playerStats_t	*s = &cg.pstats;
+	//i = WP_MACHINEGUN;
+	j = 1;	// playernum not used for now
+	for ( i = WP_MACHINEGUN; i < WP_NUM_WEAPONS; i++ ) {
+		if ( i == WP_GRAPPLING_HOOK ) continue;
+		s->statsWeaponShots[i] = atoi( CG_Argv( j++ + start ) );
+		s->statsWeaponHits[i] = atoi( CG_Argv( j++ + start ) );
+		s->statsWeaponDmgD[i] = atoi( CG_Argv( j++ + start ) );
+		s->statsWeaponDmgR[i] = atoi( CG_Argv( j++ + start ) );
+
+		//CG_Printf( "weap %i done\n", i );
+	}
+#endif
+#if 0
+		s->statsWeaponAccuracy[i] = s->statsWeaponHits[i] * 100 / s->statsWeaponShots[i];
+
+		s->statsWeaponTotalAccuracy += s->statsWeaponAccuracy[i];
+		s->statsWeaponTotalDmgD += s->statsWeaponDmgD[i];
+		s->statsWeaponTotalDmgR += s->statsWeaponDmgR[i];
+		s->statsWeaponTotalShots += s->statsWeaponShots[i];
+		s->statsWeaponTotalHits += s->statsWeaponHits[i];
+
+	//}
+	s->statsWeaponTotalDamageRatio = (float)s->statsWeaponTotalDmgD / (float)s->statsWeaponTotalDmgR;
+	s->statsWeaponTotalAccuracy = (float)s->statsWeaponTotalShots * 100.0f / (float)s->statsWeaponTotalHits;
+#endif
+	//CG_PrintPlayerWeaponStats();
+}
+
+
 /*
 =================
 CG_ParseScores
@@ -56,20 +124,21 @@ static void CG_ParseScores( int start ) {
 		score_t* s = &cg.scores[i];
 		int k = j, powerups;
 
-		s->playerNum = atoi( CG_Argv( i * 14 + k++ + start) );
-		s->score = atoi( CG_Argv( i * 14 + k++ + start) );
-		s->ping = atoi( CG_Argv( i * 14 + k++ + start) );
-		s->time = atoi( CG_Argv( i * 14 + k++ + start) );
-		s->scoreFlags = atoi( CG_Argv( i * 14 + k++ + start) );
-		powerups = atoi( CG_Argv( i * 14 + k++ + start) );
-		s->accuracy = atoi(CG_Argv(i * 14 + k++ + start));
-		s->impressiveCount = atoi(CG_Argv(i * 14 + k++ + start));
-		s->excellentCount = atoi(CG_Argv(i * 14 + k++ + start));
-		s->guantletCount = atoi(CG_Argv(i * 14 + k++ + start));
-		s->defendCount = atoi(CG_Argv(i * 14 + k++ + start));
-		s->assistCount = atoi(CG_Argv(i * 14 + k++ + start));
-		s->perfect = atoi(CG_Argv(i * 14 + k++ + start));
-		s->captures = atoi(CG_Argv(i * 14 + k++ + start));
+		s->playerNum = atoi( CG_Argv( i * 15 + k++ + start) );
+		s->score = atoi( CG_Argv( i * 15 + k++ + start) );
+		s->ping = atoi( CG_Argv( i * 15 + k++ + start) );
+		s->time = atoi( CG_Argv( i * 15 + k++ + start) );
+		s->scoreFlags = atoi( CG_Argv( i * 15 + k++ + start) );
+		powerups = atoi( CG_Argv( i * 15 + k++ + start) );
+		s->accuracy = atoi(CG_Argv(i * 15 + k++ + start));
+		s->impressiveCount = atoi(CG_Argv(i * 15 + k++ + start));
+		s->excellentCount = atoi(CG_Argv(i * 15 + k++ + start));
+		s->guantletCount = atoi(CG_Argv(i * 15 + k++ + start));
+		s->defendCount = atoi(CG_Argv(i * 15 + k++ + start));
+		s->assistCount = atoi(CG_Argv(i * 15 + k++ + start));
+		s->perfect = atoi(CG_Argv(i * 15 + k++ + start));
+		s->captures = atoi(CG_Argv(i * 15 + k++ + start));
+		s->holyShitCount = atoi( CG_Argv( i * 15 + k++ + start ) );
 
 		if ( s->playerNum < 0 || s->playerNum >= MAX_CLIENTS ) {
 			s->playerNum = 0;
@@ -153,14 +222,15 @@ void CG_ParseServerinfo( void ) {
 	cgs.dmFlags = atoi( Info_ValueForKey( info, "dmFlags" ) );
 	cgs.scoreLimit = atoi( Info_ValueForKey( info, "scoreLimit" ) );
 	cgs.timeLimit = atoi( Info_ValueForKey( info, "timeLimit" ) );
-	cgs.maxplayers = atoi( Info_ValueForKey( info, "sv_maxclients" ) );
+	cgs.maxplayers = atoi( Info_ValueForKey( info, "sv_maxClients" ) );
 	cgs.bots_enabled = atoi( Info_ValueForKey( info, "bot_enable" ) );
 	mapname = Info_ValueForKey( info, "mapName" );
 	Com_sprintf( cgs.mapname, sizeof( cgs.mapname ), "maps/%s.bsp", mapname );
 	cgs.gravity = atoi( Info_ValueForKey( info, "g_gravity" ) );
-	cgs.tieredArmor = atoi( Info_ValueForKey( info, "g_armorTiered" ) );
+	cgs.armorRules = atoi( Info_ValueForKey( info, "g_armorRules" ) );
 	cgs.teamSizeMin = atoi( Info_ValueForKey( info, "g_teamSize_min" ) );
 	cgs.teamSizeMax = atoi( Info_ValueForKey( info, "g_teamSize_max" ) );
+	cgs.forceWeaponColors = atoi( Info_ValueForKey( info, "g_forceWeaponColors" ) );
 }
 
 
@@ -571,9 +641,9 @@ static void CG_MapRestart( void ) {
 	if ( cg.warmupTime == 0 ) {
 		trap_S_StartLocalSound( cgs.media.countFightSound, CHAN_ANNOUNCER );
 		if ( CG_NumLocalPlayers() > 1 ) {
-			CG_GlobalCenterPrint( "FIGHT!", SCREEN_HEIGHT/2, 0.8 );
+			CG_GlobalCenterPrint( "FIGHT!", SCREEN_HEIGHT/2, 0.6 );
 		} else {
-			CG_GlobalCenterPrint( "FIGHT!", 112 + GIANTCHAR_HEIGHT/2, 0.8 );
+			CG_GlobalCenterPrint( "FIGHT!", 112 + BIGCHAR_HEIGHT/2, 0.6 );
 		}
 	}
 #ifdef MISSIONPACK
@@ -783,6 +853,7 @@ static void CG_ServerCommand( void ) {
 
 	if ( !strcmp( cmd, "print" ) ) {
 		CG_NotifyBitsPrintf( localPlayerBits, "%s", CG_Argv( start+1 ) );
+		CG_GameNotifyAdd( va( "%s", CG_Argv( start + 1 ) ) );
 		return;
 	}
 
@@ -824,6 +895,7 @@ static void CG_ServerCommand( void ) {
 		CG_RemoveChatEscapeChar( text );
 		if ( chatPlayerNum >= 0 && chatPlayerNum < MAX_CLIENTS ) {
 			CG_AddToTeamChat( localPlayerBits, cgs.playerinfo[chatPlayerNum].team, text );
+			CG_GameNotifyAdd( text );
 		} else {
 			CG_NotifyBitsPrintf( localPlayerBits, "%s\n", text );
 		}
@@ -844,11 +916,17 @@ static void CG_ServerCommand( void ) {
 
 		CG_RemoveChatEscapeChar( text );
 		CG_AddToTeamChat( localPlayerBits, team, text );
+		CG_GameNotifyAdd( text );
 		return;
 	}
 
 	if ( !strcmp( cmd, "scores" ) ) {
 		CG_ParseScores(start);
+		return;
+	}
+
+	if ( !strcmp( cmd, "pwstats" ) ) {
+		CG_ParsePlayerWeaponStats( start );
 		return;
 	}
 

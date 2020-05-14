@@ -120,14 +120,14 @@ void G_InitSessionData( gplayer_t *player, char *userinfo ) {
 		sess->spectatorState = SPECTATOR_FREE;
 
 		// allow specifying team, mainly for bots (and humans via start server menu)
-		value = Info_ValueForKey( userinfo, "teampref" );
+		value = Info_ValueForKey( userinfo, "teamPref" );
 
 		if ( value[0] || g_teamAutoJoin.integer ) {
 			SetTeam( &g_entities[player - level.players], value );
 		}
 	} else {
-		value = Info_ValueForKey( userinfo, "teampref" );
-		//TODO: should teampref be used? joining clients should be greeted by welcome screen
+		value = Info_ValueForKey( userinfo, "teamPref" );
+		//TODO: should teamPref be used? joining clients should be greeted by welcome screen
 		if ( value[0] == 's' ) {
 			// a willing spectator, not a waiting-in-line
 			sess->sessionTeam = TEAM_SPECTATOR;

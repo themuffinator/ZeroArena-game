@@ -1056,7 +1056,6 @@ Q3CGOBJ = \
   $(B)/$(BASEGAME)/cgame/bg_gametypes.o \
   $(B)/$(BASEGAME)/cgame/bg_misc.o \
   $(B)/$(BASEGAME)/cgame/bg_pmove.o \
-  $(B)/$(BASEGAME)/cgame/bg_slidemove.o \
   $(B)/$(BASEGAME)/cgame/bg_lib.o \
   $(B)/$(BASEGAME)/cgame/bg_tracemap.o \
   $(B)/$(BASEGAME)/cgame/cg_atmospheric.o \
@@ -1153,7 +1152,6 @@ MPCGOBJ = \
   $(B)/$(MISSIONPACK)/cgame/bg_gametypes.o \
   $(B)/$(MISSIONPACK)/cgame/bg_misc.o \
   $(B)/$(MISSIONPACK)/cgame/bg_pmove.o \
-  $(B)/$(MISSIONPACK)/cgame/bg_slidemove.o \
   $(B)/$(MISSIONPACK)/cgame/bg_lib.o \
   $(B)/$(MISSIONPACK)/cgame/bg_tracemap.o \
   $(B)/$(MISSIONPACK)/cgame/cg_atmospheric.o \
@@ -1277,7 +1275,6 @@ Q3GOBJ = \
   $(B)/$(BASEGAME)/game/bg_gametypes.o \
   $(B)/$(BASEGAME)/game/bg_misc.o \
   $(B)/$(BASEGAME)/game/bg_pmove.o \
-  $(B)/$(BASEGAME)/game/bg_slidemove.o \
   $(B)/$(BASEGAME)/game/bg_lib.o \
   $(B)/$(BASEGAME)/game/bg_tracemap.o \
   $(B)/$(BASEGAME)/game/g_active.o \
@@ -1357,7 +1354,6 @@ MPGOBJ = \
   $(B)/$(MISSIONPACK)/game/bg_gametypes.o \
   $(B)/$(MISSIONPACK)/game/bg_misc.o \
   $(B)/$(MISSIONPACK)/game/bg_pmove.o \
-  $(B)/$(MISSIONPACK)/game/bg_slidemove.o \
   $(B)/$(MISSIONPACK)/game/bg_lib.o \
   $(B)/$(MISSIONPACK)/game/bg_tracemap.o \
   $(B)/$(MISSIONPACK)/game/g_active.o \

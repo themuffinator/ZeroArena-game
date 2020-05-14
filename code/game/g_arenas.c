@@ -49,7 +49,7 @@ void UpdateTournamentInfo( void ) {
 	int			i;
 	gentity_t* ent;
 	int			playerNum;
-	int			n, accuracy, perfect, msglen;
+	int			n, perfect, msglen;
 	int			score1, score2;
 	qboolean	won;
 	char		buf[32];
@@ -77,11 +77,7 @@ void UpdateTournamentInfo( void ) {
 	if ( level.players[playerNum].sess.sessionTeam == TEAM_SPECTATOR ) {
 		Com_sprintf( msg, sizeof( msg ), "postgame %i %i 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0", level.numNonSpectatorPlayers, playerNum );
 	} else {
-		if ( ent->player->accuracy_shots ) {
-			accuracy = ent->player->accuracy_hits * 100 / ent->player->accuracy_shots;
-		} else {
-			accuracy = 0;
-		}
+		
 		won = qfalse;
 		if ( GTF( GTF_TEAMS ) ) {
 			won = (level.players[playerNum].sess.sessionTeam == level.sortedTeams[1]);
@@ -109,10 +105,10 @@ void UpdateTournamentInfo( void ) {
 		} else {
 			perfect = 0;
 		}
-		Com_sprintf( msg, sizeof( msg ), "postgame %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i", level.numNonSpectatorPlayers, playerNum, accuracy,
+		Com_sprintf( msg, sizeof( msg ), "postgame %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i", level.numNonSpectatorPlayers, playerNum, G_WeaponsTotalAccuracy( ent->player ),
 			ent->player->ps.persistant[PERS_IMPRESSIVE_COUNT], ent->player->ps.persistant[PERS_EXCELLENT_COUNT], ent->player->ps.persistant[PERS_DEFEND_COUNT],
 			ent->player->ps.persistant[PERS_ASSIST_COUNT], ent->player->ps.persistant[PERS_GAUNTLET_FRAG_COUNT], ent->player->ps.persistant[PERS_SCORE],
-			perfect, score1, score2, level.teamScores[TEAM_GREEN], level.teamScores[TEAM_YELLOW], level.teamScores[TEAM_TEAL], level.teamScores[TEAM_PINK], level.time, ent->player->ps.persistant[PERS_CAPTURES] );
+			perfect, score1, score2, level.teamScores[TEAM_GREEN], level.teamScores[TEAM_YELLOW], level.teamScores[TEAM_TEAL], level.teamScores[TEAM_PINK], level.time, ent->player->ps.persistant[PERS_CAPTURES], ent->player->ps.persistant[PERS_HOLYSHIT_COUNT] );
 	}
 
 	msglen = strlen( msg );
@@ -357,9 +353,7 @@ Svcmd_AbortPodium_f
 ===============
 */
 void Svcmd_AbortPodium_f( void ) {
-	if ( g_gameType.integer != GT_SINGLE_PLAYER ) {
-		return;
-	}
+	if ( !g_singlePlayerActive.integer ) return;
 
 	if ( podium1 ) {
 		podium1->nextthink = level.time;

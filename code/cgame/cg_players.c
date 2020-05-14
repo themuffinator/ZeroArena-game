@@ -375,40 +375,22 @@ static qboolean	CG_FindPlayerModelFile( char *filename, int length, playerInfo_t
 	team = "bright";
 
 	for ( i = 0; i < 2; i++ ) {
-		if ( i == 0 && teamName && *teamName ) {
-			//								"models/players/james/stroggs/lower_lily_red.skin"
-			Com_sprintf( filename, length, "models/players/%s/%s%s_%s_%s.%s", modelName, teamName, base, skinName, team, ext );
-		}
-		else {
-			//								"models/players/james/lower_lily_red.skin"
-			Com_sprintf( filename, length, "models/players/%s/%s_%s_%s.%s", modelName, base, skinName, team, ext );
-		}
-		if ( CG_FileExists( filename ) ) {
+#if 0
+		//								"models/players/james/lower_lily_red.skin"
+		Com_sprintf( filename, length, "models/players/%s/%s_%s_%s.%s", modelName, base, skinName, team, ext );
+		if ( CG_FileExists( filename ) )
 			return qtrue;
-		}
-		if ( GTF(GTF_TEAMS) ) {
-			if ( i == 0 && teamName && *teamName ) {
-				//								"models/players/james/stroggs/lower_red.skin"
-				Com_sprintf( filename, length, "models/players/%s/%s%s_%s.%s", modelName, teamName, base, team, ext );
-			}
-			else {
-				//								"models/players/james/lower_red.skin"
-				Com_sprintf( filename, length, "models/players/%s/%s_%s.%s", modelName, base, team, ext );
-			}
-		}
-		else {
-			if ( i == 0 && teamName && *teamName ) {
-				//								"models/players/james/stroggs/lower_lily.skin"
-				Com_sprintf( filename, length, "models/players/%s/%s%s_%s.%s", modelName, teamName, base, skinName, ext );
-			}
-			else {
-				//								"models/players/james/lower_lily.skin"
-				Com_sprintf( filename, length, "models/players/%s/%s_%s.%s", modelName, base, skinName, ext );
-			}
-		}
-		if ( CG_FileExists( filename ) ) {
+#endif
+		//								"models/players/james/lower_red.skin"
+		Com_sprintf( filename, length, "models/players/%s/%s_%s.%s", modelName, base, team, ext );
+		if ( CG_FileExists( filename ) )
 			return qtrue;
-		}
+
+		//								"models/players/james/lower_lily.skin"
+		Com_sprintf( filename, length, "models/players/%s/%s_%s.%s", modelName, base, skinName, ext );
+		if ( CG_FileExists( filename ) )
+			return qtrue;
+
 		if ( !teamName || !*teamName ) {
 			break;
 		}
@@ -423,26 +405,14 @@ CG_FindPlayerHeadFile
 ==========================
 */
 static qboolean	CG_FindPlayerHeadFile( char *filename, int length, playerInfo_t *pi, const char *teamName, const char *headModelName, const char *headSkinName, const char *base, const char *ext ) {
-	char *team, *headsFolder;
+	char *team;
 	int i;
 
 	team = "bright";
 
-	if ( headModelName[0] == '*' ) {
-		headsFolder = "heads/";
-		headModelName++;
-	}
-	else {
-		headsFolder = "";
-	}
 	while(1) {
 		for ( i = 0; i < 2; i++ ) {
-			if ( i == 0 && teamName && *teamName ) {
-				Com_sprintf( filename, length, "models/players/%s%s/%s/%s%s_%s.%s", headsFolder, headModelName, headSkinName, teamName, base, team, ext );
-			}
-			else {
-				Com_sprintf( filename, length, "models/players/%s%s/%s/%s_%s.%s", headsFolder, headModelName, headSkinName, base, team, ext );
-			}
+			Com_sprintf( filename, length, "models/players/%s/%s_%s.%s", headModelName, base, team, ext );
 
 			if (Q_stricmpn(ext, "$image", 6) == 0) {
 				COM_StripExtension(filename, filename, length);
@@ -453,22 +423,8 @@ static qboolean	CG_FindPlayerHeadFile( char *filename, int length, playerInfo_t 
 				return qtrue;
 			}
 
-			if ( GTF(GTF_TEAMS) ) {
-				if ( i == 0 &&  teamName && *teamName ) {
-					Com_sprintf( filename, length, "models/players/%s%s/%s%s_%s.%s", headsFolder, headModelName, teamName, base, team, ext );
-				}
-				else {
-					Com_sprintf( filename, length, "models/players/%s%s/%s_%s.%s", headsFolder, headModelName, base, team, ext );
-				}
-			}
-			else {
-				if ( i == 0 && teamName && *teamName ) {
-					Com_sprintf( filename, length, "models/players/%s%s/%s%s_%s.%s", headsFolder, headModelName, teamName, base, headSkinName, ext );
-				}
-				else {
-					Com_sprintf( filename, length, "models/players/%s%s/%s_%s.%s", headsFolder, headModelName, base, headSkinName, ext );
-				}
-			}
+			
+			Com_sprintf( filename, length, "models/players/%s/%s_%s.%s", headModelName, base, headSkinName, ext );
 
 			if (Q_stricmpn(ext, "$image", 6) == 0) {
 				COM_StripExtension(filename, filename, length);
@@ -483,11 +439,6 @@ static qboolean	CG_FindPlayerHeadFile( char *filename, int length, playerInfo_t 
 				break;
 			}
 		}
-		// if tried the heads folder first
-		if ( headsFolder[0] ) {
-			break;
-		}
-		headsFolder = "heads/";
 	}
 
 	return qfalse;
@@ -678,7 +629,7 @@ CG_RegisterPlayerModelname
 static qboolean CG_RegisterPlayerModelname( playerInfo_t *pi, const char *modelName, const char *skinName, const char *headModelName, const char *headSkinName, const char *teamName ) {
 	char	filename[MAX_QPATH];
 	const char		*headName;
-	char newTeamName[MAX_QPATH];
+	//char newTeamName[MAX_QPATH];
 
 	if ( headModelName[0] == '\0' ) {
 		headName = modelName;
@@ -720,22 +671,8 @@ static qboolean CG_RegisterPlayerModelname( playerInfo_t *pi, const char *modelN
 
 	// if any skins failed to load, return failure
 	if ( !CG_RegisterPlayerSkin( pi, teamName, modelName, skinName, headName, headSkinName ) ) {
-		if ( teamName && *teamName) {
-			Com_Printf( "Failed to load skin file: %s : %s : %s, %s : %s\n", teamName, modelName, skinName, headName, headSkinName );
-			if( pi->team == TEAM_BLUE ) {
-				Com_sprintf(newTeamName, sizeof(newTeamName), "%s/", DEFAULT_BLUETEAM_NAME);
-			}
-			else {
-				Com_sprintf(newTeamName, sizeof(newTeamName), "%s/", DEFAULT_REDTEAM_NAME);
-			}
-			if ( !CG_RegisterPlayerSkin( pi, newTeamName, modelName, skinName, headName, headSkinName ) ) {
-				Com_Printf( "Failed to load skin file: %s : %s : %s, %s : %s\n", newTeamName, modelName, skinName, headName, headSkinName );
-				return qfalse;
-			}
-		} else {
-			Com_Printf( "Failed to load skin file: %s : %s, %s : %s\n", modelName, skinName, headName, headSkinName );
-			return qfalse;
-		}
+		Com_Printf( "Failed to load skin file: %s : %s, %s : %s\n", modelName, skinName, headName, headSkinName );
+		return qfalse;
 	}
 
 	// load the animations
@@ -847,8 +784,8 @@ This will usually be deferred to a safe time
 ===================
 */
 static void CG_LoadPlayerInfo( int playerNum, playerInfo_t *pi ) {
-	const char	*defaultModel, *defaultHeadModel;
-	const char	*skinName, *headSkinName;
+	//const char	*defaultModel, *defaultHeadModel;
+	//const char* skinName, * headSkinName;
 	const char	*dir, *fallback;
 	int			i, modelloaded;
 	const char	*s;
@@ -868,19 +805,13 @@ static void CG_LoadPlayerInfo( int playerNum, playerInfo_t *pi ) {
 	}
 #endif
 	modelloaded = qtrue;
-	if ( !CG_RegisterPlayerModelname( pi, pi->modelName, pi->skinName, pi->headModelName, pi->headSkinName, teamname ) ) {
+	if ( !CG_RegisterPlayerModelname( pi, pi->modelName, "bright", pi->headModelName, pi->skinName, teamname ) ) {
 		if ( cg_buildScript.integer ) {
 			CG_Error( "CG_RegisterPlayerModelname( %s, %s, %s, %s %s ) failed", pi->modelName, pi->skinName, pi->headModelName, pi->headSkinName, teamname );
 		}
 
-		defaultModel = cg_defaultModelGender.string[0] == 'f' ? cg_defaultFemaleModel.string : cg_defaultMaleModel.string;
-		defaultHeadModel = cg_defaultModelGender.string[0] == 'f' ? cg_defaultFemaleHeadModel.string : cg_defaultMaleHeadModel.string;
-
-		skinName = "bright";
-		headSkinName = "bright";
-
-		if ( !CG_RegisterPlayerModelname( pi, defaultModel, skinName, defaultHeadModel, headSkinName, teamname ) ) {
-			CG_Error( "Default player model (model %s/%s, head %s/%s) failed to register", defaultModel, skinName, defaultHeadModel, headSkinName );
+		if ( !CG_RegisterPlayerModelname( pi, DEFAULT_MODEL, "default", DEFAULT_MODEL, "default", teamname ) ) {
+			CG_Error( "DEFAULT_MODEL (%s) failed to register", DEFAULT_MODEL );
 		}
 		modelloaded = qfalse;
 	}
@@ -892,6 +823,7 @@ static void CG_LoadPlayerInfo( int playerNum, playerInfo_t *pi ) {
 		if ( trap_R_LerpTag( &tag, pi->torsoModel, 0, 0, 1, "tag_flag" ) ) {
 			pi->newAnims = qtrue;
 		}
+		//CG_Printf( "LoadPlayerInfo: model %s a tag_flag%i\n", pi->newAnims ? "has" : "does not have" );
 	}
 
 	// sounds
@@ -1070,7 +1002,7 @@ void CG_NewPlayerInfo( int playerNum ) {
 	playerInfo_t newInfo;
 	const char	*configstring;
 	const char	*v;
-	//char		*slash;
+	char		*slash;
 
 	pi = &cgs.playerinfo[playerNum];
 
@@ -1125,10 +1057,6 @@ void CG_NewPlayerInfo( int playerNum ) {
 	v = Info_ValueForKey( configstring, "t" );
 	newInfo.team = atoi( v );
 
-	// team task
-	v = Info_ValueForKey( configstring, "tt" );
-	newInfo.teamTask = atoi(v);
-
 	// team leader
 	v = Info_ValueForKey( configstring, "tl" );
 	newInfo.teamLeader = atoi(v);
@@ -1156,8 +1084,16 @@ void CG_NewPlayerInfo( int playerNum ) {
 
 	} else {
 		Q_strncpyz( newInfo.modelName, v, sizeof( newInfo.modelName ) );
-		Q_strncpyz( newInfo.skinName, "bright", sizeof( newInfo.skinName ) );
-		//*slash = 0;
+
+		slash = strchr( newInfo.modelName, '/' );
+		if ( !slash ) {
+			// modelName didn not include a skin name
+			Q_strncpyz( newInfo.skinName, "default", sizeof( newInfo.skinName ) );
+		} else {
+			Q_strncpyz( newInfo.skinName, slash + 1, sizeof( newInfo.skinName ) );
+			// truncate modelName
+			*slash = 0;
+		}
 	}
 
 	// head model
@@ -1177,8 +1113,16 @@ void CG_NewPlayerInfo( int playerNum ) {
 
 	} else {
 		Q_strncpyz( newInfo.headModelName, v, sizeof( newInfo.headModelName ) );
-		Q_strncpyz( newInfo.headSkinName, "bright", sizeof( newInfo.headSkinName ) );
-		//*slash = 0;
+
+		slash = strchr( newInfo.headModelName, '/' );
+		if ( !slash ) {
+			// modelName didn not include a skin name
+			Q_strncpyz( newInfo.headSkinName, "default", sizeof( newInfo.headSkinName ) );
+		} else {
+			Q_strncpyz( newInfo.headSkinName, slash + 1, sizeof( newInfo.headSkinName ) );
+			// truncate modelName
+			*slash = 0;
+		}
 	}
 
 	// scan for an existing playerinfo that matches this modelname
@@ -1839,9 +1783,7 @@ static void CG_TrailItem( centity_t* cent, qhandle_t hModel, const byte rgba[4] 
 	angles[YAW] += 90;
 	AnglesToAxis( angles, ent.axis );
 
-	if (cent->currentState.playerNum == cg.cur_lc->predictedPlayerState.playerNum
-		&& cg_thirdPerson[cg.cur_localPlayerNum].integer)
-	{
+	if (cent->currentState.playerNum == cg.cur_lc->predictedPlayerState.playerNum && cg_thirdPerson.integer) {
 		// flag blocks view in third person, so only draw in mirrors
 		ent.renderfx |= RF_ONLY_MIRROR;
 	}
@@ -1850,7 +1792,12 @@ static void CG_TrailItem( centity_t* cent, qhandle_t hModel, const byte rgba[4] 
 	ent.shaderRGBA[1] = rgba[1];
 	ent.shaderRGBA[2] = rgba[2];
 	ent.shaderRGBA[3] = rgba[3];
-
+#if 0
+	if ( cent->currentState.playerNum == cg.cur_lc->predictedPlayerState.playerNum && cg_thirdPerson.integer ) {
+		//TODO: rather make it transparent
+		ent.shaderRGBA[3] = 0x20;
+	}
+#endif
 	ent.hModel = hModel;
 	CG_AddRefEntityWithMinLight( &ent );
 }
@@ -1861,13 +1808,14 @@ static void CG_TrailItem( centity_t* cent, qhandle_t hModel, const byte rgba[4] 
 CG_PlayerFlag
 ===============
 */
-static void CG_PlayerFlag( centity_t *cent, const cgSkin_t *skin, refEntity_t *torso ) {
+static void CG_PlayerFlag( centity_t *cent, refEntity_t *torso, const team_t team ) {
 	playerInfo_t	*pi;
 	refEntity_t	pole;
 	refEntity_t	flag;
 	vec3_t		angles, dir;
 	int			legsAnim, flagAnim, updateangles;
 	float		angle, d;
+	vec3_t col;
 
 	// show the flag pole model
 	memset( &pole, 0, sizeof(pole) );
@@ -1875,16 +1823,22 @@ static void CG_PlayerFlag( centity_t *cent, const cgSkin_t *skin, refEntity_t *t
 	VectorCopy( torso->lightingOrigin, pole.lightingOrigin );
 	pole.shadowPlane = torso->shadowPlane;
 	pole.renderfx = torso->renderfx;
+
 	CG_PositionEntityOnTag( &pole, torso, torso->hModel, "tag_flag" );
 	CG_AddRefEntityWithMinLight( &pole );
 
 	// show the flag model
 	memset( &flag, 0, sizeof(flag) );
 	flag.hModel = cgs.media.flagFlapModel;
-	flag.customSkin = CG_AddSkinToFrame( skin );
+	//flag.customSkin = CG_AddSkinToFrame( skin );
 	VectorCopy( torso->lightingOrigin, flag.lightingOrigin );
 	flag.shadowPlane = torso->shadowPlane;
 	flag.renderfx = torso->renderfx;
+	CG_TeamColors( team, col, "playerflag" );
+	flag.shaderRGBA[0] = 0xff * col[0];
+	flag.shaderRGBA[1] = 0xff * col[1];
+	flag.shaderRGBA[2] = 0xff * col[2];
+	flag.shaderRGBA[3] = 0xff;
 
 	VectorClear(angles);
 
@@ -2047,6 +2001,7 @@ CG_PlayerPowerups
 static void CG_PlayerPowerups( centity_t *cent, refEntity_t *torso ) {
 	int		powerups, i;
 	playerInfo_t	*pi;
+	vec3_t col;
 
 	powerups = cent->currentState.powerups;
 	if ( !powerups ) {
@@ -2056,11 +2011,19 @@ static void CG_PlayerPowerups( centity_t *cent, refEntity_t *torso ) {
 	// quad gives a dlight
 	if ( powerups & ( 1 << PW_QUAD ) ) {
 		//trap_R_AddLightToScene( cent->lerpOrigin, 200 + (rand()&31), 1.0f, 0.2f, 0.4f, 1, 0 );
-		trap_R_AddLightToScene( cent->lerpOrigin, 144 + (rand()&15),0.8f, 0.094f, 0.360f, 0.917f, 0 );
+		trap_R_AddLightToScene( cent->lerpOrigin, 144 + (rand()&15), 0.8f, 0.094f, 0.360f, 0.917f, 0 );
 	}
 	// bs gives a dlight
 	if ( powerups & (1 << PW_BATTLESUIT) ) {
 		trap_R_AddLightToScene( cent->lerpOrigin, 144 + (rand() & 15), 0.8f, 0.839f, 0.501f, 0.156f, 0 );
+	}
+	// invuln gives a dlight
+	if ( powerups & (1 << PW_INVULN) ) {
+		trap_R_AddLightToScene( cent->lerpOrigin, 144 + (rand() & 15), 0.8f, 0.917f, 0.360f, 0.094f, 0 );
+	}
+	// power armor gives a dlight
+	if ( powerups & (1 << PW_PSCREEN) || powerups & (1 << PW_PSHIELD) ) {
+		trap_R_AddLightToScene( cent->lerpOrigin, 144 + (rand() & 15), powerups & (1 << PW_PSCREEN) ? 0.4f : 0.8f, 0.098f, 0.6f, 0, 0 );
 	}
 
 	// flight plays a looped sound
@@ -2071,17 +2034,20 @@ static void CG_PlayerPowerups( centity_t *cent, refEntity_t *torso ) {
 	pi = &cgs.playerinfo[ cent->currentState.playerNum ];
 	for ( i = 0; i < TEAM_NUM_TEAMS; i++ ) {
 		if ( powerups & (1 << (PW_FLAGS_INDEX + i)) ) {
+			
 			if ( pi->newAnims ) {
-				CG_PlayerFlag( cent, &cgs.media.flagFlapSkin, torso );
+				CG_PlayerFlag( cent, torso, i );
 			} else {
-				byte col[4];
-				col[0] = teamColor[i][0] * 0xff;
-				col[1] = teamColor[i][1] * 0xff;
-				col[2] = teamColor[i][2] * 0xff;
-				col[3] = 0xff;
-				CG_TrailItem( cent, cgs.media.flagModel, col );
+				byte rgba[4];
+
+				CG_TeamColors( i, col, "playerpu" );
+				rgba[0] = col[0] * 0xff;
+				rgba[1] = col[1] * 0xff;
+				rgba[2] = col[2] * 0xff;
+				rgba[3] = 0xff;
+				CG_TrailItem( cent, cgs.media.flagModel, rgba );
 			}
-			trap_R_AddLightToScene( cent->lerpOrigin, 200 + (rand() & 31), 1.0f, teamColor[i][0], teamColor[i][1], teamColor[i][2], 0 );
+			trap_R_AddLightToScene( cent->lerpOrigin, 200 + (rand() & 31), 1.0f, col[0], col[1], col[2], 0 );
 		}
 	}
 
@@ -2189,6 +2155,11 @@ static void CG_PlayerSprites( centity_t *cent, const refEntity_t *parent ) {
 
 	if ( cent->currentState.eFlags & EF_AWARD_CAP ) {
 		CG_PlayerFloatSprite( origin, awardFlags, cgs.media.medalCapture );
+		return;
+	}
+
+	if ( cent->currentState.eFlags & EF_AWARD_HOLYSHIT ) {
+		CG_PlayerFloatSprite( origin, awardFlags, cgs.media.medalHolyShit );
 		return;
 	}
 
@@ -2391,6 +2362,14 @@ void CG_AddRefEntityWithPowerups( refEntity_t *ent, entityState_t *state ) {
 			ent->customShader = cgs.media.battleSuitShader;
 			CG_AddRefEntityWithMinLight( ent );
 		}
+		if ( state->powerups & ( 1 << PW_PSCREEN) ) {
+			ent->customShader = cgs.media.powerShieldShader;
+			CG_AddRefEntityWithMinLight( ent );
+		}
+		if ( state->powerups & ( 1 << PW_PSHIELD) ) {
+			ent->customShader = cgs.media.powerShieldShader;
+			CG_AddRefEntityWithMinLight( ent );
+		}
 	}
 }
 
@@ -2493,12 +2472,12 @@ void CG_Player( centity_t *cent ) {
 	byte			rgba[4];
 #ifdef MISSIONPACK
 	refEntity_t		skull;
-	refEntity_t		powerup;
 	int				t;
 	float			c;
 	float			angle;
 	vec3_t			dir, angles;
 #endif
+	refEntity_t		powerup;
 
 	// the player number is stored in playerNum.  It can't be derived
 	// from the entity number, because a single player may have
@@ -2523,7 +2502,7 @@ void CG_Player( centity_t *cent ) {
 	renderfx = 0;
 	if ( cent->currentState.number == cg.cur_ps->playerNum) {
 		// ZTM: FIXME: using CG_StepOffset, if player runs up steep stairs they are drawn deep in stairs/floor
-		if ( cg_thirdPersonSmooth[cg.cur_localPlayerNum].integer ) {
+		if ( cg_thirdPersonSmooth.integer ) {
 			CG_StepOffset( cent->lerpOrigin );
 		}
 
@@ -2587,17 +2566,25 @@ void CG_Player( centity_t *cent ) {
 	}
 
 	// find the player color
-	if ( GTF( GTF_TEAMS ) && pi->team > 0 ) {
-		rgba[0] = 0xff * teamColorPlayers[pi->team][0];
-		rgba[1] = 0xff * teamColorPlayers[pi->team][1];
-		rgba[2] = 0xff * teamColorPlayers[pi->team][2];
+	if ( CG_IsValidTeam( pi->team ) ) {
+		vec3_t col;
+		CG_TeamColors( pi->team, col, "player" );
+		rgba[0] = 0xc0 * col[0];
+		rgba[1] = 0xc0 * col[1];
+		rgba[2] = 0xc0 * col[2];
 		rgba[3] = 0xff;
 	} else {
 		//Byte4Copy( pi->c1RGBA, rgba );
-		rgba[0] = 0xff * pi->color2[0];
-		rgba[1] = 0xff * pi->color2[1];
-		rgba[2] = 0xff * pi->color2[2];
+		rgba[0] = 0xc0 * pi->color2[0];
+		rgba[1] = 0xc0 * pi->color2[1];
+		rgba[2] = 0xc0 * pi->color2[2];
 		rgba[3] = 0xff;
+	}
+	if ( cent->currentState.eFlags & EF_DEAD ) {
+		rgba[0] *= 0.25f;
+		rgba[1] *= 0.25f;
+		rgba[2] *= 0.25f;
+		rgba[3] *= 0.25f;
 	}
 
 	// add the shadow
@@ -2771,39 +2758,51 @@ void CG_Player( centity_t *cent ) {
 			CG_AddRefEntityWithMinLight( &skull );
 		}
 	}
-
-	if ( cent->currentState.powerups & ( 1 << PW_GUARD ) ) {
+#endif
+	if ( cent->currentState.powerups & ( 1 << PW_RESISTANCE ) ) {
 		memcpy(&powerup, &torso, sizeof(torso));
-		powerup.hModel = cgs.media.guardPowerupModel;
+		powerup.hModel = cgs.media.resistanceBandModel;
+		powerup.frame = 0;
+		powerup.oldframe = 0;
+		powerup.customSkin = 0;
+		CG_AddRefEntityWithMinLight( &powerup );
+	} else if ( cent->currentState.powerups & ( 1 << PW_SCOUT ) ) {
+		memcpy(&powerup, &torso, sizeof(torso));
+		powerup.hModel = cgs.media.scoutBandModel;
+		powerup.frame = 0;
+		powerup.oldframe = 0;
+		powerup.customSkin = 0;
+		CG_AddRefEntityWithMinLight( &powerup );
+	} else if ( cent->currentState.powerups & ( 1 << PW_STRENGTH ) ) {
+		memcpy(&powerup, &torso, sizeof(torso));
+		powerup.hModel = cgs.media.strengthBandModel;
+		powerup.frame = 0;
+		powerup.oldframe = 0;
+		powerup.customSkin = 0;
+		CG_AddRefEntityWithMinLight( &powerup );
+	} else if ( cent->currentState.powerups & ( 1 << PW_ARMAMENT ) ) {
+		memcpy(&powerup, &torso, sizeof(torso));
+		powerup.hModel = cgs.media.armamentBandModel;
+		powerup.frame = 0;
+		powerup.oldframe = 0;
+		powerup.customSkin = 0;
+		CG_AddRefEntityWithMinLight( &powerup );
+	} else if ( cent->currentState.powerups & (1 << PW_TENACITY) ) {
+		memcpy( &powerup, &torso, sizeof( torso ) );
+		powerup.hModel = cgs.media.tenacityBandModel;
+		powerup.frame = 0;
+		powerup.oldframe = 0;
+		powerup.customSkin = 0;
+		CG_AddRefEntityWithMinLight( &powerup );
+	} else if ( cent->currentState.powerups & (1 << PW_PARASITE) ) {
+		memcpy( &powerup, &torso, sizeof( torso ) );
+		powerup.hModel = cgs.media.parasiteBandModel;
 		powerup.frame = 0;
 		powerup.oldframe = 0;
 		powerup.customSkin = 0;
 		CG_AddRefEntityWithMinLight( &powerup );
 	}
-	if ( cent->currentState.powerups & ( 1 << PW_SCOUT ) ) {
-		memcpy(&powerup, &torso, sizeof(torso));
-		powerup.hModel = cgs.media.scoutPowerupModel;
-		powerup.frame = 0;
-		powerup.oldframe = 0;
-		powerup.customSkin = 0;
-		CG_AddRefEntityWithMinLight( &powerup );
-	}
-	if ( cent->currentState.powerups & ( 1 << PW_DOUBLER ) ) {
-		memcpy(&powerup, &torso, sizeof(torso));
-		powerup.hModel = cgs.media.doublerPowerupModel;
-		powerup.frame = 0;
-		powerup.oldframe = 0;
-		powerup.customSkin = 0;
-		CG_AddRefEntityWithMinLight( &powerup );
-	}
-	if ( cent->currentState.powerups & ( 1 << PW_AMMOREGEN ) ) {
-		memcpy(&powerup, &torso, sizeof(torso));
-		powerup.hModel = cgs.media.ammoRegenPowerupModel;
-		powerup.frame = 0;
-		powerup.oldframe = 0;
-		powerup.customSkin = 0;
-		CG_AddRefEntityWithMinLight( &powerup );
-	}
+#ifdef MISSIONPACK
 	if ( cent->currentState.powerups & ( 1 << PW_INVULNERABILITY ) ) {
 		if ( !pi->invulnerabilityStartTime ) {
 			pi->invulnerabilityStartTime = cg.time;

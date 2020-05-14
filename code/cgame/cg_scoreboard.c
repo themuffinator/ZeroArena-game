@@ -157,9 +157,9 @@ static void CG_DrawPlayerScore( int y, score_t* score, float* color, float fade,
 		} else if ( pi->handicap < 100 ) {
 			Com_sprintf( string, sizeof( string ), "%i", pi->handicap );
 			if ( GTF( GTF_DUEL ) ) {
-				CG_DrawString( iconx, y - SMALLCHAR_HEIGHT / 2, string, UI_SMALLFONT | UI_NOSCALE, color );
+				CG_DrawString( iconx, y - SMALLCHAR_HEIGHT / 2, string, UI_TINYFONT | UI_NOSCALE, color );
 			} else {
-				CG_DrawString( iconx, y, string, UI_SMALLFONT | UI_NOSCALE, color );
+				CG_DrawString( iconx, y, string, UI_TINYFONT | UI_NOSCALE, color );
 			}
 		}
 
@@ -167,9 +167,9 @@ static void CG_DrawPlayerScore( int y, score_t* score, float* color, float fade,
 		if ( GTF( GTF_DUEL ) ) {
 			Com_sprintf( string, sizeof( string ), "%i/%i", pi->wins, pi->losses );
 			if ( pi->handicap < 100 && !pi->botSkill ) {
-				CG_DrawString( iconx, y + SMALLCHAR_HEIGHT / 2, string, UI_SMALLFONT | UI_NOSCALE, color );
+				CG_DrawString( iconx, y + SMALLCHAR_HEIGHT / 2, string, UI_TINYFONT | UI_NOSCALE, color );
 			} else {
-				CG_DrawString( iconx, y, string, UI_SMALLFONT | UI_NOSCALE, color );
+				CG_DrawString( iconx, y, string, UI_TINYFONT | UI_NOSCALE, color );
 			}
 		}
 	}
@@ -201,10 +201,12 @@ static void CG_DrawPlayerScore( int y, score_t* score, float* color, float fade,
 
 		localPlayer = qtrue;
 
-		if ( GTF( GTF_TEAMS ) && ps->persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
-			hcolor[0] = teamColor[ps->persistant[PERS_TEAM]][0];
-			hcolor[1] = teamColor[ps->persistant[PERS_TEAM]][1];
-			hcolor[2] = teamColor[ps->persistant[PERS_TEAM]][2];
+		if ( GTF( GTF_TEAMS ) && CG_IsValidTeam( ps->persistant[PERS_TEAM] ) ) {
+			vec3_t col;
+			CG_TeamColors( (team_t)(ps->persistant[PERS_TEAM]), col, "drawplayerscore" );
+			hcolor[0] = col[0];
+			hcolor[1] = col[1];
+			hcolor[2] = col[2];
 			rank = -2;
 		} else if ( ps->persistant[PERS_TEAM] == TEAM_SPECTATOR ) {
 			rank = -1;
@@ -223,7 +225,7 @@ static void CG_DrawPlayerScore( int y, score_t* score, float* color, float fade,
 			hcolor[0] = 0.666f;
 			hcolor[1] = 0.470f;
 			hcolor[2] = 0;
-		} else if ( rank == -1 ) {
+		} else if ( rank > -2 ) {
 			hcolor[0] = 0.666f;
 			hcolor[1] = 0.666f;
 			hcolor[2] = 0.666f;
@@ -242,21 +244,21 @@ static void CG_DrawPlayerScore( int y, score_t* score, float* color, float fade,
 	} else {
 		Com_sprintf( string, sizeof( string ), "%5i", score->score );
 	}
-	CG_DrawString( SB_SCORE_X + (SB_RATING_WIDTH / 2) + 4 * BIGCHAR_WIDTH, y, string, UI_RIGHT | UI_DROPSHADOW | UI_BIGFONT | UI_NOSCALE, color );
+	CG_DrawString( SB_SCORE_X + (SB_RATING_WIDTH / 2) + 4 * BIGCHAR_WIDTH, y, string, UI_RIGHT | UI_DROPSHADOW | UI_SMALLFONT | UI_NOSCALE, color );
 	
 	if ( score->ping != -1 ) {
 		Com_sprintf( string, sizeof( string ), "%4i", score->ping );
-		CG_DrawString( SB_PING_X - (SB_RATING_WIDTH / 2) + 4 * BIGCHAR_WIDTH, y, string, UI_RIGHT | UI_DROPSHADOW | UI_BIGFONT | UI_NOSCALE, color );
+		CG_DrawString( SB_PING_X - (SB_RATING_WIDTH / 2) + 4 * BIGCHAR_WIDTH, y, string, UI_RIGHT | UI_DROPSHADOW | UI_SMALLFONT | UI_NOSCALE, color );
 
 		Com_sprintf( string, sizeof( string ), "%4i", score->time );
-		CG_DrawString( SB_TIME_X - (SB_RATING_WIDTH / 2) + 4 * BIGCHAR_WIDTH, y, string, UI_RIGHT | UI_DROPSHADOW | UI_BIGFONT | UI_NOSCALE, color );
+		CG_DrawString( SB_TIME_X - (SB_RATING_WIDTH / 2) + 4 * BIGCHAR_WIDTH, y, string, UI_RIGHT | UI_DROPSHADOW | UI_SMALLFONT | UI_NOSCALE, color );
 	}
 
-	CG_DrawString( SB_NAME_X - (SB_RATING_WIDTH / 2), y, pi->name, UI_LEFT | UI_DROPSHADOW | UI_BIGFONT | UI_NOSCALE, color );
+	CG_DrawString( SB_NAME_X - (SB_RATING_WIDTH / 2), y, pi->name, UI_LEFT | UI_DROPSHADOW | UI_SMALLFONT | UI_NOSCALE, color );
 
 	// add the "ready" marker for intermission exiting
 	if ( cg.intermissionStarted && Com_ClientListContains( &cg.readyPlayers, score->playerNum ) ) {
-		CG_DrawString( iconx, y, "READY", UI_LEFT | UI_DROPSHADOW | UI_BIGFONT | UI_NOSCALE, color );
+		CG_DrawString( iconx, y, "READY", UI_LEFT | UI_DROPSHADOW | UI_SMALLFONT | UI_NOSCALE, color );
 	}
 }
 
@@ -332,7 +334,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 		return qfalse;
 	}
 
-	if ( cgs.gameType == GT_SINGLE_PLAYER && cg.cur_lc && cg.cur_lc->predictedPlayerState.pm_type == PM_INTERMISSION ) {
+	if ( (cgs.gameType == GT_CAMPAIGN || cg_singlePlayer.integer) && cg.cur_lc && cg.cur_lc->predictedPlayerState.pm_type == PM_INTERMISSION ) {
 		return qfalse;
 	}
 
@@ -366,8 +368,8 @@ qboolean CG_DrawOldScoreboard( void ) {
 	// fragged by ... line
 	if ( cg.cur_lc && cg.cur_lc->killerName[0] ) {
 		s = va( "Fragged by %s", cg.cur_lc->killerName );
-		y = SB_HEADER - 6 - CG_DrawStringLineHeight( UI_BIGFONT ) * 2;
-		CG_DrawString( SCREEN_WIDTH / 2, y, s, UI_CENTER | UI_DROPSHADOW | UI_BIGFONT, NULL );
+		y = SB_HEADER - 6 - CG_DrawStringLineHeight( UI_SMALLFONT ) * 2;
+		CG_DrawString( SCREEN_WIDTH / 2, y, s, UI_CENTER | UI_DROPSHADOW | UI_SMALLFONT, NULL );
 	}
 
 	// current rank
@@ -388,8 +390,8 @@ qboolean CG_DrawOldScoreboard( void ) {
 						CG_PlaceString( cg.cur_ps->persistant[PERS_RANK] + 1 ),
 						cg.cur_ps->persistant[PERS_SCORE] );
 				}
-				y = SB_HEADER - 6 - CG_DrawStringLineHeight( UI_BIGFONT );
-				CG_DrawString( SCREEN_WIDTH / 2, y, s, UI_CENTER | UI_DROPSHADOW | UI_BIGFONT, NULL );
+				y = SB_HEADER - 6 - CG_DrawStringLineHeight( UI_SMALLFONT );
+				CG_DrawString( SCREEN_WIDTH / 2, y, s, UI_CENTER | UI_DROPSHADOW | UI_SMALLFONT, NULL );
 			}
 		} else {
 			int high = SCORE_NOT_PRESENT, low = SCORE_NOT_PRESENT;
@@ -414,8 +416,8 @@ qboolean CG_DrawOldScoreboard( void ) {
 				}
 			}
 
-			y = SB_HEADER - 6 - CG_DrawStringLineHeight( UI_BIGFONT );
-			CG_DrawString( SCREEN_WIDTH / 2, y, s, UI_CENTER | UI_DROPSHADOW | UI_BIGFONT, NULL );
+			y = SB_HEADER - 6 - CG_DrawStringLineHeight( UI_SMALLFONT );
+			CG_DrawString( SCREEN_WIDTH / 2, y, s, UI_CENTER | UI_DROPSHADOW | UI_SMALLFONT, NULL );
 		}
 	}
 
@@ -496,9 +498,9 @@ qboolean CG_DrawOldScoreboard( void ) {
 	CG_SetScreenPlacement( PLACE_LEFT, PLACE_BOTTOM );
 
 	// draw game type name
-	lineHeight = CG_DrawStringLineHeight( UI_BIGFONT );
+	lineHeight = CG_DrawStringLineHeight( UI_SMALLFONT );
 	y = SCREEN_HEIGHT - lineHeight * 2;
-	CG_DrawString( lineHeight, y, cgs.gametypeName, UI_DROPSHADOW | UI_BIGFONT, NULL );
+	CG_DrawString( lineHeight, y, cgs.gametypeName, UI_DROPSHADOW | UI_SMALLFONT, NULL );
 
 	return qtrue;
 }
@@ -605,7 +607,7 @@ void CG_DrawTourneyScoreboard( void ) {
 
 		// use smaller font if not all players fit
 		if ( cg.numScores > (SCREEN_HEIGHT - y) / gap ) {
-			style = UI_BIGFONT;
+			style = UI_SMALLFONT;
 			gap = BIGCHAR_HEIGHT + 4;
 		}
 

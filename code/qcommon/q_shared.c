@@ -1602,26 +1602,7 @@ Com_LocalPlayerCvarName
 char *Com_LocalPlayerCvarName(int localPlayerNum, const char *in_cvarName) {
 	static char localPlayerCvarName[MAX_CVAR_VALUE_STRING];
 
-	if (localPlayerNum == 0) {
-		Q_strncpyz(localPlayerCvarName, in_cvarName, MAX_CVAR_VALUE_STRING);
-	} else {
-		char prefix[2];
-		const char *cvarName;
-
-		prefix[1] = '\0';
-
-		cvarName = in_cvarName;
-
-		if (cvarName[0] == '+' || cvarName[0] == '-') {
-			prefix[0] = cvarName[0];
-			cvarName++;
-		} else {
-			prefix[0] = '\0';
-		}
-
-		Com_sprintf(localPlayerCvarName, MAX_CVAR_VALUE_STRING, "%s%d%s", prefix, localPlayerNum+1, cvarName);
-	}
-
+	Q_strncpyz(localPlayerCvarName, in_cvarName, MAX_CVAR_VALUE_STRING);
 	return localPlayerCvarName;
 }
 

@@ -60,12 +60,12 @@ typedef struct {
 	menubitmap_s	framel;
 	menubitmap_s	framer;
 
-	menutext_s		player[MAX_SPLITVIEW];
+	menutext_s		player;	// [MAX_SPLITVIEW] ;
 
 	menubitmap_s	back;
 
 	char			bannerString[32];
-	char			playerString[MAX_SPLITVIEW][12];
+	char			playerString[MAX_SPLITVIEW][12] ;
 	void 			(*playerfunc)(int);
 } selectPlayerMenu_t;
 
@@ -137,17 +137,17 @@ static void UI_SelectPlayer_MenuInit( const char *banner ) {
 	y = (SCREEN_HEIGHT - UI_MaxSplitView()*SETUP_MENU_VERTICAL_SPACING) / 2;
 
 	for (i = 0; i < UI_MaxSplitView(); i++) {
-		Com_sprintf(selectPlayerMenu.playerString[i], sizeof (selectPlayerMenu.playerString[i]), "Player %d", i+1);
+		Com_sprintf( selectPlayerMenu.playerString[i], sizeof( selectPlayerMenu.playerString[i] ), "Player %d", i + 1 );
 
-		selectPlayerMenu.player[i].generic.type			= MTYPE_PTEXT;
-		selectPlayerMenu.player[i].generic.flags		= QMF_CENTER_JUSTIFY|QMF_PULSEIFFOCUS;
-		selectPlayerMenu.player[i].generic.x			= 320;
-		selectPlayerMenu.player[i].generic.y			= y;
-		selectPlayerMenu.player[i].generic.id			= ID_CUSTOMIZECONTROLS + i;
-		selectPlayerMenu.player[i].generic.callback		= UI_SelectPlayerMenu_Event;
-		selectPlayerMenu.player[i].string				= selectPlayerMenu.playerString[i];
-		selectPlayerMenu.player[i].color				= text_big_color;
-		selectPlayerMenu.player[i].style				= UI_CENTER;
+		selectPlayerMenu.player.generic.type			= MTYPE_PTEXT;
+		selectPlayerMenu.player.generic.flags		= QMF_CENTER_JUSTIFY|QMF_PULSEIFFOCUS;
+		selectPlayerMenu.player.generic.x			= 320;
+		selectPlayerMenu.player.generic.y			= y;
+		selectPlayerMenu.player.generic.id = ID_CUSTOMIZECONTROLS +i;
+		selectPlayerMenu.player.generic.callback		= UI_SelectPlayerMenu_Event;
+		selectPlayerMenu.player.string = selectPlayerMenu.playerString[i];
+		selectPlayerMenu.player.color				= text_big_color;
+		selectPlayerMenu.player.style				= UI_CENTER;
 
 		y += SETUP_MENU_VERTICAL_SPACING;
 	}
@@ -167,9 +167,7 @@ static void UI_SelectPlayer_MenuInit( const char *banner ) {
 	Menu_AddItem( &selectPlayerMenu.menu, &selectPlayerMenu.framel );
 	Menu_AddItem( &selectPlayerMenu.menu, &selectPlayerMenu.framer );
 
-	for (i = 0; i < UI_MaxSplitView(); i++) {
-		Menu_AddItem( &selectPlayerMenu.menu, &selectPlayerMenu.player[i] );
-	}
+	Menu_AddItem( &selectPlayerMenu.menu, &selectPlayerMenu.player );
 
 	Menu_AddItem( &selectPlayerMenu.menu, &selectPlayerMenu.back );
 }

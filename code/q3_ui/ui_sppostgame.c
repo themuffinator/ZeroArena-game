@@ -91,17 +91,17 @@ char	*ui_medalNames[] = {
 	"Accuracy",
 	"Impressive",
 	"Excellent",
-	"Gauntlet",
+	"Humiliation",
 	"Frags",
 	"Perfect"
 };
 char	*ui_medalPicNames[] = {
-	"menu/medals/medal_accuracy",
-	"menu/medals/medal_impressive",
-	"menu/medals/medal_excellent",
-	"menu/medals/medal_gauntlet",
-	"menu/medals/medal_frags",
-	"menu/medals/medal_victory"
+	"gfx/medals/accuracy",
+	"gfx/medals/impressive",
+	"gfx/medals/excellent",
+	"gfx/medals/gauntlet",
+	"gfx/medals/frags",
+	"gfx/medals/victory"
 };
 char	*ui_medalSounds[] = {
 	"sound/feedback/accuracy.wav",

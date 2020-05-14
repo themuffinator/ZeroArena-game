@@ -595,7 +595,6 @@ void BotMatch_HelpAccompany(bot_state_t *bs, bot_match_t *match) {
 		bs->formation_dist = 128;
 		bs->arrive_time = 0;
 		//
-		BotSetTeamStatus(bs);
 		// remember last ordered task
 		BotRememberLastOrderedTask(bs);
 	}
@@ -642,7 +641,6 @@ void BotMatch_DefendKeyArea(bot_state_t *bs, bot_match_t *match) {
 	//away from defending
 	bs->defendaway_time = 0;
 	//
-	BotSetTeamStatus(bs);
 	// remember last ordered task
 	BotRememberLastOrderedTask(bs);
 	BotPrintTeamGoal(bs);
@@ -682,7 +680,6 @@ void BotMatch_GetItem(bot_state_t *bs, bot_match_t *match) {
 	//set the team goal time
 	bs->teamgoal_time = FloatTime() + TEAM_GETITEM_TIME;
 	//
-	BotSetTeamStatus(bs);
 	BotPrintTeamGoal(bs);
 }
 
@@ -770,7 +767,6 @@ void BotMatch_Camp(bot_state_t *bs, bot_match_t *match) {
 	//not arrived yet
 	bs->arrive_time = 0;
 	//
-	BotSetTeamStatus(bs);
 	// remember last ordered task
 	BotRememberLastOrderedTask(bs);
 	BotPrintTeamGoal(bs);
@@ -807,7 +803,6 @@ void BotMatch_Patrol(bot_state_t *bs, bot_match_t *match) {
 	//set the team goal time if not set already
 	if (!bs->teamgoal_time) bs->teamgoal_time = FloatTime() + TEAM_PATROL_TIME;
 	//
-	BotSetTeamStatus(bs);
 	// remember last ordered task
 	BotRememberLastOrderedTask(bs);
 	BotPrintTeamGoal(bs);
@@ -864,7 +859,6 @@ void BotMatch_GetFlag(bot_state_t *bs, bot_match_t *match) {
 		BotGetAlternateRouteGoal(bs, BotOppositeTeam(bs));
 	}
 	//
-	BotSetTeamStatus(bs);
 	// remember last ordered task
 	BotRememberLastOrderedTask(bs);
 	BotPrintTeamGoal(bs);
@@ -907,7 +901,6 @@ void BotMatch_AttackEnemyBase(bot_state_t *bs, bot_match_t *match) {
 	bs->teamgoal_time = FloatTime() + TEAM_ATTACKENEMYBASE_TIME;
 	bs->attackaway_time = 0;
 	//
-	BotSetTeamStatus(bs);
 	// remember last ordered task
 	BotRememberLastOrderedTask(bs);
 	BotPrintTeamGoal(bs);
@@ -948,7 +941,6 @@ void BotMatch_Harvest(bot_state_t *bs, bot_match_t *match) {
 	bs->teamgoal_time = FloatTime() + TEAM_HARVEST_TIME;
 	bs->harvestaway_time = 0;
 	//
-	BotSetTeamStatus(bs);
 	// remember last ordered task
 	BotRememberLastOrderedTask(bs);
 	BotPrintTeamGoal(bs);
@@ -1003,7 +995,6 @@ void BotMatch_RushBase(bot_state_t *bs, bot_match_t *match) {
 	bs->teamgoal_time = FloatTime() + CTF_RUSHBASE_TIME;
 	bs->rushbaseaway_time = 0;
 	//
-	BotSetTeamStatus(bs);
 	BotPrintTeamGoal(bs);
 }
 
@@ -1085,7 +1076,6 @@ void BotMatch_ReturnFlag(bot_state_t *bs, bot_match_t *match) {
 	bs->teamgoal_time = FloatTime() + CTF_RETURNFLAG_TIME;
 	bs->rushbaseaway_time = 0;
 	//
-	BotSetTeamStatus(bs);
 	BotPrintTeamGoal(bs);
 }
 
@@ -1554,9 +1544,9 @@ void BotMatch_WhereAreYou(bot_state_t *bs, bot_match_t *match) {
 		}
 	}
 	if (bestitemname) {
-		if (gt[gametype].gtFlags & GTF_TEAMBASES) {
+		if (gt[gametype].gtFlags & GTF_TEAMBASES || gt[gametype].gtFlags & GTF_CTF ) {
 
-			if (gametype == GT_OVERLOAD || gametype == GT_HARVESTER) {
+			if ( gt[gametype].gtFlags & GTF_TEAMBASES ) {
 				redtt = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, team_obelisk[TEAM_RED].areanum, TFL_DEFAULT);
 				bluett = trap_AAS_AreaTravelTimeToGoalArea(bs->areanum, bs->origin, team_obelisk[TEAM_BLUE].areanum, TFL_DEFAULT);
 			}
@@ -1693,7 +1683,6 @@ void BotMatch_Kill(bot_state_t *bs, bot_match_t *match) {
 	//set the team goal time
 	bs->teamgoal_time = FloatTime() + TEAM_KILL_SOMEONE;
 	//
-	BotSetTeamStatus(bs);
 	BotPrintTeamGoal(bs);
 }
 

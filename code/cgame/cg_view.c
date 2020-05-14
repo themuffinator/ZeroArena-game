@@ -354,8 +354,8 @@ static void CG_OffsetThirdPersonView( void ) {
 		focusAngles[PITCH] = 0;
 		cg.refdefViewAngles[PITCH] = 0;
 	} else {
-		thirdPersonAngle = cg_thirdPersonAngle[cg.cur_localPlayerNum].value;
-		thirdPersonRange = cg_thirdPersonRange[cg.cur_localPlayerNum].value;
+		thirdPersonAngle = cg_thirdPersonAngle.value;
+		thirdPersonRange = cg_thirdPersonRange.value;
 
 		// if dead, look at killer
 		if ( cg.cur_lc->predictedPlayerState.stats[STAT_HEALTH] <= 0 ) {
@@ -369,7 +369,7 @@ static void CG_OffsetThirdPersonView( void ) {
 	}
 	AngleVectors( focusAngles, forward, NULL, NULL );
 
-	if ( cg_thirdPersonSmooth[cg.cur_localPlayerNum].integer ) {
+	if ( cg_thirdPersonSmooth.integer ) {
 		CG_StepOffset( cg.refdef.vieworg );
 	}
 
@@ -377,7 +377,7 @@ static void CG_OffsetThirdPersonView( void ) {
 
 	VectorCopy( cg.refdef.vieworg, view );
 
-	view[2] += cg_thirdPersonHeight[cg.cur_localPlayerNum].value;
+	view[2] += cg_thirdPersonHeight.value;
 
 	cg.refdefViewAngles[PITCH] *= 0.5;
 
@@ -451,6 +451,12 @@ static void CG_OffsetFirstPersonView( void ) {
 		angles[PITCH] = -15;
 		angles[YAW] = cg.cur_ps->stats[STAT_DEAD_YAW];
 		origin[2] += cg.cur_lc->predictedPlayerState.viewheight;
+		return;
+	}
+
+	// if spectator, just set to crouch height and be done - stops annoying initial transitions
+	if ( cg_entities[cg.cur_ps->playerNum].currentState.team == TEAM_SPECTATOR ) {
+		origin[2] += CROUCH_VIEWHEIGHT;
 		return;
 	}
 
@@ -1046,7 +1052,11 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 	// if we are only updating the screen as a loading
 	// pacifier, don't even try to read snapshots
 	if ( cg.infoScreenText[0] != 0 ) {
-		CG_DrawInformation();
+		if ( GTF( GTF_CAMPAIGN ) ) {
+
+		} else {
+			CG_DrawInformation();
+		}
 		return;
 	}
 
@@ -1066,7 +1076,11 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 	// if we haven't received any snapshots yet, all
 	// we can draw is the information screen
 	if ( !cg.snap || ( cg.snap->snapFlags & SNAPFLAG_NOT_ACTIVE ) ) {
-		CG_DrawInformation();
+		if ( GTF( GTF_CAMPAIGN ) ) {
+
+		} else {
+			CG_DrawInformation();
+		}
 		return;
 	}
 
@@ -1140,7 +1154,7 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 
 		// decide on third person view
 		cg.cur_lc->renderingThirdPerson = cg.cur_ps->persistant[PERS_TEAM] != TEAM_SPECTATOR
-							&& (cg_thirdPerson[cg.cur_localPlayerNum].integer || (cg.cur_ps->stats[STAT_HEALTH] <= 0) || cg.cur_lc->cameraOrbit);
+							&& (cg_thirdPerson.integer || (cg.cur_ps->stats[STAT_HEALTH] <= 0) || cg.cur_lc->cameraOrbit);
 
 		// build cg.refdef
 		inwater = CG_CalcViewValues();

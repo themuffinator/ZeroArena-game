@@ -101,6 +101,7 @@ typedef struct
 	menutext_s		modelname;
 	menutext_s		skinname;
 	menutext_s		playername;
+	menutext_s		playerclan;
 	uiPlayerInfo_t	playerinfo;
 	int				nummodels;
 	char			modelnames[MAX_PLAYERMODELS][128];
@@ -203,8 +204,8 @@ PlayerModel_SaveChanges
 */
 static void PlayerModel_SaveChanges( void )
 {
-	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "model"), s_playermodel.modelskin );
-	trap_Cvar_Set( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "headModel"), s_playermodel.headmodelskin );
+	trap_Cvar_Set( "model", s_playermodel.modelskin );
+	trap_Cvar_Set( "headModel", s_playermodel.headmodelskin );
 }
 
 /*
@@ -448,7 +449,7 @@ static void PlayerModel_BuildList( void )
 				//	return;
 			}
 
-			if( precache ) {
+			if ( precache ) {
 				trap_S_RegisterSound( va( "sound/player/announce/%s_wins.wav", skinname), qfalse );
 			}
 		}
@@ -475,12 +476,16 @@ static void PlayerModel_SetMenuItems( void )
 	char*			pdest;
 
 	// name
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "name"), s_playermodel.playername.string, 16 );
+	trap_Cvar_VariableStringBuffer( "name", s_playermodel.playername.string, 16 );
 	Q_CleanStr( s_playermodel.playername.string );
 
+	// clan tag
+	trap_Cvar_VariableStringBuffer( "clan", s_playermodel.playerclan.string, 16 );
+	Q_CleanStr( s_playermodel.playerclan.string );
+
 	// model
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "model"), s_playermodel.modelskin, sizeof ( s_playermodel.modelskin ) );
-	trap_Cvar_VariableStringBuffer( Com_LocalPlayerCvarName(s_playermodel.localPlayerNum, "headModel"), s_playermodel.headmodelskin, sizeof ( s_playermodel.headmodelskin ) );
+	trap_Cvar_VariableStringBuffer( "model", s_playermodel.modelskin, sizeof ( s_playermodel.modelskin ) );
+	trap_Cvar_VariableStringBuffer( "headModel", s_playermodel.headmodelskin, sizeof ( s_playermodel.headmodelskin ) );
 	
 	// use default skin if none is set
 	if (!strchr(s_playermodel.modelskin, '/')) {
@@ -538,6 +543,7 @@ static void PlayerModel_MenuInit( int localPlayerNum )
 	int			x;
 	int			y;
 	static char	playername[32];
+	static char	playerclan[32];
 	static char	modelname[32];
 	static char	skinname[32];
 
@@ -626,6 +632,14 @@ static void PlayerModel_MenuInit( int localPlayerNum )
 	s_playermodel.playername.string	       = playername;
 	s_playermodel.playername.style		   = UI_CENTER;
 	s_playermodel.playername.color         = text_color_normal;
+
+	s_playermodel.playerclan.generic.type = MTYPE_PTEXT;
+	s_playermodel.playerclan.generic.flags = QMF_CENTER_JUSTIFY | QMF_INACTIVE;
+	s_playermodel.playerclan.generic.x = 320;
+	s_playermodel.playerclan.generic.y = 460;
+	s_playermodel.playerclan.string = playerclan;
+	s_playermodel.playerclan.style = UI_CENTER;
+	s_playermodel.playerclan.color = text_color_normal;
 
 	s_playermodel.modelname.generic.type  = MTYPE_PTEXT;
 	s_playermodel.modelname.generic.flags = QMF_CENTER_JUSTIFY|QMF_INACTIVE;

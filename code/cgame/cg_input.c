@@ -35,25 +35,25 @@ Suite 120, Rockville, Maryland 20850 USA.
 unsigned in_frameMsec;
 int in_frameTime;
 
-vmCvar_t	cg_freelook;
+vmCvar_t	cg_freeLook;
 
 vmCvar_t	m_pitch;
 vmCvar_t	m_yaw;
 vmCvar_t	m_forward;
 vmCvar_t	m_side;
 
-vmCvar_t	cg_yawspeed[MAX_SPLITVIEW];
-vmCvar_t	cg_pitchspeed[MAX_SPLITVIEW];
+vmCvar_t	cg_yawSpeed;
+vmCvar_t	cg_pitchSpeed;
 
-vmCvar_t	cg_yawspeedanalog[MAX_SPLITVIEW];
-vmCvar_t	cg_pitchspeedanalog[MAX_SPLITVIEW];
+vmCvar_t	cg_yawSpeedAnalog;
+vmCvar_t	cg_pitchSpeedAnalog;
 
-vmCvar_t	cg_anglespeedkey[MAX_SPLITVIEW];
+vmCvar_t	cg_angleSpeedKey;
 
-vmCvar_t	cg_run[MAX_SPLITVIEW];
+vmCvar_t	cg_alwaysRun;
 
-vmCvar_t	cg_joystickUseAnalog[MAX_SPLITVIEW];
-vmCvar_t	cg_joystickThreshold[MAX_SPLITVIEW];
+vmCvar_t	cg_joystickUseAnalog;
+vmCvar_t	cg_joystickThreshold;
 
 /*
 ===============================================================================
@@ -108,7 +108,7 @@ void IN_MLookDown( int localPlayerNum ) {
 
 void IN_MLookUp( int localPlayerNum ) {
 	cis[localPlayerNum].in_mlooking = qfalse;
-	if ( !cg_freelook.integer ) {
+	if ( !cg_freeLook.integer ) {
 		IN_CenterView ( localPlayerNum );
 	}
 }
@@ -226,7 +226,7 @@ float CL_AxisFraction( int localPlayerNum, int joystickNum, int axisNum ) {
 	int axis;
 
 	// non-analog keystate or analog disabled
-	if ( axisNum == 0 || !cg_joystickUseAnalog[joystickNum].integer ) {
+	if ( axisNum == 0 || !cg_joystickUseAnalog.integer ) {
 		return 1;
 	}
 
@@ -241,7 +241,7 @@ float CL_AxisFraction( int localPlayerNum, int joystickNum, int axisNum ) {
 		fraction = 0;
 		CG_Printf("WARNING: Cmd for player %d (axis %d on joystick for player %d): axis fraction is 0, but input system still thinks it's pressed\n", localPlayerNum+1, axisNum, joystickNum+1);
 	} else {
-		float threshold = 32767.0f * cg_joystickThreshold[joystickNum].value;
+		float threshold = 32767.0f * cg_joystickThreshold.value;
 
 		fraction = ( (float)abs( cg.localPlayers[ joystickNum ].joystickAxis[ axis ] ) - threshold ) / ( 32767.0f - threshold );
 	}
@@ -297,7 +297,7 @@ void CL_KeyStateSeparate( localPlayer_t *player, kbutton_t *key, float *pDigital
 	digitalFrac = 0;
 
 	for ( i = 0; i < 2; ++i ) {
-		if ( key->axisNum[i] && cg_joystickUseAnalog[ key->joystickNum[i] ].integer ) {
+		if ( key->axisNum[i] && cg_joystickUseAnalog.integer ) {
 			analogFrac += fraction[i];
 		} else {
 			digitalFrac += fraction[i];
@@ -421,31 +421,30 @@ Moves the local angle positions
 void CG_AdjustAngles( localPlayer_t *player, clientInput_t *ci ) {
 	float	speed;
 	float	digital, analog;
-	int		localPlayerNum = player - cg.localPlayers;
 	
 	if ( ci->in_speed.active ) {
-		speed = 0.001 * cg.frametime * cg_anglespeedkey[localPlayerNum].value;
+		speed = 0.001 * cg.frametime * cg_angleSpeedKey.value;
 	} else {
 		speed = 0.001 * cg.frametime;
 	}
 
 	if ( !ci->in_strafe.active ) {
 		CL_KeyStateSeparate (player, &ci->in_right, &digital, &analog);
-		player->viewangles[YAW] -= speed*cg_yawspeed[localPlayerNum].value * digital;
-		player->viewangles[YAW] -= speed*cg_yawspeedanalog[localPlayerNum].value * analog;
+		player->viewangles[YAW] -= speed*cg_yawSpeed.value * digital;
+		player->viewangles[YAW] -= speed*cg_yawSpeedAnalog.value * analog;
 
 		CL_KeyStateSeparate (player, &ci->in_left, &digital, &analog);
-		player->viewangles[YAW] += speed*cg_yawspeed[localPlayerNum].value * digital;
-		player->viewangles[YAW] += speed*cg_yawspeedanalog[localPlayerNum].value * analog;
+		player->viewangles[YAW] += speed*cg_yawSpeed.value * digital;
+		player->viewangles[YAW] += speed*cg_yawSpeedAnalog.value * analog;
 	}
 
 	CL_KeyStateSeparate (player, &ci->in_lookup, &digital, &analog);
-	player->viewangles[PITCH] -= speed*cg_pitchspeed[localPlayerNum].value * digital;
-	player->viewangles[PITCH] -= speed*cg_pitchspeedanalog[localPlayerNum].value * analog;
+	player->viewangles[PITCH] -= speed*cg_pitchSpeed.value * digital;
+	player->viewangles[PITCH] -= speed*cg_pitchSpeedAnalog.value * analog;
 
 	CL_KeyStateSeparate (player, &ci->in_lookdown, &digital, &analog);
-	player->viewangles[PITCH] += speed*cg_pitchspeed[localPlayerNum].value * digital;
-	player->viewangles[PITCH] += speed*cg_pitchspeedanalog[localPlayerNum].value * analog;
+	player->viewangles[PITCH] += speed*cg_pitchSpeed.value * digital;
+	player->viewangles[PITCH] += speed*cg_pitchSpeedAnalog.value * analog;
 }
 
 /*
@@ -464,7 +463,7 @@ void CG_KeyMove( localPlayer_t *player, clientInput_t *ci, usercmd_t *cmd ) {
 	// the walking flag is to keep animations consistant
 	// even during acceleration and develeration
 	//
-	if ( ci->in_speed.active ^ cg_run[ci-cis].integer ) {
+	if ( ci->in_speed.active ^ cg_alwaysRun.integer ) {
 		movespeed = 127;
 		cmd->buttons &= ~BUTTON_WALKING;
 	} else {
@@ -515,7 +514,7 @@ void CG_MouseMove( localPlayer_t *player, clientInput_t *ci, usercmd_t *cmd, flo
 	else
 		player->viewangles[YAW] -= m_yaw.value * mx;
 
-	if ((ci->in_mlooking || cg_freelook.integer) && !ci->in_strafe.active)
+	if ((ci->in_mlooking || cg_freeLook.integer) && !ci->in_strafe.active)
 		player->viewangles[PITCH] += m_pitch.value * my;
 	else
 		cmd->forwardmove = ClampChar(cmd->forwardmove - m_forward.value * my);
@@ -617,25 +616,22 @@ CG_RegisterInputCvars
 =================
 */
 void CG_RegisterInputCvars( void ) {
-	int i;
 
-	trap_Cvar_Register( &cg_freelook, "cl_freelook", "1", CVAR_ARCHIVE ); // ZTM: NOTE: changing name breaks team arena menu scripts
+	trap_Cvar_Register( &cg_freeLook, "cg_freeLook", "1", CVAR_ARCHIVE ); // ZTM: NOTE: changing name breaks team arena menu scripts
 
 	trap_Cvar_Register( &m_pitch, "m_pitch", "0.022", CVAR_ARCHIVE );
 	trap_Cvar_Register( &m_yaw, "m_yaw", "0.022", CVAR_ARCHIVE );
 	trap_Cvar_Register( &m_forward, "m_forward", "0.25", CVAR_ARCHIVE );
 	trap_Cvar_Register( &m_side, "m_side", "0.25", CVAR_ARCHIVE );
 
-	for (i = 0; i < CG_MaxSplitView(); i++) {
-		trap_Cvar_Register( &cg_yawspeed[i], Com_LocalPlayerCvarName(i, "cg_yawspeed"), "140", CVAR_ARCHIVE );
-		trap_Cvar_Register( &cg_pitchspeed[i], Com_LocalPlayerCvarName(i, "cg_pitchspeed"), "140", CVAR_ARCHIVE );
-		trap_Cvar_Register( &cg_yawspeedanalog[i], Com_LocalPlayerCvarName(i, "cg_yawspeedanalog"), "200", CVAR_ARCHIVE );
-		trap_Cvar_Register( &cg_pitchspeedanalog[i], Com_LocalPlayerCvarName(i, "cg_pitchspeedanalog"), "200", CVAR_ARCHIVE );
-		trap_Cvar_Register( &cg_anglespeedkey[i], Com_LocalPlayerCvarName(i, "cg_anglespeedkey"), "1.5", 0 );
-		trap_Cvar_Register( &cg_run[i], Com_LocalPlayerCvarName(i, "cl_run"), "1", CVAR_ARCHIVE ); // ZTM: NOTE: changing name breaks team arena menu scripts
-		trap_Cvar_Register( &cg_joystickUseAnalog[i], Com_LocalPlayerCvarName(i, "in_joystickUseAnalog"), "1", CVAR_ARCHIVE );
-		trap_Cvar_Register( &cg_joystickThreshold[i], Com_LocalPlayerCvarName(i, "in_joystickThreshold"), "0.15", CVAR_ARCHIVE );
-	}
+	trap_Cvar_Register( &cg_yawSpeed, "cg_yawSpeed", "140", CVAR_ARCHIVE );
+	trap_Cvar_Register( &cg_pitchSpeed, "cg_pitchSpeed", "140", CVAR_ARCHIVE );
+	trap_Cvar_Register( &cg_yawSpeedAnalog, "cg_yawSpeedAnalog", "200", CVAR_ARCHIVE );
+	trap_Cvar_Register( &cg_pitchSpeedAnalog, "cg_pitchSpeedAnalog", "200", CVAR_ARCHIVE );
+	trap_Cvar_Register( &cg_angleSpeedKey, "cg_angleSpeedKey", "1.5", 0 );
+	trap_Cvar_Register( &cg_alwaysRun, "cg_alwaysRun", "1", CVAR_ARCHIVE );
+	trap_Cvar_Register( &cg_joystickUseAnalog, "in_joystickUseAnalog", "1", CVAR_ARCHIVE );
+	trap_Cvar_Register( &cg_joystickThreshold, "in_joystickThreshold", "0.15", CVAR_ARCHIVE );
 }
 
 /*
@@ -644,24 +640,21 @@ CG_UpdateInputCvars
 =================
 */
 void CG_UpdateInputCvars( void ) {
-	int i;
 
-	trap_Cvar_Update( &cg_freelook );
+	trap_Cvar_Update( &cg_freeLook );
 
 	trap_Cvar_Update( &m_pitch );
 	trap_Cvar_Update( &m_yaw );
 	trap_Cvar_Update( &m_forward );
 	trap_Cvar_Update( &m_side );
 
-	for (i = 0; i < CG_MaxSplitView(); i++) {
-		trap_Cvar_Update( &cg_yawspeed[i] );
-		trap_Cvar_Update( &cg_pitchspeed[i] );
-		trap_Cvar_Update( &cg_yawspeedanalog[i] );
-		trap_Cvar_Update( &cg_pitchspeedanalog[i] );
-		trap_Cvar_Update( &cg_anglespeedkey[i] );
-		trap_Cvar_Update( &cg_run[i] );
-		trap_Cvar_Update( &cg_joystickUseAnalog[i] );
-		trap_Cvar_Update( &cg_joystickThreshold[i] );
-	}
+	trap_Cvar_Update( &cg_yawSpeed );
+	trap_Cvar_Update( &cg_pitchSpeed );
+	trap_Cvar_Update( &cg_yawSpeedAnalog );
+	trap_Cvar_Update( &cg_pitchSpeedAnalog );
+	trap_Cvar_Update( &cg_angleSpeedKey );
+	trap_Cvar_Update( &cg_alwaysRun );
+	trap_Cvar_Update( &cg_joystickUseAnalog );
+	trap_Cvar_Update( &cg_joystickThreshold );
 }
 

@@ -122,15 +122,14 @@ qboolean CheckGauntletAttack( gentity_t *ent ) {
 	} else {
 		s_quadFactor = 1;
 	}
-#ifdef MISSIONPACK
-	if( ent->player->persistantPowerup && ent->player->persistantPowerup->item && ent->player->persistantPowerup->item->giTag == PW_DOUBLER ) {
+
+	if ( ent->player->persistantPowerup && ent->player->persistantPowerup->item && ent->player->persistantPowerup->item->giTag == PW_STRENGTH ) {
 		s_quadFactor *= 2;
 	}
-#endif
 
 	damage = 50 * s_quadFactor;
 	G_Damage( traceEnt, ent, ent, forward, tr.endpos,
-		damage, 0, MOD_GAUNTLET );
+		damage, 0, MOD_GAUNTLET, ent->s.weapon );
 
 	return qtrue;
 }
@@ -152,7 +151,7 @@ MACHINEGUN
 #define	MACHINEGUN_DAMAGE	7
 #define	MACHINEGUN_TEAM_DAMAGE	5		// wimpier MG in teamplay
 
-void Bullet_Fire (gentity_t *ent, float spread, int damage, int mod ) {
+void Bullet_Fire( gentity_t *ent, float spread, int damage, int mod, weapon_t weapon ) {
 	trace_t		tr;
 	vec3_t		end;
 #ifdef MISSIONPACK
@@ -198,7 +197,7 @@ void Bullet_Fire (gentity_t *ent, float spread, int damage, int mod ) {
 			tent = G_TempEntity( tr.endpos, EV_BULLET_HIT_FLESH );
 			tent->s.eventParm = traceEnt->s.number;
 			if( LogAccuracyHit( traceEnt, ent ) ) {
-				ent->player->accuracy_hits++;
+				//ent->player->statsWeaponHits[ent->s.weapon]++;
 			}
 		} else {
 			tent = G_TempEntity( tr.endpos, EV_BULLET_HIT_WALL );
@@ -224,7 +223,7 @@ void Bullet_Fire (gentity_t *ent, float spread, int damage, int mod ) {
 			else {
 #endif
 				G_Damage( traceEnt, ent, ent, forward, tr.endpos,
-					damage, 0, mod);
+					damage, 0, mod, ent->s.weapon );
 #ifdef MISSIONPACK
 			}
 #endif
@@ -307,7 +306,7 @@ qboolean ShotgunPellet( vec3_t start, vec3_t end, gentity_t *ent ) {
 			if( LogAccuracyHit( traceEnt, ent ) ) {
 				hitPlayer = qtrue;
 			}
-			G_Damage( traceEnt, ent, ent, forward, tr.endpos, damage, 0, MOD_SHOTGUN);
+			G_Damage( traceEnt, ent, ent, forward, tr.endpos, damage, 0, MOD_SHOTGUN, ent->s.weapon );
 			return hitPlayer;
 		}
 		return qfalse;
@@ -339,9 +338,9 @@ void ShotgunPattern( vec3_t origin, vec3_t origin2, int seed, gentity_t *ent ) {
 		VectorMA( origin, 8192 * 16, forward, end);
 		VectorMA (end, r, right, end);
 		VectorMA (end, u, up, end);
-		if( ShotgunPellet( origin, end, ent ) && !hitPlayer ) {
+		if ( ShotgunPellet( origin, end, ent ) && !hitPlayer ) {
 			hitPlayer = qtrue;
-			ent->player->accuracy_hits++;
+			//ent->player->statsWeaponHits[ent->s.weapon]++;
 		}
 	}
 
@@ -496,13 +495,13 @@ void weapon_railgun_fire (gentity_t *ent) {
 				if( LogAccuracyHit( traceEnt, ent ) ) {
 					hits++;
 				}
-				G_Damage (traceEnt, ent, ent, forward, trace.endpos, damage, 0, MOD_RAILGUN);
+				G_Damage( traceEnt, ent, ent, forward, trace.endpos, damage, 0, MOD_RAILGUN, ent->s.weapon );
 			}
 #else
 				if( LogAccuracyHit( traceEnt, ent ) ) {
 					hits++;
 				}
-				G_Damage (traceEnt, ent, ent, forward, trace.endpos, damage, 0, MOD_RAILGUN);
+				G_Damage( traceEnt, ent, ent, forward, trace.endpos, damage, 0, MOD_RAILGUN, ent->s.weapon );
 #endif
 		}
 		if ( trace.contents & CONTENTS_SOLID ) {
@@ -557,11 +556,11 @@ void weapon_railgun_fire (gentity_t *ent) {
 			ent->player->accurateCount -= 2;
 			ent->player->ps.persistant[PERS_IMPRESSIVE_COUNT]++;
 			// add the sprite over the player's head
-			ent->player->ps.eFlags &= ~(EF_AWARD_IMPRESSIVE | EF_AWARD_EXCELLENT | EF_AWARD_GAUNTLET | EF_AWARD_ASSIST | EF_AWARD_DEFEND | EF_AWARD_CAP );
+			G_ClearMedals( &ent->player->ps );
 			ent->player->ps.eFlags |= EF_AWARD_IMPRESSIVE;
 			ent->player->rewardTime = level.time + REWARD_SPRITE_TIME;
 		}
-		ent->player->accuracy_hits++;
+		//ent->player->statsWeaponHits[ent->s.weapon]++;
 	}
 
 }
@@ -682,9 +681,9 @@ void Weapon_LightningFire( gentity_t *ent ) {
 			}
 #endif
 			if( LogAccuracyHit( traceEnt, ent ) ) {
-				ent->player->accuracy_hits++;
+				//ent->player->statsWeaponHits[ent->s.weapon]++;
 			}
-			G_Damage( traceEnt, ent, ent, forward, tr.endpos, damage, 0, MOD_LIGHTNING);
+			G_Damage( traceEnt, ent, ent, forward, tr.endpos, damage, 0, MOD_LIGHTNING, ent->s.weapon );
 		}
 
 		if ( traceEnt->takedamage && traceEnt->player ) {
@@ -795,6 +794,12 @@ set muzzle location relative to pivoting eye
 void CalcMuzzlePoint ( gentity_t *ent, vec3_t forward, vec3_t right, vec3_t up, vec3_t muzzlePoint ) {
 	VectorCopy( ent->s.pos.trBase, muzzlePoint );
 	muzzlePoint[2] += ent->player->ps.viewheight;
+#if 0
+	if ( ent->player->pers.handedness == 1 )		// left
+		muzzlePoint[1] -= 4.5;
+	else if ( ent->player->pers.handedness == 2 )	// right
+		muzzlePoint[1] += 4.5;
+#endif
 	VectorMA( muzzlePoint, 14, forward, muzzlePoint );
 	// snap to integer coordinates for more efficient network bandwidth usage
 	SnapVector( muzzlePoint );
@@ -810,6 +815,17 @@ set muzzle location relative to pivoting eye
 void CalcMuzzlePointOrigin ( gentity_t *ent, vec3_t origin, vec3_t forward, vec3_t right, vec3_t up, vec3_t muzzlePoint ) {
 	VectorCopy( ent->s.pos.trBase, muzzlePoint );
 	muzzlePoint[2] += ent->player->ps.viewheight;
+	//FIXME: approximate correct gun muzzle origin
+//muff
+	//muzzlePoint[2] += g_gunzoffset.value;
+	//muzzlePoint[1] += g_gunyoffset.value;
+#if 0
+	if ( ent->player->pers.handedness == 1 )		// left
+		muzzlePoint[1] -= 4.5;
+	else if ( ent->player->pers.handedness == 2 )	// right
+		muzzlePoint[1] += 4.5;
+#endif
+//-muff
 	VectorMA( muzzlePoint, 14, forward, muzzlePoint );
 	// snap to integer coordinates for more efficient network bandwidth usage
 	SnapVector( muzzlePoint );
@@ -830,22 +846,26 @@ void FireWeapon( gentity_t *ent ) {
 	} else {
 		s_quadFactor = 1;
 	}
-#ifdef MISSIONPACK
-	if( ent->player->persistantPowerup && ent->player->persistantPowerup->item && ent->player->persistantPowerup->item->giTag == PW_DOUBLER ) {
+	if( ent->player->persistantPowerup && ent->player->persistantPowerup->item && ent->player->persistantPowerup->item->giTag == PW_STRENGTH ) {
 		s_quadFactor *= 2;
 	}
-#endif
 
 	// track shots taken for accuracy tracking.  Grapple is not a weapon and gauntet is just not tracked
 	if( ent->s.weapon != WP_GRAPPLING_HOOK && ent->s.weapon != WP_GAUNTLET ) {
 #ifdef MISSIONPACK
-		if( ent->s.weapon == WP_NAILGUN ) {
-			ent->player->accuracy_shots += NUM_NAILSHOTS;
+		if ( ent->s.weapon == WP_NAILGUN ) {
+			ent->player->statsWeaponShots[WP_NAILGUN] += NUM_NAILSHOTS;
+		} else if ( ent->s.weapon == WP_SHOTGUN ) {
+			ent->player->statsWeaponShots[ent->s.weapon] += DEFAULT_SHOTGUN_COUNT;
 		} else {
-			ent->player->accuracy_shots++;
+			ent->player->statsWeaponShots[ent->s.weapon]++;
 		}
 #else
-		ent->player->accuracy_shots++;
+		if ( ent->s.weapon == WP_SHOTGUN ) {
+			//ent->player->statsWeaponShots[ent->s.weapon] += DEFAULT_SHOTGUN_COUNT;
+		} else {
+			//ent->player->statsWeaponShots[ent->s.weapon]++;
+		}
 #endif
 	}
 
@@ -867,9 +887,9 @@ void FireWeapon( gentity_t *ent ) {
 		break;
 	case WP_MACHINEGUN:
 		if ( !GTF(GTF_TDM)) {
-			Bullet_Fire( ent, MACHINEGUN_SPREAD, MACHINEGUN_DAMAGE, MOD_MACHINEGUN );
+			Bullet_Fire( ent, MACHINEGUN_SPREAD, MACHINEGUN_DAMAGE, MOD_MACHINEGUN, ent->s.weapon );
 		} else {
-			Bullet_Fire( ent, MACHINEGUN_SPREAD, MACHINEGUN_TEAM_DAMAGE, MOD_MACHINEGUN );
+			Bullet_Fire( ent, MACHINEGUN_SPREAD, MACHINEGUN_TEAM_DAMAGE, MOD_MACHINEGUN, ent->s.weapon );
 		}
 		break;
 	case WP_GRENADE_LAUNCHER:
@@ -898,7 +918,7 @@ void FireWeapon( gentity_t *ent ) {
 		weapon_proxlauncher_fire( ent );
 		break;
 	case WP_CHAINGUN:
-		Bullet_Fire( ent, CHAINGUN_SPREAD, CHAINGUN_DAMAGE, MOD_CHAINGUN );
+		Bullet_Fire( ent, CHAINGUN_SPREAD, CHAINGUN_DAMAGE, MOD_CHAINGUN, ent->s.weapon );
 		break;
 #endif
 	default:
@@ -969,7 +989,7 @@ static void KamikazeRadiusDamage( vec3_t origin, gentity_t *attacker, float dama
 			// push the center of mass higher than the origin so players
 			// get knocked into the air more
 			dir[2] += 24;
-			G_Damage( ent, NULL, attacker, dir, origin, damage, DAMAGE_RADIUS|DAMAGE_NO_TEAM_PROTECTION, MOD_KAMIKAZE );
+			G_Damage( ent, NULL, attacker, dir, origin, damage, DAMAGE_RADIUS|DAMAGE_NO_TEAM_PROTECTION, MOD_KAMIKAZE, 0 );
 			ent->kamikazeTime = level.time + 3000;
 //		}
 	}
@@ -1027,7 +1047,7 @@ static void KamikazeShockWave( vec3_t origin, gentity_t *attacker, float damage,
 //		if( CanDamage (ent, origin) ) {
 			VectorSubtract (ent->r.currentOrigin, origin, dir);
 			dir[2] += 24;
-			G_Damage( ent, NULL, attacker, dir, origin, damage, DAMAGE_RADIUS|DAMAGE_NO_TEAM_PROTECTION, MOD_KAMIKAZE );
+			G_Damage( ent, NULL, attacker, dir, origin, damage, DAMAGE_RADIUS|DAMAGE_NO_TEAM_PROTECTION, MOD_KAMIKAZE, 0 );
 			//
 			dir[2] = 0;
 			VectorNormalize(dir);
@@ -1142,7 +1162,7 @@ void G_StartKamikaze( gentity_t *ent ) {
 		ent->s.eFlags &= ~EF_KAMIKAZE;
 		ent->player->ps.eFlags &= ~EF_KAMIKAZE;
 		// nuke the guy that used it
-		G_Damage( ent, ent, ent, NULL, NULL, 100000, DAMAGE_NO_PROTECTION, MOD_KAMIKAZE );
+		G_Damage( ent, ent, ent, NULL, NULL, 100000, DAMAGE_NO_PROTECTION, MOD_KAMIKAZE, 0 );
 	}
 	else {
 		if ( !strcmp(ent->activator->classname, "bodyqueue") ) {

@@ -149,6 +149,9 @@ qhandle_t	trap_R_RegisterModel( const char *name );			// returns rgb axis if not
 qhandle_t	trap_R_RegisterShaderEx( const char *name, int lightmapIndex, qboolean mipRawImage ); // returns all white if not found
 qhandle_t	trap_R_RegisterShader( const char *name );			// returns all white if not found
 qhandle_t	trap_R_RegisterShaderNoMip( const char *name );			// returns all white if not found
+//muff
+//qhandle_t	trap_R_RegisterShader_Ext( const char* name, const qboolean mipRawImage, const qboolean forceAlphaBlend );
+//-muff
 void		trap_R_RegisterFont(const char *fontName, int pointSize, float borderWidth, qboolean forceAutoHint, fontInfo_t *font);
 
 // skin (entity model surface remap) management

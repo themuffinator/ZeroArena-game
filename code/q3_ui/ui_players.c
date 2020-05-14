@@ -829,7 +829,7 @@ void UI_DrawPlayer( float x, float y, float w, float h, uiPlayerInfo_t *pi, int 
 	legs.renderfx = renderfx;
 	VectorCopy (legs.origin, legs.oldorigin);
 
-	Byte4Copy( pi->c1RGBA, legs.shaderRGBA );
+	Byte4Copy( pi->c2RGBA, legs.shaderRGBA );
 
 	CG_AddRefEntityWithMinLight( &legs );
 
@@ -853,7 +853,7 @@ void UI_DrawPlayer( float x, float y, float w, float h, uiPlayerInfo_t *pi, int 
 
 	torso.renderfx = renderfx;
 
-	Byte4Copy( pi->c1RGBA, torso.shaderRGBA );
+	Byte4Copy( pi->c2RGBA, torso.shaderRGBA );
 
 	CG_AddRefEntityWithMinLight( &torso );
 
@@ -872,7 +872,7 @@ void UI_DrawPlayer( float x, float y, float w, float h, uiPlayerInfo_t *pi, int 
 
 	head.renderfx = renderfx;
 
-	Byte4Copy( pi->c1RGBA, head.shaderRGBA );
+	Byte4Copy( pi->c2RGBA, head.shaderRGBA );
 
 	CG_AddRefEntityWithMinLight( &head );
 
@@ -1320,6 +1320,20 @@ void UI_PlayerInfo_UpdateColor( uiPlayerInfo_t *pi ) {
 	pi->c1RGBA[3] = 0xff;
 }
 
+/*
+===============
+UI_PlayerInfo_UpdateColor2
+===============
+*/
+void UI_PlayerInfo_UpdateColor2( uiPlayerInfo_t* pi ) {
+	CG_PlayerColorFromIndex( trap_Cvar_VariableIntegerValue( "color2" ), pi->color2 );
+
+	pi->c2RGBA[0] = 0xff * pi->color2[0];
+	pi->c2RGBA[1] = 0xff * pi->color2[1];
+	pi->c2RGBA[2] = 0xff * pi->color2[2];
+	pi->c2RGBA[3] = 0xff;
+}
+
 
 /*
 ===============
@@ -1333,6 +1347,7 @@ void UI_PlayerInfo_SetInfo( uiPlayerInfo_t *pi, int legsAnim, int torsoAnim, vec
 	pi->chat = chat;
 
 	UI_PlayerInfo_UpdateColor( pi );
+	UI_PlayerInfo_UpdateColor2( pi );
 
 	// view angles
 	VectorCopy( viewAngles, pi->viewAngles );

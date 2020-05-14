@@ -231,7 +231,7 @@ int AAS_Swimming(vec3_t origin)
 
 	VectorCopy(origin, testorg);
 	testorg[2] -= 2;
-	if ( AAS_PointContents(testorg) & (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA) ) return qtrue;
+	if (AAS_PointContents(testorg) & (CONTENTS_LAVA|CONTENTS_SLIME|CONTENTS_WATER)) return qtrue;
 	return qfalse;
 } //end of the function AAS_Swimming
 //===========================================================================

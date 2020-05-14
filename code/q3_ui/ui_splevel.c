@@ -43,7 +43,6 @@ SINGLE PLAYER LEVEL SELECT MENU
 #define ART_LEVELFRAME_SELECTED		"menu/art/maps_selected"
 #define ART_ARROW					"menu/art/narrow_0"
 #define ART_ARROW_FOCUS				"menu/art/narrow_1"
-#define ART_MAP_UNKNOWN				"menu/art/unknownmap"
 #define ART_MAP_COMPLETE1			"menu/art/level_complete1"
 #define ART_MAP_COMPLETE2			"menu/art/level_complete2"
 #define ART_MAP_COMPLETE3			"menu/art/level_complete3"
@@ -240,11 +239,17 @@ static void UI_SPLevelMenu_SetMenuArena( int n, int level, const char *arenaInfo
 		levelMenuInfo.levelScores[n] = 8;
 	}
 
-	Com_sprintf( levelMenuInfo.levelPicNames[n], sizeof(levelMenuInfo.levelPicNames[n]), "levelshots/%s_small", map );
-	if( !trap_R_RegisterShaderNoMip( levelMenuInfo.levelPicNames[n] ) ) {
-		Com_sprintf( levelMenuInfo.levelPicNames[n], sizeof(levelMenuInfo.levelPicNames[n]), "levelshots/%s", map );
-		if( !trap_R_RegisterShaderNoMip( levelMenuInfo.levelPicNames[n] ) ) {
-			strcpy( levelMenuInfo.levelPicNames[n], ART_MAP_UNKNOWN );
+	Com_sprintf( levelMenuInfo.levelPicNames[n], sizeof(levelMenuInfo.levelPicNames[n]), "levelshots/preview/%s", map );
+	if ( !trap_R_RegisterShaderNoMip( levelMenuInfo.levelPicNames[n] ) ) {
+		Com_sprintf( levelMenuInfo.levelPicNames[n], sizeof( levelMenuInfo.levelPicNames[n] ), "levelshots/%s", map );
+		if ( !trap_R_RegisterShaderNoMip( levelMenuInfo.levelPicNames[n] ) ) {
+			Com_sprintf( levelMenuInfo.levelPicNames[n], sizeof( levelMenuInfo.levelPicNames[n] ), "levelshots/%s_small", map );
+			if ( !trap_R_RegisterShaderNoMip( levelMenuInfo.levelPicNames[n] ) ) {
+				Com_sprintf( levelMenuInfo.levelPicNames[n], sizeof( levelMenuInfo.levelPicNames[n] ), "levelshots/16-9/%s", map );
+				if ( !trap_R_RegisterShaderNoMip( levelMenuInfo.levelPicNames[n] ) ) {
+					strcpy( levelMenuInfo.levelPicNames[n], ART_MAP_UNKNOWN );
+				}
+			}
 		}
 	}
 	levelMenuInfo.item_maps[n].shader = 0;

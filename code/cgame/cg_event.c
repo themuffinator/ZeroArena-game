@@ -172,6 +172,7 @@ static void CG_GraphObits_Add( int mod, int target, int attacker ) {
 		case MOD_TARGET_LASER:
 		case MOD_TRIGGER_HURT:
 		case MOD_BLASTER:
+		case MOD_TREASON:
 			cg.obitIcon[cg.obitNum] = cgs.media.deathIcon;
 			break;
 		default:
@@ -270,6 +271,14 @@ static void CG_Obituary( entityState_t *ent ) {
 			message = "goes out with a bang";
 			break;
 #endif
+		case MOD_GRENADE:
+			if ( gender == GENDER_FEMALE )
+				message = "caught her own grenade";
+			else if ( gender == GENDER_NEUTER )
+				message = "caught its own grenade";
+			else
+				message = "caught his own grenade";
+			break;
 		case MOD_GRENADE_SPLASH:
 			if ( gender == GENDER_FEMALE )
 				message = "tripped on her own grenade";
@@ -308,6 +317,9 @@ static void CG_Obituary( entityState_t *ent ) {
 			}
 			break;
 #endif
+		case MOD_TREASON:
+			message = "died from shame";
+			break;
 		default:
 			if ( gender == GENDER_FEMALE )
 				message = "killed herself";
@@ -472,7 +484,7 @@ static void CG_UseItem( centity_t *cent ) {
 	int			itemNum, playerNum;
 	gitem_t		*item;
 	entityState_t *es;
-	int			i;
+	//int			i;
 
 	es = &cent->currentState;
 	
@@ -480,18 +492,17 @@ static void CG_UseItem( centity_t *cent ) {
 	if ( itemNum < 0 || itemNum > HI_NUM_HOLDABLE ) {
 		itemNum = 0;
 	}
-
+	
 	// print a message if the local player
-	for (i = 0; i < CG_MaxSplitView(); i++) {
-		if ( es->number != cg.snap->pss[i].playerNum ) {
-			continue;
-		}
-
+	if ( es->number == cg.cur_ps->playerNum ) {
 		if ( !itemNum ) {
-			CG_CenterPrint( i, "No item to use", SCREEN_HEIGHT * 0.30, 0.5 );
+			CG_CenterPrint( 0, "No item to use", SCREEN_HEIGHT * 0.30, 0.5 );
+		} else if ( (itemNum == HI_PSCREEN || itemNum == HI_PSHIELD) ) {
+			// only use use item events for PA when out of ammo
+			CG_CenterPrint( 0, "No Cells for Power Armor", SCREEN_HEIGHT * 0.30, 0.5 );
 		} else {
 			item = BG_FindItemForHoldable( itemNum );
-			CG_CenterPrint( i, va("Use %s", item->pickup_name), SCREEN_HEIGHT * 0.30, 0.5 );
+			CG_CenterPrint( 0, va( "Use %s", item->pickup_name ), SCREEN_HEIGHT * 0.30, 0.5 );
 		}
 	}
 
@@ -507,10 +518,10 @@ static void CG_UseItem( centity_t *cent ) {
 	case HI_MEDKIT:
 		playerNum = cent->currentState.playerNum;
 		if ( playerNum >= 0 && playerNum < MAX_CLIENTS ) {
-			pi = &cgs.playerinfo[ playerNum ];
+			pi = &cgs.playerinfo[playerNum];
 			pi->medkitUsageTime = cg.time;
+			trap_S_StartSound (NULL, es->number, CHAN_BODY, cgs.media.medkitSound );
 		}
-		trap_S_StartSound (NULL, es->number, CHAN_BODY, cgs.media.medkitSound );
 		break;
 
 #ifdef MISSIONPACK
@@ -544,7 +555,7 @@ static void CG_ItemPickup( int localPlayerNum, int itemNum ) {
 	// see if it should be the grabbed weapon
 	if ( item->giType == IT_WEAPON ) {
 		// select it immediately
-		if ( cg_autoswitch[localPlayerNum].integer && item->giTag != WP_MACHINEGUN ) {
+		if ( cg_autoSwitch.integer && item->giTag != WP_MACHINEGUN ) {
 			player->weaponSelectTime = cg.time;
 			player->weaponSelect = bg_itemlist[itemNum].giTag;
 		}
@@ -879,23 +890,27 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			// will be played at prediction time
 			if ( item->giType == IT_POWERUP || item->giType == IT_TEAM) {
 				trap_S_StartSound (NULL, es->number, CHAN_AUTO,	cgs.media.n_healthSound );
-			} else if (item->giType == IT_PERSISTANT_POWERUP) {
-#ifdef MISSIONPACK
+			} else if (item->giType == IT_RUNE) {
 				switch (item->giTag ) {
 					case PW_SCOUT:
 						trap_S_StartSound (NULL, es->number, CHAN_AUTO,	cgs.media.scoutSound );
 					break;
-					case PW_GUARD:
-						trap_S_StartSound (NULL, es->number, CHAN_AUTO,	cgs.media.guardSound );
+					case PW_RESISTANCE:
+						trap_S_StartSound (NULL, es->number, CHAN_AUTO,	cgs.media.resistanceSound );
 					break;
-					case PW_DOUBLER:
-						trap_S_StartSound (NULL, es->number, CHAN_AUTO,	cgs.media.doublerSound );
+					case PW_STRENGTH:
+						trap_S_StartSound (NULL, es->number, CHAN_AUTO,	cgs.media.strengthSound );
 					break;
-					case PW_AMMOREGEN:
-						trap_S_StartSound (NULL, es->number, CHAN_AUTO,	cgs.media.ammoregenSound );
+					case PW_ARMAMENT:
+						trap_S_StartSound (NULL, es->number, CHAN_AUTO,	cgs.media.armamentSound );
 					break;
+					case PW_TENACITY:
+						trap_S_StartSound( NULL, es->number, CHAN_AUTO, cgs.media.tenacitySound );
+						break;
+					case PW_PARASITE:
+						trap_S_StartSound( NULL, es->number, CHAN_AUTO, cgs.media.parasiteSound );
+						break;
 				}
-#endif
 			} else {
 				trap_S_StartSound (NULL, es->number, CHAN_AUTO,	cgs.media.itemPickupSounds[ index ] );
 			}
@@ -1049,6 +1064,13 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		CG_LightningBoltBeam(es->origin2, es->pos.trBase);
 		break;
 #endif
+//muff
+	case EV_REGISTER_ITEM:
+		DEBUGNAME( "EV_REGISTER_ITEM" );
+		CG_RegisterItemVisuals( es->eventParm );
+		CG_RegisterItemSounds( es->eventParm );
+		break;
+//-muff
 	case EV_SCOREPLUM:
 		DEBUGNAME("EV_SCOREPLUM");
 		CG_ScorePlum( cent->currentState.otherEntityNum, cent->lerpOrigin, cent->currentState.time );
@@ -1060,33 +1082,33 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_MISSILE_HIT:
 		DEBUGNAME("EV_MISSILE_HIT");
 		ByteToDir( es->eventParm, dir );
-		CG_MissileHitPlayer( es->weapon, position, dir, es->otherEntityNum );
+		CG_MissileHitPlayer( es->weapon, es->modelindex2, position, dir, es->otherEntityNum );
 		break;
 
 	case EV_MISSILE_MISS:
 		DEBUGNAME("EV_MISSILE_MISS");
 		ByteToDir( es->eventParm, dir );
-		CG_MissileHitWall( es->weapon, 0, position, dir, IMPACTSOUND_DEFAULT );
+		CG_MissileHitWall( es->weapon, es->modelindex2, position, dir, IMPACTSOUND_DEFAULT );
 		break;
 
 	case EV_MISSILE_MISS_METAL:
 		DEBUGNAME("EV_MISSILE_MISS_METAL");
 		ByteToDir( es->eventParm, dir );
-		CG_MissileHitWall( es->weapon, 0, position, dir, IMPACTSOUND_METAL );
+		CG_MissileHitWall( es->weapon, es->modelindex2, position, dir, IMPACTSOUND_METAL );
 		break;
 
 	case EV_RAILTRAIL:
 		DEBUGNAME("EV_RAILTRAIL");
 		cent->currentState.weapon = WP_RAILGUN;
-
+		//FIXME: correct rail origin accurately to muzzle in both 1st and 3rd person
 		if ( es->playerNum >= 0 && es->playerNum < MAX_CLIENTS ) {
 			for (i = 0; i < CG_MaxSplitView(); i++) {
 				if ( es->playerNum == cg.snap->pss[i].playerNum
 					&& !cg.localPlayers[i].renderingThirdPerson)
 				{
-					if(cg_drawGun[i].integer == 2)
+					if ( cg_drawGun.integer == 2 )
 						VectorMA(es->origin2, 8, cg.refdef.viewaxis[1], es->origin2);
-					else if(cg_drawGun[i].integer == 3)
+					else if( cg_drawGun.integer == 3 )
 						VectorMA(es->origin2, 4, cg.refdef.viewaxis[1], es->origin2);
 					break;
 				}
@@ -1141,273 +1163,48 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_GLOBAL_TEAM_SOUND:	// play as a local sound so it never diminishes
 		DEBUGNAME("EV_GLOBAL_TEAM_SOUND");
 		{
-			//multiteam: muff: this is not ideal but until we get split screen spectator-only we'll keep this like this
-			qboolean redTeam			= qfalse;
-			qboolean blueTeam			= qfalse;
-			qboolean greenTeam			= qfalse;
-			qboolean yellowTeam			= qfalse;
-			qboolean tealTeam			= qfalse;
-			qboolean pinkTeam			= qfalse;
-			qboolean localHasRed		= qfalse;
-			qboolean localHasBlue		= qfalse;
-			qboolean localHasGreen		= qfalse;
-			qboolean localHasYellow		= qfalse;
-			qboolean localHasTeal		= qfalse;
-			qboolean localHasPink		= qfalse;
-			qboolean localHasNeutral	= qfalse;
-
-			// Check if any local player is on blue/red team or has flags.
-			for (i = 0; i < CG_MaxSplitView(); i++) {
-				if (cg.snap->playerNums[i] == -1) {
-					continue;
-				}
-				if (cg.snap->pss[i].persistant[PERS_TEAM] == TEAM_RED) {
-					redTeam = qtrue;
-				}
-				if (cg.snap->pss[i].persistant[PERS_TEAM] == TEAM_BLUE) {
-					blueTeam = qtrue;
-				}
-				if (cg.snap->pss[i].persistant[PERS_TEAM] == TEAM_GREEN) {
-					greenTeam = qtrue;
-				}
-				if (cg.snap->pss[i].persistant[PERS_TEAM] == TEAM_YELLOW) {
-					yellowTeam = qtrue;
-				}
-				if (cg.snap->pss[i].persistant[PERS_TEAM] == TEAM_TEAL) {
-					tealTeam = qtrue;
-				}
-				if (cg.snap->pss[i].persistant[PERS_TEAM] == TEAM_PINK) {
-					pinkTeam = qtrue;
-				}
-
-				if (cg.snap->pss[i].powerups[PW_REDFLAG]) {
-					localHasRed = qtrue;
-				}
-				if (cg.snap->pss[i].powerups[PW_BLUEFLAG]) {
-					localHasBlue = qtrue;
-				}
-				if (cg.snap->pss[i].powerups[PW_GREENFLAG]) {
-					localHasGreen = qtrue;
-				}
-				if (cg.snap->pss[i].powerups[PW_YELLOWFLAG]) {
-					localHasYellow = qtrue;
-				}
-				if (cg.snap->pss[i].powerups[PW_TEALFLAG]) {
-					localHasTeal = qtrue;
-				}
-				if (cg.snap->pss[i].powerups[PW_PINKFLAG]) {
-					localHasPink = qtrue;
-				}
-				if (cg.snap->pss[i].powerups[PW_NEUTRALFLAG]) {
-					localHasNeutral = qtrue;
-				}
-			}
-
-			// ZTM: NOTE: Some of these sounds don't really work with local player on different teams.
-			//     New games might want to replace you/enemy sounds with red/blue.
-			//     See http://github.com/zturtleman/spearmint/wiki/New-Sounds
+			team_t	team = cg.cur_ps->persistant[PERS_TEAM];
 
 			switch( es->eventParm ) {
-				//multiteam TODO: muff: probably needs fixing
 				case GTS_RED_CAPTURE:
-					CG_AddBufferedSound( redTeam ? cgs.media.captureYourTeamSound : cgs.media.captureOpponentSound );
-					break;
 				case GTS_BLUE_CAPTURE:
-					CG_AddBufferedSound( blueTeam ? cgs.media.captureYourTeamSound : cgs.media.captureOpponentSound );
-					break;
 				case GTS_GREEN_CAPTURE:
-					CG_AddBufferedSound( greenTeam ? cgs.media.captureYourTeamSound : cgs.media.captureOpponentSound );
-					break;
 				case GTS_YELLOW_CAPTURE:
-					CG_AddBufferedSound( yellowTeam ? cgs.media.captureYourTeamSound : cgs.media.captureOpponentSound );
-					break;
 				case GTS_TEAL_CAPTURE:
-					CG_AddBufferedSound( tealTeam ? cgs.media.captureYourTeamSound : cgs.media.captureOpponentSound );
-					break;
 				case GTS_PINK_CAPTURE:
-					CG_AddBufferedSound( pinkTeam ? cgs.media.captureYourTeamSound : cgs.media.captureOpponentSound );
+					CG_AddBufferedSound( (team == (es->eventParm - GTS_RED_CAPTURE + FIRST_TEAM)) ? cgs.media.captureYourTeamSound : cgs.media.captureOpponentSound );
 					break;
 				case GTS_RED_RETURN:
-					CG_AddBufferedSound( redTeam ? cgs.media.returnYourTeamSound : cgs.media.returnOpponentSound );
-					CG_AddBufferedSound( cgs.media.flagReturnedSound[TEAM_RED] );
-					break;
 				case GTS_BLUE_RETURN:
-					if ( cgs.gameType == GT_1FCTF ) {
-						CG_AddBufferedSound( cgs.media.returnOpponentSound );
-						CG_AddBufferedSound( cgs.media.flagReturnedSound[TEAM_FREE] );
-						break;
-					}
-
-					CG_AddBufferedSound( blueTeam ? cgs.media.returnYourTeamSound : cgs.media.returnOpponentSound );
-					CG_AddBufferedSound( cgs.media.flagReturnedSound[TEAM_BLUE] );
-					break;
 				case GTS_GREEN_RETURN:
-					CG_AddBufferedSound( greenTeam ? cgs.media.returnYourTeamSound : cgs.media.returnOpponentSound );
-					CG_AddBufferedSound( cgs.media.flagReturnedSound[TEAM_GREEN]);
-					break;
 				case GTS_YELLOW_RETURN:
-					CG_AddBufferedSound( yellowTeam ? cgs.media.returnYourTeamSound : cgs.media.returnOpponentSound );
-					CG_AddBufferedSound( cgs.media.flagReturnedSound[TEAM_YELLOW] );
-					break;
 				case GTS_TEAL_RETURN:
-					CG_AddBufferedSound( tealTeam ? cgs.media.returnYourTeamSound : cgs.media.returnOpponentSound );
-					CG_AddBufferedSound( cgs.media.flagReturnedSound[TEAM_TEAL] );
-					break;
 				case GTS_PINK_RETURN:
-					CG_AddBufferedSound( pinkTeam ? cgs.media.returnYourTeamSound : cgs.media.returnOpponentSound );
-					CG_AddBufferedSound( cgs.media.flagReturnedSound[TEAM_PINK] );
+					CG_AddBufferedSound( (team == (es->eventParm - GTS_RED_RETURN + FIRST_TEAM)) ? cgs.media.returnYourTeamSound : cgs.media.returnOpponentSound );
 					break;
-
 				case GTS_RED_TAKEN:
-					// if this player picked up the flag then a sound is played in CG_CheckLocalSounds
-					if (localHasBlue || localHasNeutral) {
-					}
-					else if ( !(redTeam && blueTeam && greenTeam && yellowTeam && tealTeam && pinkTeam) ) {
-						if ( redTeam ) {
-							if ( cgs.gameType == GT_1FCTF )
-								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
-							else
-								CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
-						} else if ( blueTeam || greenTeam || yellowTeam || tealTeam || pinkTeam ) {
-							if ( cgs.gameType == GT_1FCTF )
-								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
-							else
-								CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
-						}
-					} else {
-						// ZTM: NOTE: There are local players on both teams, so have no correct sound to play. New games should fix this.
-					}
-					break;
 				case GTS_BLUE_TAKEN:
-					// if this player picked up the flag then a sound is played in CG_CheckLocalSounds
-					if (localHasRed || localHasNeutral) {
-					}
-					else if (!(redTeam && blueTeam && greenTeam && yellowTeam && tealTeam && pinkTeam)) {
-						if (blueTeam) {
-							if (cgs.gameType == GT_1FCTF)
-								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
-							else
-								CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
-						}
-						else if (redTeam || greenTeam || yellowTeam || tealTeam || pinkTeam) {
-							if (cgs.gameType == GT_1FCTF)
-								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
-							else
-								CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
-						}
-					} else {
-						// ZTM: NOTE: There are local players on both teams, so have no correct sound to play. New games should fix this.
-					}
-					break;
 				case GTS_GREEN_TAKEN:
-					// if this player picked up the flag then a sound is played in CG_CheckLocalSounds
-					if ( localHasRed || localHasNeutral ) {
-					} else if ( !(redTeam && blueTeam && greenTeam && yellowTeam && tealTeam && pinkTeam) ) {
-						if ( greenTeam ) {
-							if ( cgs.gameType == GT_1FCTF )
-								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
-							else
-								CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
-						} else if ( redTeam || blueTeam || yellowTeam || tealTeam || pinkTeam ) {
-							if ( cgs.gameType == GT_1FCTF )
-								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
-							else
-								CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
-						}
-					} else {
-						// ZTM: NOTE: There are local players on both teams, so have no correct sound to play. New games should fix this.
-					}
-					break;
 				case GTS_YELLOW_TAKEN:
-					// if this player picked up the flag then a sound is played in CG_CheckLocalSounds
-					if ( localHasRed || localHasNeutral ) {
-					} else if ( !(redTeam && blueTeam && greenTeam && yellowTeam && tealTeam && pinkTeam) ) {
-						if ( yellowTeam ) {
-							if ( cgs.gameType == GT_1FCTF )
-								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
-							else
-								CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
-						} else if ( redTeam || greenTeam || blueTeam || tealTeam || pinkTeam ) {
-							if ( cgs.gameType == GT_1FCTF )
-								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
-							else
-								CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
-						}
-					} else {
-						// ZTM: NOTE: There are local players on both teams, so have no correct sound to play. New games should fix this.
-					}
-					break;
 				case GTS_TEAL_TAKEN:
-					// if this player picked up the flag then a sound is played in CG_CheckLocalSounds
-					if ( localHasRed || localHasNeutral ) {
-					} else if ( !(redTeam && blueTeam && greenTeam && yellowTeam && tealTeam && pinkTeam) ) {
-						if ( tealTeam ) {
-							if ( cgs.gameType == GT_1FCTF )
-								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
-							else
-								CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
-						} else if ( redTeam || greenTeam || yellowTeam || blueTeam || pinkTeam ) {
-							if ( cgs.gameType == GT_1FCTF )
-								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
-							else
-								CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
-						}
-					} else {
-						// ZTM: NOTE: There are local players on both teams, so have no correct sound to play. New games should fix this.
-					}
-					break;
 				case GTS_PINK_TAKEN:
 					// if this player picked up the flag then a sound is played in CG_CheckLocalSounds
-					if ( localHasRed || localHasNeutral ) {
-					} else if ( !(redTeam && blueTeam && greenTeam && yellowTeam && tealTeam && pinkTeam) ) {
-						if ( pinkTeam ) {
-							if ( cgs.gameType == GT_1FCTF )
-								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
-							else
-								CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
-						} else if ( redTeam || greenTeam || yellowTeam || tealTeam || blueTeam ) {
-							if ( cgs.gameType == GT_1FCTF )
-								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
-							else
-								CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
-						}
+					if ( (team == (es->eventParm - GTS_RED_TAKEN + FIRST_TEAM)) ) {
+						CG_AddBufferedSound( (team == (es->eventParm - GTS_RED_TAKEN + FIRST_TEAM)) ? cgs.media.yourTeamPickedUpFlagSound : cgs.media.enemyPickedUpFlagSound );
 					} else {
-						// ZTM: NOTE: There are local players on both teams, so have no correct sound to play. New games should fix this.
+						CG_AddBufferedSound( (team == (es->eventParm - GTS_RED_TAKEN + FIRST_TEAM)) ? cgs.media.enemyPickedUpFlagSound : cgs.media.yourTeamPickedUpFlagSound );
 					}
 					break;
-
-				// ZTM: NOTE: These are confusing when there are players on both teams (players don't know which base is attacked). New games should fix this.
-				case GTS_REDOBELISK_ATTACKED: // Overload: red obelisk is being attacked
-					if (redTeam) {
+				case GTS_REDOBELISK_ATTACKED:
+				case GTS_BLUEOBELISK_ATTACKED:
+				case GTS_GREENOBELISK_ATTACKED:
+				case GTS_YELLOWOBELISK_ATTACKED:
+				case GTS_PINKOBELISK_ATTACKED:
+				case GTS_TEALOBELISK_ATTACKED:
+					if ( (team == (es->eventParm - GTS_REDOBELISK_ATTACKED + FIRST_TEAM))  ) {
 						CG_AddBufferedSound( cgs.media.yourBaseIsUnderAttackSound );
 					}
 					break;
-				case GTS_BLUEOBELISK_ATTACKED: // Overload: blue obelisk is being attacked
-					if (blueTeam) {
-						CG_AddBufferedSound( cgs.media.yourBaseIsUnderAttackSound );
-					}
-					break;
-				case GTS_GREENOBELISK_ATTACKED: // Overload: red obelisk is being attacked
-					if ( greenTeam ) {
-						CG_AddBufferedSound( cgs.media.yourBaseIsUnderAttackSound );
-					}
-					break;
-				case GTS_YELLOWOBELISK_ATTACKED: // Overload: red obelisk is being attacked
-					if ( yellowTeam ) {
-						CG_AddBufferedSound( cgs.media.yourBaseIsUnderAttackSound );
-					}
-					break;
-				case GTS_TEALOBELISK_ATTACKED: // Overload: red obelisk is being attacked
-					if ( tealTeam ) {
-						CG_AddBufferedSound( cgs.media.yourBaseIsUnderAttackSound );
-					}
-					break;
-				case GTS_PINKOBELISK_ATTACKED: // Overload: red obelisk is being attacked
-					if ( pinkTeam ) {
-						CG_AddBufferedSound( cgs.media.yourBaseIsUnderAttackSound );
-					}
-					break;
-
 				case GTS_REDTEAM_SCORED:
 				case GTS_BLUETEAM_SCORED:
 				case GTS_GREENTEAM_SCORED:
@@ -1422,11 +1219,11 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 				case GTS_YELLOWTEAM_TOOK_LEAD:
 				case GTS_TEALTEAM_TOOK_LEAD:
 				case GTS_PINKTEAM_TOOK_LEAD:
-					if (!GTF(GTF_TDM) || cg_teamDmLeadAnnouncements.integer )
+					if ( GTF(GTF_TDM) && cg_teamDmLeadAnnouncements.integer )
 						CG_AddBufferedSound(cgs.media.teamScoredSound[es->eventParm - GTS_REDTEAM_TOOK_LEAD] );
 					break;
 				case GTS_TEAMS_ARE_TIED:
-					if (!GTF(GTF_TDM) || cg_teamDmLeadAnnouncements.integer )
+					if ( GTF(GTF_TDM) && cg_teamDmLeadAnnouncements.integer )
 						CG_AddBufferedSound( cgs.media.teamsTiedSound );
 					break;
 #ifdef MISSIONPACK
@@ -1514,6 +1311,16 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		}
 		trap_S_StartSound (NULL, es->number, CHAN_ITEM, cgs.media.protectSound );
 		break;
+	case EV_POWERUP_INVULN:
+		DEBUGNAME( "EV_POWERUP_INVULN" );
+		for ( i = 0; i < CG_MaxSplitView(); i++ ) {
+			if ( es->number == cg.snap->pss[i].playerNum ) {
+				cg.localPlayers[i].powerupActive = PW_INVULN;
+				cg.localPlayers[i].powerupTime = cg.time;
+			}
+		}
+		trap_S_StartSound( NULL, es->number, CHAN_ITEM, cgs.media.protectSound );
+		break;
 	case EV_POWERUP_REGEN:
 		DEBUGNAME("EV_POWERUP_REGEN");
 		for (i = 0; i < CG_MaxSplitView(); i++) {
@@ -1524,7 +1331,46 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		}
 		trap_S_StartSound (NULL, es->number, CHAN_ITEM, cgs.media.regenSound );
 		break;
-
+	case EV_POWERUP_VAMPIRE:
+		DEBUGNAME( "EV_POWERUP_VAMPIRE" );
+		for ( i = 0; i < CG_MaxSplitView(); i++ ) {
+			if ( es->number == cg.snap->pss[i].playerNum ) {
+				cg.localPlayers[i].powerupActive = PW_VAMPIRE;
+				cg.localPlayers[i].powerupTime = cg.time;
+			}
+		}
+		trap_S_StartSound( NULL, es->number, CHAN_ITEM, cgs.media.vampireSound );
+		break;
+	case EV_PARMOR_SCREEN:
+		DEBUGNAME( "EV_PARMOR_SCREEN" );
+		for ( i = 0; i < CG_MaxSplitView(); i++ ) {
+			if ( es->number == cg.snap->pss[i].playerNum ) {
+				cg.localPlayers[i].powerupActive = PW_PSCREEN;
+				cg.localPlayers[i].powerupTime = cg.time;
+			}
+		}
+		trap_S_StartSound( NULL, es->number, CHAN_ITEM, cgs.media.parmorSound );
+		break;
+	case EV_PARMOR_SHIELD:
+		DEBUGNAME( "EV_PARMOR_SHIELD" );
+		for ( i = 0; i < CG_MaxSplitView(); i++ ) {
+			if ( es->number == cg.snap->pss[i].playerNum ) {
+				cg.localPlayers[i].powerupActive = PW_PSHIELD;
+				cg.localPlayers[i].powerupTime = cg.time;
+			}
+		}
+		trap_S_StartSound( NULL, es->number, CHAN_ITEM, cgs.media.parmorSound );
+		break;
+	case EV_PARMOR_SCREEN_ON:
+	case EV_PARMOR_SHIELD_ON:
+		DEBUGNAME( "EV_PARMOR_SCREEN_ON" );
+		trap_S_StartSound( NULL, es->number, CHAN_ITEM, cgs.media.parmorOnSound );
+		break;
+	case EV_PARMOR_SCREEN_OFF:
+	case EV_PARMOR_SHIELD_OFF:
+		DEBUGNAME( "EV_PARMOR_SCREEN_OFF" );
+		trap_S_StartSound( NULL, es->number, CHAN_ITEM, cgs.media.parmorOffSound );
+		break;
 	case EV_STOPLOOPINGSOUND:
 		DEBUGNAME("EV_STOPLOOPINGSOUND");
 		trap_S_StopLoopingSound( es->number );

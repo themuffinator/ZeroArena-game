@@ -113,7 +113,8 @@ void TossPlayerItems( gentity_t* self ) {
 		item = BG_FindItemForWeapon( weapon );
 
 		// spawn the item
-		Drop_Item( self, item, 0 );
+		drop = Drop_Item( self, item, 0 );
+		drop->count = self->player->ps.ammo[weapon];
 	}
 
 	// drop all the powerups if not in teamplay
@@ -248,13 +249,12 @@ void TossPlayerSkulls( gentity_t* self ) {
 	drop->s.team = self->player->sess.sessionTeam;
 }
 
-#ifdef MISSIONPACK
 /*
 =================
-TossPlayerPersistantPowerups
+ResetPlayerRune
 =================
 */
-void TossPlayerPersistantPowerups( gentity_t* ent ) {
+void ResetPlayerRune( gentity_t* ent ) {
 	gentity_t* powerup;
 
 	if ( !ent->player ) {
@@ -272,10 +272,9 @@ void TossPlayerPersistantPowerups( gentity_t* ent ) {
 	powerup->s.contents = CONTENTS_TRIGGER;
 	trap_LinkEntity( powerup );
 
-	ent->player->ps.stats[STAT_PERSISTANT_POWERUP] = 0;
+	ent->player->ps.stats[STAT_RUNE] = 0;
 	ent->player->persistantPowerup = NULL;
 }
-#endif
 
 
 /*
@@ -386,6 +385,7 @@ char* modNames[] = {
 	"MOD_TARGET_LASER",
 	"MOD_TRIGGER_HURT",
 	"MOD_BLASTER",
+	"MOD_TREASON",
 #ifdef MISSIONPACK
 	"MOD_KAMIKAZE",
 	"MOD_JUICED",
@@ -463,7 +463,14 @@ void CheckAlmostCapture( gentity_t* self, gentity_t* attacker ) {
 			if ( CheckGoalNear( self, va( "team_CTF_%sflag", g_teamNamesLower[self->player->sess.sessionTeam] ) ) ) {
 				self->player->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
 				if ( attacker->player ) {
-					attacker->player->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
+					//attacker->player->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
+
+					attacker->player->ps.persistant[PERS_HOLYSHIT_COUNT]++;
+
+					// add the sprite over the player's head
+					G_ClearMedals( &attacker->player->ps );
+					attacker->player->ps.eFlags |= EF_AWARD_HOLYSHIT;
+					attacker->player->rewardTime = level.time + REWARD_SPRITE_TIME;
 				}
 			}
 		} else {
@@ -475,7 +482,14 @@ void CheckAlmostCapture( gentity_t* self, gentity_t* attacker ) {
 				if ( CheckGoalNear( self, va( "team_CTF_%sflag", g_teamNamesLower[i] ) ) ) {
 					self->player->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
 					if ( attacker->player ) {
-						attacker->player->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
+						//attacker->player->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
+
+						attacker->player->ps.persistant[PERS_HOLYSHIT_COUNT]++;
+
+						// add the sprite over the player's head
+						G_ClearMedals( &attacker->player->ps );
+						attacker->player->ps.eFlags |= EF_AWARD_HOLYSHIT;
+						attacker->player->rewardTime = level.time + REWARD_SPRITE_TIME;
 					}
 				}
 			}
@@ -510,7 +524,12 @@ void CheckAlmostScored( gentity_t* self, gentity_t* attacker ) {
 				if ( VectorLength( dir ) < 200 ) {
 					self->player->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
 					if ( attacker->player ) {
-						attacker->player->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
+						//attacker->player->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
+
+						// add the sprite over the player's head
+						G_ClearMedals( &attacker->player->ps );
+						attacker->player->ps.eFlags |= EF_AWARD_HOLYSHIT;
+						attacker->player->rewardTime = level.time + REWARD_SPRITE_TIME;
 					}
 				}
 			}
@@ -617,7 +636,7 @@ void player_die( gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int
 				attacker->player->ps.persistant[PERS_GAUNTLET_FRAG_COUNT]++;
 
 				// add the sprite over the player's head
-				attacker->player->ps.eFlags &= ~(EF_AWARD_IMPRESSIVE | EF_AWARD_EXCELLENT | EF_AWARD_GAUNTLET | EF_AWARD_ASSIST | EF_AWARD_DEFEND | EF_AWARD_CAP);
+				G_ClearMedals( &attacker->player->ps );
 				attacker->player->ps.eFlags |= EF_AWARD_GAUNTLET;
 				attacker->player->rewardTime = level.time + REWARD_SPRITE_TIME;
 
@@ -632,7 +651,7 @@ void player_die( gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int
 				attacker->player->ps.persistant[PERS_EXCELLENT_COUNT]++;
 
 				// add the sprite over the player's head
-				attacker->player->ps.eFlags &= ~(EF_AWARD_IMPRESSIVE | EF_AWARD_EXCELLENT | EF_AWARD_GAUNTLET | EF_AWARD_ASSIST | EF_AWARD_DEFEND | EF_AWARD_CAP);
+				G_ClearMedals( &attacker->player->ps );
 				attacker->player->ps.eFlags |= EF_AWARD_EXCELLENT;
 				attacker->player->rewardTime = level.time + REWARD_SPRITE_TIME;
 			}
@@ -661,9 +680,7 @@ void player_die( gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int
 	}
 
 	TossPlayerItems( self );
-#ifdef MISSIONPACK
-	TossPlayerPersistantPowerups( self );
-#endif
+	ResetPlayerRune( self );
 	if ( g_gameType.integer == GT_HARVESTER ) {
 		TossPlayerSkulls( self );
 	}
@@ -761,42 +778,106 @@ void player_die( gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int
 
 /*
 ================
-CheckArmor
+CheckPowerArmor
 ================
 */
-static qboolean TestEnergyDamage( int mod, int dflags ) {
-	if ( dflags & DAMAGE_ENERGY ) return qtrue;
+static int CheckPowerArmor( gentity_t* ent, vec3_t point, const int damage, const int dflags ) {
+	gplayer_t* cl;
+	int			save;
+	int			power_armor_type;
+	int			damagePerCell;
+	int			power;
+	int			power_used;
+	int			dmg;
 
-	switch ( mod ) {
-	case MOD_GAUNTLET:
-	case MOD_PLASMA:
-	case MOD_PLASMA_SPLASH:
-	case MOD_BFG:
-	case MOD_BFG_SPLASH:
-	//case MOD_BFG_LASER:
-		return qtrue;
-		break;
-	default:
-		return qfalse;
-		break;
+	if ( !damage ) return 0;
+	dmg = damage;
+	save = 0;
+
+	cl = ent->player;
+	if ( !cl ) return 0;
+	if ( dflags & DAMAGE_NO_ARMOR ) return 0;
+
+	power_armor_type = cl->ps.stats[STAT_PARMOR_ACTIVE];
+	if ( !power_armor_type ) return 0;
+
+	if ( !(cl->ps.ammo[WP_BFG] + cl->ps.ammo[WP_PLASMAGUN]) )
+		return 0;
+
+	if ( power_armor_type == HI_PSCREEN ) {
+		vec3_t		vec;
+		float		dot;
+		vec3_t		forward;
+
+		// only works if damage point is in front
+		AngleVectors( ent->s.angles, forward, NULL, NULL );
+		VectorSubtract( point, ent->s.origin, vec );
+		VectorNormalize( vec );
+		dot = DotProduct( vec, forward );
+		if ( dot <= 0.3 )
+			return 0;
+
+		damagePerCell = 1;
+		dmg = dmg / 3;
+		ent->player->ps.powerups[PW_PSCREEN] += 500;
+	} else {
+		damagePerCell = 2;
+		dmg = (2 * dmg) / 3;
+		ent->player->ps.powerups[PW_PSHIELD] += 500;
 	}
+	G_AddEvent( ent, (power_armor_type == HI_PSCREEN) ? EV_PARMOR_SCREEN : EV_PARMOR_SHIELD, 0 );
+
+	// save from bfg ammo first
+	power = cl->ps.ammo[WP_BFG];
+	if ( power ) {
+		save = power * (damagePerCell * 2);
+		if ( !save )
+			return 0;
+		if ( save > dmg )
+			save = dmg;
+
+		power_used = save / damagePerCell;
+		power_used -= cl->ps.ammo[WP_BFG];
+		if ( cl->ps.ammo[WP_BFG] != AMMO_INFINITE ) {
+			cl->ps.ammo[WP_BFG] -= power_used;
+		}
+		dmg -= save;
+	}
+
+	if ( !dmg )
+
+		power = cl->ps.ammo[WP_PLASMAGUN];
+	if ( power ) {
+		save = power * damagePerCell;
+		if ( !save )
+			return 0;
+		if ( save > dmg )
+			save = dmg;
+
+		power_used = save / damagePerCell;
+		power_used -= cl->ps.ammo[WP_BFG];
+		if ( cl->ps.ammo[WP_PLASMAGUN] != AMMO_INFINITE )
+			cl->ps.ammo[WP_PLASMAGUN] -= power_used;
+	}
+
+	return save;
 }
 
 
-static int CheckArmor( gplayer_t* player, int damage, int dflags, int mod ) {
+static int CheckArmor( gplayer_t* player, int damage, int dFlags ) {
 	gitem_armor_t* a;
 	int				save;
 	int				armorCount;
 	float			armorProtection;
 
 	if ( !damage ) return 0;
-	if ( dflags & DAMAGE_NO_ARMOR ) return 0;
+	if ( dFlags & DAMAGE_NO_ARMOR ) return 0;
 
 	if ( !player ) return 0;
 
 	armorCount = player->ps.stats[STAT_ARMOR];
-	a = &bgarmor[g_armorTiered.integer][player->ps.stats[STAT_ARMOR_TYPE]];
-	armorProtection = TestEnergyDamage( mod, dflags ) ? a->energy_protection : a->normal_protection;
+	a = &bgarmor[g_armorRules.integer][player->ps.stats[STAT_ARMOR_TYPE]];
+	armorProtection = (dFlags & DAMAGE_ENERGY) ? a->energy_protection : a->normal_protection;
 
 	save = ceil( ((float)damage * armorProtection) );
 	if ( save >= armorCount ) save = armorCount;
@@ -810,13 +891,13 @@ static int CheckArmor( gplayer_t* player, int damage, int dflags, int mod ) {
 	}
 #endif
 	return save;
-	}
+}
 
-	/*
-	================
-	RaySphereIntersections
-	================
-	*/
+/*
+================
+RaySphereIntersections
+================
+*/
 int RaySphereIntersections( vec3_t origin, float radius, vec3_t point, vec3_t dir, vec3_t intersections[2] ) {
 	float b, c, d, t;
 
@@ -886,6 +967,7 @@ int G_InvulnerabilityEffect( gentity_t* targ, vec3_t dir, vec3_t point, vec3_t i
 	}
 }
 #endif
+
 /*
 ============
 G_Damage
@@ -910,8 +992,7 @@ dflags		these flags are used to control how T_Damage works
 ============
 */
 
-void G_Damage( gentity_t* targ, gentity_t* inflictor, gentity_t* attacker,
-	vec3_t dir, vec3_t point, int damage, int dflags, int mod ) {
+void G_Damage( gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_t dir, vec3_t point, int damage, int dFlags, int mod, weapon_t weapon ) {
 	gplayer_t* player;
 	int			take;
 	int			asave;
@@ -920,6 +1001,7 @@ void G_Damage( gentity_t* targ, gentity_t* inflictor, gentity_t* attacker,
 #ifdef MISSIONPACK
 	vec3_t		bouncedir, impactpoint;
 #endif
+	qboolean	goodDmg = qfalse;
 
 	if ( !targ->takedamage ) {
 		return;
@@ -967,13 +1049,11 @@ void G_Damage( gentity_t* targ, gentity_t* inflictor, gentity_t* attacker,
 	// unless they are rocket jumping
 	if ( attacker->player && attacker != targ ) {
 		max = attacker->player->ps.stats[STAT_MAX_HEALTH];
-#ifdef MISSIONPACK
-		if ( BG_ItemForItemNum( attacker->player->ps.stats[STAT_PERSISTANT_POWERUP] )->giTag == PW_GUARD ) {
+		if ( BG_ItemForItemNum( attacker->player->ps.stats[STAT_RUNE] )->giTag == PW_RESISTANCE ) {
 			max /= 2;
 		}
-#endif
 		damage = damage * max / 100;
-		}
+	}
 
 	player = targ->player;
 
@@ -984,7 +1064,7 @@ void G_Damage( gentity_t* targ, gentity_t* inflictor, gentity_t* attacker,
 	}
 
 	if ( !dir ) {
-		dflags |= DAMAGE_NO_KNOCKBACK;
+		dFlags |= DAMAGE_NO_KNOCKBACK;
 	} else {
 		VectorNormalize( dir );
 	}
@@ -996,7 +1076,7 @@ void G_Damage( gentity_t* targ, gentity_t* inflictor, gentity_t* attacker,
 	if ( targ->flags & FL_NO_KNOCKBACK ) {
 		knockback = 0;
 	}
-	if ( dflags & DAMAGE_NO_KNOCKBACK ) {
+	if ( dFlags & DAMAGE_NO_KNOCKBACK ) {
 		knockback = 0;
 	}
 
@@ -1028,16 +1108,17 @@ void G_Damage( gentity_t* targ, gentity_t* inflictor, gentity_t* attacker,
 	}
 
 	// check for completely getting out of the damage
-	if ( !(dflags & DAMAGE_NO_PROTECTION) ) {
+	if ( !(dFlags & DAMAGE_NO_PROTECTION) ) {
 
 		// if TF_NO_FRIENDLY_FIRE is set, don't do damage to the target
 		// if the attacker was on the same team
 #ifdef MISSIONPACK
-		if ( mod != MOD_JUICED && targ != attacker && !(dflags & DAMAGE_NO_TEAM_PROTECTION) && OnSameTeam( targ, attacker ) ) {
+		if ( mod != MOD_JUICED && targ != attacker && !(dFlags & DAMAGE_NO_TEAM_PROTECTION) && OnSameTeam( targ, attacker ) ) {
 #else	
 		if ( targ != attacker && OnSameTeam( targ, attacker ) ) {
 #endif
 			if ( !g_friendlyFire.integer ) {
+				//G_Printf( "friendly fire cancelled out\n" );
 				return;
 			}
 		}
@@ -1056,31 +1137,37 @@ void G_Damage( gentity_t* targ, gentity_t* inflictor, gentity_t* attacker,
 		if ( targ->flags & FL_GODMODE ) {
 			return;
 		}
-		}
 
-		// battlesuit protects from all radius damage (but takes knockback)
-		// and protects 50% against all damage
-	if ( player && player->ps.powerups[PW_BATTLESUIT] ) {
-		G_AddEvent( targ, EV_POWERUP_BATTLESUIT, 0 );
-		if ( (dflags & DAMAGE_RADIUS) || (mod == MOD_FALLING) ) {
+		// no damage during countdown
+		if ( level.warmupState == WARMUP_COUNTDOWN ) {
 			return;
 		}
-		damage *= 0.5;
 	}
 
-	// add to the attacker's hit counter (if the target isn't a general entity like a prox mine)
-	if ( attacker->player && player
-		&& targ != attacker && targ->health > 0
-		&& targ->s.eType != ET_MISSILE
-		&& targ->s.eType != ET_GENERAL ) {
-		if ( OnSameTeam( targ, attacker ) ) {
-			attacker->player->ps.persistant[PERS_HITS]--;
-		} else {
-			attacker->player->ps.persistant[PERS_HITS]++;
+	// invulnerability protects against any weapon damage
+	if ( player && player->ps.powerups[PW_INVULN] ) {
+		//if ( !((mod == MOD_LAVA) && (mod == MOD_SLIME) && (mod == MOD_FALLING)) ) {
+		if ( attacker ) {
+			G_AddEvent( targ, EV_POWERUP_INVULN, 0 );
+			return;
 		}
-		attacker->player->ps.persistant[PERS_ATTACKEE_ARMOR] = (targ->health << 8) | (player->ps.stats[STAT_ARMOR]);
 	}
 
+	// battlesuit protects from all radius damage (but takes knockback)
+	// and protects 50% against all damage
+	if ( player ) {
+		if ( player->ps.powerups[PW_BATTLESUIT] ) {
+			G_AddEvent( targ, EV_POWERUP_BATTLESUIT, 0 );
+			if ( (dFlags & DAMAGE_RADIUS) || (mod == MOD_FALLING) ) {
+				return;
+			}
+			damage *= 0.5;
+		}
+		if ( player->ps.powerups[PW_RESISTANCE] ) {
+			damage *= 0.5;
+		}
+	}
+	
 	// always give half damage if hurting self
 	// calculated after knockback, so rocket jumping works
 	if ( targ == attacker ) {
@@ -1092,8 +1179,35 @@ void G_Damage( gentity_t* targ, gentity_t* inflictor, gentity_t* attacker,
 	}
 	take = damage;
 
+	// add to the attacker's hit counter (if the target isn't a general entity like a prox mine)
+	if ( attacker->player && player && targ != attacker && targ->health > 0
+		&& targ->s.eType != ET_MISSILE && targ->s.eType != ET_GENERAL ) {
+		if ( OnSameTeam( targ, attacker ) ) {
+			attacker->player->ps.persistant[PERS_HITS]--;
+			if ( g_treasonDamage.value && g_friendlyFire.integer ) {
+				// take health/armor from attacking team mate
+				attacker->player->treasonDmg = take * g_treasonDamage.value;
+				take -= attacker->player->treasonDmg;
+				//G_Printf( "treason dmg = %i\n", attacker->player->treasonDmg );
+			}
+		} else {
+			attacker->player->ps.persistant[PERS_HITS]++;
+		}
+		attacker->player->ps.persistant[PERS_ATTACKEE_ARMOR] = (targ->health << 8) | (player->ps.stats[STAT_ARMOR]);
+
+		if ( weapon ) {
+			//targ->player->statsWeaponDmgR[weapon] += damage;
+			//attacker->player->statsWeaponDmgD[weapon] += damage;
+		}
+		goodDmg = qtrue;
+	}
+	
+	// save some from power armor
+	asave = CheckPowerArmor( targ, point, take, dFlags );
+	take -= asave;
+
 	// save some from armor
-	asave = CheckArmor( targ->player, take, dflags, mod );
+	asave = CheckArmor( targ->player, take, dFlags );
 	take -= asave;
 
 	if ( g_debugDamage.integer ) {
@@ -1136,6 +1250,18 @@ void G_Damage( gentity_t* targ, gentity_t* inflictor, gentity_t* attacker,
 			targ->player->ps.stats[STAT_HEALTH] = targ->health;
 		}
 
+		// vampiric damage here
+		if ( goodDmg && attacker->player->ps.powerups[PW_VAMPIRE] ) {
+			attacker->health += take;
+			if ( attacker->player ) {
+				if ( attacker->health > attacker->player->ps.stats[STAT_MAX_HEALTH] * 2 ) {
+					attacker->health = attacker->player->ps.stats[STAT_MAX_HEALTH];
+				}
+				attacker->player->ps.stats[STAT_HEALTH] = attacker->health;
+			}
+			G_AddEvent( attacker, EV_POWERUP_VAMPIRE, 0 );
+		}
+
 		if ( targ->health <= 0 ) {
 #if 0
 			if ( player )
@@ -1151,18 +1277,17 @@ void G_Damage( gentity_t* targ, gentity_t* inflictor, gentity_t* attacker,
 			targ->pain( targ, attacker, take );
 		}
 	}
+}
 
-	}
 
+/*
+============
+CanDamage
 
-	/*
-	============
-	CanDamage
-
-	Returns qtrue if the inflictor can directly damage the target.  Used for
-	explosions and melee attacks.
-	============
-	*/
+Returns qtrue if the inflictor can directly damage the target.  Used for
+explosions and melee attacks.
+============
+*/
 qboolean CanDamage( gentity_t * targ, vec3_t origin ) {
 	vec3_t	dest;
 	trace_t	tr;
@@ -1264,8 +1389,7 @@ qboolean CanDamage( gentity_t * targ, vec3_t origin ) {
 G_RadiusDamage
 ============
 */
-qboolean G_RadiusDamage( vec3_t origin, gentity_t * attacker, float damage, float radius,
-	gentity_t * ignore, int mod ) {
+qboolean G_RadiusDamage( vec3_t origin, gentity_t * attacker, float damage, float radius, gentity_t * ignore, const int dFlags, const int mod, const weapon_t weapon ) {
 	float		points, dist;
 	gentity_t* ent;
 	int			entityList[MAX_GENTITIES];
@@ -1321,7 +1445,7 @@ qboolean G_RadiusDamage( vec3_t origin, gentity_t * attacker, float damage, floa
 			// push the center of mass higher than the origin so players
 			// get knocked into the air more
 			dir[2] += 24;
-			G_Damage( ent, NULL, attacker, dir, origin, (int)points, DAMAGE_RADIUS, mod );
+			G_Damage( ent, NULL, attacker, dir, origin, (int)points, DAMAGE_RADIUS | dFlags, mod, ent->s.weapon );
 		}
 	}
 

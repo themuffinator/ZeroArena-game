@@ -177,25 +177,164 @@ void MField_KeyDownEvent( mfield_t *edit, int key ) {
 
 	if ( key == K_RIGHTARROW || key == K_KP_RIGHTARROW ) 
 	{
-		if ( edit->cursor < edit->len ) {
-			edit->cursor++;
-		}
-		if ( edit->cursor >= edit->scroll + edit->widthInChars && edit->cursor <= edit->len )
-		{
-			edit->scroll++;
-		}
-		return;
+#if 0
+		if ( (trap_Key_IsDown( K_LEFTCTRL ) || trap_Key_IsDown( K_RIGHTCTRL )) ) {
+			int cur;
+
+			for ( cur = edit->cursor; cur <= edit->len; cur++ ) {
+				if ( Q_isalpha( edit->buffer[cur + 1] ) || Q_isintegral( edit->buffer[cur + 1] ) ) {
+					cur++;
+					break;
+				} else if ( edit->buffer[cur + 1] == ';' || edit->buffer[cur + 1] == '_'
+						|| edit->buffer[cur + 1] == '-' || edit->buffer[cur + 1] == '\"' ) {
+					cur++;
+					break;
+				} else if ( edit->buffer[cur + 1] != ' ' ) {
+					cur++;
+					break;
+				}
+			}
+			if ( cur > edit->len + 1 ) cur = edit->len + 1;
+
+			if ( edit->cursor != cur && cur >= edit->scroll + edit->widthInChars && cur <= edit->len ) {
+				edit->scroll += (cur - edit->cursor);
+			}
+			edit->cursor = cur;
+#endif
+#if 0
+			// skip consecutive numbers and letters
+			if ( (edit->buffer[cur] >= '0' && edit->buffer[cur] <= '9')
+				|| (edit->buffer[cur] >= 'a' && edit->buffer[cur] <= 'z')
+				|| (edit->buffer[cur] >= 'A' && edit->buffer[cur] <= 'Z') ) {
+				cur++;
+				while ( cur < edit->len ) {
+					if ( (edit->buffer[cur] >= '0' && edit->buffer[cur] <= '9')
+						|| (edit->buffer[cur] >= 'a' && edit->buffer[cur] <= 'z')
+						|| (edit->buffer[cur] >= 'A' && edit->buffer[cur] <= 'Z') ) {
+						cur++;
+					} else {
+						break;
+					}
+				}
+			}
+			// skip consecutive spaces
+			if ( edit->cursor == cur && (edit->buffer[cur] == ' ') ) {
+				cur++;
+				while ( cur < edit->len ) {
+					if ( (edit->buffer[cur] != ' ') ) {
+						break;
+					} else {
+						cur++;
+					}
+				}
+			}
+			// skip consecutive special chars
+			if ( edit->cursor == cur ) {
+				cur++;
+				while ( cur < edit->len ) {
+					if ( (edit->buffer[cur] >= '0' && edit->buffer[cur] <= '9')
+						|| (edit->buffer[cur] >= 'a' && edit->buffer[cur] <= 'z')
+						|| (edit->buffer[cur] >= 'A' && edit->buffer[cur] <= 'Z') ) {
+						break;
+					} else {
+						cur++;
+					}
+				}
+			}
+
+			if ( cur > edit->scroll + edit->widthInChars )
+				cur = edit->scroll + edit->widthInChars;
+
+			if ( edit->cursor != cur && cur >= edit->scroll + edit->widthInChars && edit->cursor <= edit->len ) {
+				edit->scroll += (cur - edit->cursor);
+			}
+			edit->cursor = cur;
+		} else {
+#endif
+			if ( edit->cursor < edit->len ) {
+				edit->cursor++;
+			}
+			if ( edit->cursor >= edit->scroll + edit->widthInChars && edit->cursor <= edit->len ) {
+				edit->scroll++;
+			}
+			return;
+		//}
 	}
 
 	if ( key == K_LEFTARROW || key == K_KP_LEFTARROW ) 
 	{
-		if ( edit->cursor > 0 ) {
-			edit->cursor--;
-		}
-		if ( edit->cursor < edit->scroll )
-		{
-			edit->scroll--;
-		}
+#if 0
+		if ( (trap_Key_IsDown( K_LEFTCTRL ) || trap_Key_IsDown( K_RIGHTCTRL )) ) {
+			int cur;
+
+			for ( cur = edit->cursor; cur > 0; cur-- ) {
+				if ( Q_isalpha(edit->buffer[cur - 1]) || Q_isintegral( edit->buffer[cur - 1]) ) {
+					
+				} else break;
+			}
+			if ( cur < 0 ) cur = 0;
+
+			if ( edit->cursor != cur && cur < edit->scroll ) {
+				edit->scroll -= (edit->cursor - cur);
+			}
+			edit->cursor = cur;
+#endif
+#if 0
+			// skip consecutive numbers and letters
+			if ( (edit->buffer[cur - 1] >= '0' && edit->buffer[cur - 1] <= '9')
+					|| (edit->buffer[cur - 1] >= 'a' && edit->buffer[cur - 1] <= 'z')
+					|| (edit->buffer[cur - 1] >= 'A' && edit->buffer[cur - 1] <= 'Z') ) {
+				cur--;
+				while ( cur > 0 ) {
+					if ( (edit->buffer[cur - 1] >= '0' && edit->buffer[cur - 1] <= '9')
+							|| (edit->buffer[cur - 1] >= 'a' && edit->buffer[cur - 1] <= 'z')
+							|| (edit->buffer[cur - 1] >= 'A' && edit->buffer[cur - 1] <= 'Z') ) {
+						cur--;
+					} else {
+						break;
+					}
+				}
+			}
+			// skip consecutive spaces
+			if ( edit->cursor == cur && (edit->buffer[cur - 1] == ' ') ) {
+				cur--;
+				while ( cur > 0 ) {
+					if ( (edit->buffer[cur - 1] != ' ') ) {
+						break;
+					} else {
+						cur--;
+					}
+				}
+			}
+			// skip consecutive special chars
+			if ( edit->cursor == cur ) {
+				cur--;
+				while ( cur > 0 ) {
+					if ( (edit->buffer[cur - 1] >= '0' && edit->buffer[cur - 1] <= '9')
+							|| (edit->buffer[cur - 1] >= 'a' && edit->buffer[cur - 1] <= 'z')
+							|| (edit->buffer[cur - 1] >= 'A' && edit->buffer[cur - 1] <= 'Z') ) {
+						break;
+					} else {
+						cur--;
+					}
+				}
+			}
+			if ( cur < 0 )
+				cur = 0;
+
+			if ( edit->cursor != cur && cur < edit->scroll ) {
+				edit->scroll -= (edit->cursor - cur);
+			}
+			edit->cursor = cur;
+		} else {
+#endif
+			if ( edit->cursor > 0 ) {
+				edit->cursor--;
+			}
+			if ( edit->cursor < edit->scroll ) {
+				edit->scroll--;
+			}
+		//}
 		return;
 	}
 
