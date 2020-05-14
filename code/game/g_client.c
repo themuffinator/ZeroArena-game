@@ -56,8 +56,8 @@ void SP_info_player_deathmatch( gentity_t *ent ) {
 	if ( ent->spawnflags & 0x01 ) {
 		ent->classname = "info_player_start";
 	}
-
-	G_DropEntityToFloor( ent );
+	
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
 }
 
 /*QUAKED info_player_start (1 0 0) (-16 -16 -24) (16 16 32)
@@ -68,7 +68,7 @@ void SP_info_player_start(gentity_t *ent) {
 	//ent->spawnflags |= 0x01;
 	//SP_info_player_deathmatch( ent );
 
-	G_DropEntityToFloor( ent );
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
 }
 
 /*QUAKED info_player_coop (1 0 0) (-16 -16 -24) (16 16 32)
@@ -77,7 +77,7 @@ co-op player spawn point
 void SP_info_player_coop( gentity_t* ent ) {
 	//SP_info_player_deathmatch( ent );
 
-	G_DropEntityToFloor( ent );
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
 }
 
 /*QUAKED info_player_intermission (1 0 1) (-16 -16 -24) (16 16 32)
@@ -277,7 +277,7 @@ gentity_t *SelectRandomFurthestSpawnPoint ( vec3_t avoidPoint, vec3_t origin, ve
 	rnd = random() * (numSpots / 2);
 
 	VectorCopy (list_spot[rnd]->s.origin, origin);
-	origin[2] += 9;
+	//origin[2] += 9;
 	VectorCopy (list_spot[rnd]->s.angles, angles);
 
 	return list_spot[rnd];
@@ -365,7 +365,7 @@ gentity_t *SelectInitialSpawnPoint( vec3_t origin, vec3_t angles, qboolean isbot
 		return SelectSpawnPoint(vec3_origin, origin, angles, isbot);
 
 	VectorCopy (spot->s.origin, origin);
-	origin[2] += 9;
+	//origin[2] += 9;
 	VectorCopy (spot->s.angles, angles);
 
 	return spot;

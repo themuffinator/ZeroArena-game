@@ -175,7 +175,7 @@ void UI_DrawConnectScreen( qboolean overlay ) {
 	if ( !overlay ) {
 		// draw the dialog background
 		CG_ClearViewport();
-		//CG_DrawPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, uis.menuBackShader );
+		CG_DrawPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, uis.menuBackShader );
 	}
 
 	// see what information we should display
@@ -183,26 +183,6 @@ void UI_DrawConnectScreen( qboolean overlay ) {
 
 	info[0] = '\0';
 	if ( trap_GetConfigString( CS_SERVERINFO, info, sizeof(info) ) ) {
-#if 0
-		char*		s;
-		qhandle_t	levelShot;
-		qhandle_t	detail;
-		s = Info_ValueForKey( info, "mapName" );
-		levelShot = trap_R_RegisterShaderNoMip( va( "levelshots/16-9/%s", s ) );
-		if ( !levelShot ) {
-			levelShot = trap_R_RegisterShaderNoMip( va( "levelshots/%s", s ) );
-			if ( !levelShot ) {
-				levelShot = trap_R_RegisterShaderNoMip( "menu/art/unknownmap" );
-				//CG_DrawPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, uis.menuBackShader );
-			}
-		}
-		trap_R_SetColor( NULL );
-		trap_R_DrawStretchPic( 0, 0, cgs.glconfig.vidWidth, cgs.glconfig.vidHeight, 0, 0, 1, 1, levelShot );
-		detail = trap_R_RegisterShader( "levelShotDetail" );
-		if ( detail ) {
-			trap_R_DrawStretchPic( 0, 0, cgs.glconfig.vidWidth, cgs.glconfig.vidHeight, 0, 0, 2.5, 2, detail );
-		}
-#endif
 		UI_DrawProportionalString( 320, 16, va( "Loading %s", Info_ValueForKey( info, "mapName" ) ), UI_BIGFONT|UI_CENTER|UI_DROPSHADOW, color_white );
 	}
 

@@ -282,10 +282,10 @@ static void PlayerSettings_DrawEffects( void *self ) {
 		if ( !colorShader )
 			colorShader = uis.whiteShader;
 			*/
-		//CG_PlayerColorFromIndex( uitogamecode[item->curvalue], picColor );
-		picColor[0] = colorTable[item->curvalue + 10][0];
-		picColor[1] = colorTable[item->curvalue + 10][1];
-		picColor[2] = colorTable[item->curvalue + 10][2];
+		CG_PlayerColorFromIndex( item->curvalue, picColor );
+		//picColor[0] = colorTable[item->curvalue + 10][0];
+		//picColor[1] = colorTable[item->curvalue + 10][1];
+		//picColor[2] = colorTable[item->curvalue + 10][2];
 		picColor[3] = 1;
 		trap_R_SetColor( picColor );
 	}
@@ -389,14 +389,14 @@ static void PlayerSettings_SetMenuItems( void ) {
 
 	// effects color
 	c = trap_Cvar_VariableValue( "color1" );	// -1;
-	if( c < 1 || c > NUM_COLOR_EFFECTS ) {
+	if( c < 1 || c > NUM_COLOR_EFFECTS-1 ) {
 		c = NUM_COLOR_EFFECTS-1;
 	}
 	s_playersettings.effects1.curvalue = c;	// gamecodetoui[c];
 
 	c = trap_Cvar_VariableValue( "color2" );	// -1;
-	if( c < 1 || c > NUM_COLOR_EFFECTS ) {
-		c = NUM_COLOR_EFFECTS;
+	if( c < 1 || c > NUM_COLOR_EFFECTS-1 ) {
+		c = NUM_COLOR_EFFECTS-1;
 	}
 	s_playersettings.effects2.curvalue = c;	// gamecodetoui[c];
 

@@ -877,7 +877,7 @@ void FinishSpawningItem( gentity_t* ent ) {
 		// suspended
 		G_SetOrigin( ent, ent->s.origin );
 	} else {
-		G_DropEntityToFloor( ent );
+		G_DropEntityToFloor( ent, 0 );
 	}
 
 	if ( !ent->s.angles[YAW] ) {

@@ -401,6 +401,7 @@ static cvarTable_t cgameCvarTable[] = {
 	{ &cg_gun_x, "cg_gunX", "0", CVAR_CHEAT, RANGE_ALL },
 	{ &cg_gun_y, "cg_gunY", "0", CVAR_CHEAT, RANGE_ALL },
 	{ &cg_gun_z, "cg_gunZ", "0", CVAR_CHEAT, RANGE_ALL },
+	{ &cg_gun_frame, "cg_gun_frame", "0", CVAR_CHEAT, RANGE_ALL },
 	{ &cg_handicap, "handicap", "100", CVAR_USERINFO | CVAR_ARCHIVE, RANGE_INT( 1, 100 ) },
 	{ &cg_hudFont, "cg_hudFont", "fonts/LiberationSans-Bold.ttf", CVAR_ARCHIVE | CVAR_LATCH, RANGE_ALL },
 	{ &cg_hudFontBorder, "cg_hudFontBorder", "2", CVAR_ARCHIVE | CVAR_LATCH, RANGE_FLOAT( 0, 5 ) },

@@ -39,6 +39,8 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 #define BODY_QUEUE_SIZE		128			//64
 
+#define SPAWNPOINT_DROPDIST		128
+
 #define	FRAMETIME			100					// msec
 #define	CARNAGE_REWARD_TIME	3000
 #define REWARD_SPRITE_TIME	2000
@@ -616,7 +618,7 @@ extern char* PlayerName( playerPersistant_t p );
 char* G_PlayerTeamName( team_t team );
 int G_WeaponsTotalAccuracy( gplayer_t* cl );
 void G_ClearMedals( playerState_t* ps );
-void G_DropEntityToFloor( gentity_t* ent );
+void G_DropEntityToFloor( gentity_t* ent, const int traceDistance );
 char* replace( const char* s, const char* old, const char* new );
 
 //

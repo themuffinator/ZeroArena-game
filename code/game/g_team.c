@@ -868,7 +868,7 @@ gentity_t* SelectTeamBaseSpawnPoint( team_t team, int teamState, vec3_t origin, 
 	if ( !spot ) return SelectSpawnPoint( vec3_origin, origin, angles, isBot );
 
 	VectorCopy( spot->s.origin, origin );
-	origin[2] += 9;
+	//origin[2] += 9;
 	VectorCopy( spot->s.angles, angles );
 
 	return spot;
@@ -1001,32 +1001,44 @@ void CheckTeamStatus( void ) {
 /*QUAKED team_CTF_redplayer (1 0 0) (-16 -16 -16) (16 16 32)
 Only in team games with bases. Red players spawn here at game start.
 */
-void SP_team_CTF_redplayer( gentity_t* ent ) {}
+void SP_team_CTF_redplayer( gentity_t* ent ) {
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
+}
 
 /*QUAKED team_CTF_blueplayer (0 0 1) (-16 -16 -16) (16 16 32)
 Only in team games with bases. Blue players spawn here at game start.
 */
-void SP_team_CTF_blueplayer( gentity_t* ent ) {}
+void SP_team_CTF_blueplayer( gentity_t* ent ) {
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
+}
 
 /*QUAKED team_CTF_greenplayer (0 0 1) (-16 -16 -16) (16 16 32)
 Only in team games with bases. Green players spawn here at game start.
 */
-void SP_team_CTF_greenplayer( gentity_t* ent ) {}
+void SP_team_CTF_greenplayer( gentity_t* ent ) {
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
+}
 
 /*QUAKED team_CTF_yellowplayer (0 0 1) (-16 -16 -16) (16 16 32)
 Only in team games with bases. Yellow players spawn here at game start.
 */
-void SP_team_CTF_yellowplayer( gentity_t* ent ) {}
+void SP_team_CTF_yellowplayer( gentity_t* ent ) {
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
+}
 
 /*QUAKED team_CTF_tealplayer (0 0 1) (-16 -16 -16) (16 16 32)
 Only in team games with bases. Teal players spawn here at game start.
 */
-void SP_team_CTF_tealplayer( gentity_t* ent ) {}
+void SP_team_CTF_tealplayer( gentity_t* ent ) {
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
+}
 
 /*QUAKED team_CTF_pinkplayer (0 0 1) (-16 -16 -16) (16 16 32)
 Only in team games with bases. Pink players spawn here at game start.
 */
-void SP_team_CTF_pinkplayer( gentity_t* ent ) {}
+void SP_team_CTF_pinkplayer( gentity_t* ent ) {
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
+}
 
 /*QUAKED team_CTF_redspawn (1 0 0) (-16 -16 -24) (16 16 32)
 Potential spawning position for Red Team in team games with bases.
@@ -1034,6 +1046,7 @@ Targets will be fired when someone spawns in on them.
 */
 void SP_team_CTF_redspawn( gentity_t* ent ) {
 	level.map_teamBaseSpawns |= (1 << TEAM_RED);
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
 }
 
 /*QUAKED team_CTF_bluespawn (0 0 1) (-16 -16 -24) (16 16 32)
@@ -1042,6 +1055,7 @@ Targets will be fired when someone spawns in on them.
 */
 void SP_team_CTF_bluespawn( gentity_t* ent ) {
 	level.map_teamBaseSpawns |= (1 << TEAM_BLUE);
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
 }
 
 /*QUAKED team_CTF_greenspawn (0 0 1) (-16 -16 -24) (16 16 32)
@@ -1050,6 +1064,7 @@ Targets will be fired when someone spawns in on them.
 */
 void SP_team_CTF_greenspawn( gentity_t* ent ) {
 	level.map_teamBaseSpawns |= (1 << TEAM_GREEN);
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
 }
 
 /*QUAKED team_CTF_yellowspawn (0 0 1) (-16 -16 -24) (16 16 32)
@@ -1058,6 +1073,7 @@ Targets will be fired when someone spawns in on them.
 */
 void SP_team_CTF_yellowspawn( gentity_t* ent ) {
 	level.map_teamBaseSpawns |= (1 << TEAM_YELLOW);
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
 }
 
 /*QUAKED team_CTF_tealspawn (0 0 1) (-16 -16 -24) (16 16 32)
@@ -1066,6 +1082,7 @@ Targets will be fired when someone spawns in on them.
 */
 void SP_team_CTF_tealspawn( gentity_t* ent ) {
 	level.map_teamBaseSpawns |= (1 << TEAM_TEAL);
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
 }
 
 /*QUAKED team_CTF_pinkspawn (0 0 1) (-16 -16 -24) (16 16 32)
@@ -1074,6 +1091,7 @@ Targets will be fired when someone spawns in on them.
 */
 void SP_team_CTF_pinkspawn( gentity_t* ent ) {
 	level.map_teamBaseSpawns |= (1 << TEAM_PINK);
+	G_DropEntityToFloor( ent, SPAWNPOINT_DROPDIST );
 }
 
 /*
@@ -1338,7 +1356,7 @@ void SpawnTeamObelisk( gentity_t* ent, const team_t entityTeam ) {
 		obelisk->activator = ent;
 	}
 
-	G_DropEntityToFloor( ent );
+	G_DropEntityToFloor( ent, 0 );
 
 	ent->s.modelindex = entityTeam;
 	trap_LinkEntity( ent );

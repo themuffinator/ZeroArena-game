@@ -977,17 +977,24 @@ G_DropEntityToFloor
 
 ==================
 */
-void G_DropEntityToFloor( gentity_t* ent ) {
+void G_DropEntityToFloor( gentity_t* ent, const int traceDistance ) {
 	trace_t		tr;
 	vec3_t		dest;
+	const int	dist = traceDistance ? traceDistance : 4096;
 
 	// drop to floor
-	VectorSet( dest, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2] - 4096 );
+	VectorSet( dest, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2] - dist );
 	trap_Trace( &tr, ent->s.origin, ent->s.mins, ent->s.maxs, dest, ent->s.number, MASK_SOLID );
 	if ( tr.startsolid ) {
-		G_Printf( "G_DropEntityToFloor: %s startsolid at %s\n", ent->classname, vtos( ent->s.origin ) );
-		G_FreeEntity( ent );
-		return;
+		// try free from being stuck in floor
+		ent->s.origin[2] += 9;
+		VectorSet( dest, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2] - dist );
+		trap_Trace( &tr, ent->s.origin, ent->s.mins, ent->s.maxs, dest, ent->s.number, MASK_SOLID );
+		if ( tr.startsolid ) {
+			G_Printf( "G_DropEntityToFloor: %s startsolid at %s\n", ent->classname, vtos( ent->s.origin ) );
+			G_FreeEntity( ent );
+			return;
+		}
 	}
 
 	// allow to ride movers

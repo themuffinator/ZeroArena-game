@@ -1213,7 +1213,7 @@ qboolean UI_RegisterPlayerModelname( uiPlayerInfo_t *pi, const char *modelSkinNa
 	char		headModelName[MAX_QPATH];
 	char		headSkinName[MAX_QPATH];
 	char		filename[MAX_QPATH];
-	//char		*slash;
+	char		*slash;
 
 	pi->torsoModel = 0;
 	pi->headModel = 0;
@@ -1223,10 +1223,25 @@ qboolean UI_RegisterPlayerModelname( uiPlayerInfo_t *pi, const char *modelSkinNa
 	}
 
 	Q_strncpyz( modelName, modelSkinName, sizeof( modelName ) );
-	Q_strncpyz( skinName, "bright", sizeof( skinName ) );
+
+	slash = strchr( modelName, '/' );
+	if ( !slash ) {
+		// modelName did not include a skin name
+		Q_strncpyz( skinName, "default", sizeof( skinName ) );
+	} else {
+		Q_strncpyz( skinName, slash + 1, sizeof( skinName ) );
+		*slash = '\0';
+	}
 
 	Q_strncpyz( headModelName, headModelSkinName, sizeof( headModelName ) );
-	Q_strncpyz( headSkinName, "bright", sizeof( skinName ) );
+	slash = strchr( headModelName, '/' );
+	if ( !slash ) {
+		// modelName did not include a skin name
+		Q_strncpyz( headSkinName, "default", sizeof( skinName ) );
+	} else {
+		Q_strncpyz( headSkinName, slash + 1, sizeof( skinName ) );
+		*slash = '\0';
+	}
 
 	// load cmodels before models so filecache works
 

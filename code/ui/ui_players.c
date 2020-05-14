@@ -1354,6 +1354,7 @@ void UI_PlayerInfo_SetInfo( uiPlayerInfo_t *pi, int legsAnim, int torsoAnim, vec
 	pi->chat = chat;
 
 	UI_PlayerInfo_UpdateColor( pi );
+	UI_PlayerInfo_UpdateColor2( pi );
 
 	// view angles
 	VectorCopy( viewAngles, pi->viewAngles );

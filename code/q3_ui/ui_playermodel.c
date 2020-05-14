@@ -440,7 +440,7 @@ static void PlayerModel_BuildList( void )
 			COM_StripExtension(fileptr,skinname, sizeof(skinname));
 
 			// look for icon_????
-			if (!Q_stricmpn(skinname,"icon_",5))
+			if (!Q_stricmpn(skinname,"icon_bright",5+6))
 			{
 				Com_sprintf( s_playermodel.modelnames[s_playermodel.nummodels++],
 					sizeof( s_playermodel.modelnames[s_playermodel.nummodels] ),
@@ -551,7 +551,7 @@ static void PlayerModel_MenuInit( int localPlayerNum )
 	memset( &s_playermodel, 0 ,sizeof(playermodel_t) );
 
 	s_playermodel.localPlayerNum = localPlayerNum;
-	Com_sprintf(s_playermodel.bannerString, sizeof (s_playermodel.bannerString), "PLAYER %d MODEL", s_playermodel.localPlayerNum+1);
+	Com_sprintf(s_playermodel.bannerString, sizeof (s_playermodel.bannerString), "PLAYER MODEL");
 
 	PlayerModel_Cache();
 
