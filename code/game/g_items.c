@@ -616,8 +616,15 @@ void Touch_Item( gentity_t* ent, gentity_t* other, trace_t* trace ) {
 
 		// never 'pickup' weapons if weapons stay, only if weapon was dropped
 		if ( g_dmFlags.integer & DF_WEAPONS_STAY ) {
-			if ( !(ent->s.eFlags & EF_DROPPED_ITEM) )
+			if ( !(ent->s.eFlags & EF_DROPPED_ITEM) ) {
+				// play the normal pickup sound
+				if ( predict ) {
+					G_AddPredictableEvent( other, EV_ITEM_PICKUP, ent->s.modelindex );
+				} else {
+					G_AddEvent( other, EV_ITEM_PICKUP, ent->s.modelindex );
+				}
 				return;
+			}
 		}
 //		predict = qfalse;
 		break;
