@@ -1255,8 +1255,8 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		// eventParm 1 = living player gibbed
 		// eventParm 2 = corpse gibbed
 		if ( es->eventParm >= 1 ) {
-			CG_GibPlayer( cent->lerpOrigin );
-
+			CG_GibPlayer( cent->lerpOrigin, cent->currentState.dir, cent->currentState.dmg );
+			
 			if ( cg_blood.integer && cg_gibs.integer ) {
 				// don't play gib sound when using the kamikaze because it interferes
 				// with the kamikaze sound, downside is that the gib sound will also

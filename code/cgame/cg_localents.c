@@ -133,7 +133,7 @@ void CG_BloodTrail( localEntity_t *le ) {
 	vec3_t	newOrigin;
 	localEntity_t	*blood;
 
-	step = 150;
+	step = 30;	// 150;
 	t = step * ( (cg.time - cg.frametime + step ) / step );
 	t2 = step * ( cg.time / step );
 
@@ -141,7 +141,7 @@ void CG_BloodTrail( localEntity_t *le ) {
 		BG_EvaluateTrajectory( &le->pos, t, newOrigin, cgs.gravity );
 
 		blood = CG_SmokePuff( newOrigin, vec3_origin, 
-					  20,		// radius
+					  5,	//20,		// radius
 					  1, 1, 1, 1,	// color
 					  2000,		// trailTime
 					  t,		// startTime
@@ -763,7 +763,7 @@ void CG_AddInvulnerabilityJuiced( localEntity_t *le ) {
 	}
 	if ( t > 5000 ) {
 		le->endTime = 0;
-		CG_GibPlayer( le->refEntity.origin );
+		CG_GibPlayer( le->refEntity.origin, NULL, 1000 );
 	}
 	else {
 		CG_AddRefEntityWithMinLight( &le->refEntity );

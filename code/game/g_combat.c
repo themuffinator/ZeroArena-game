@@ -302,7 +302,7 @@ void LookAtKiller( gentity_t* self, gentity_t* inflictor, gentity_t* attacker ) 
 GibEntity
 ==================
 */
-void GibEntity( gentity_t* self ) {
+void GibEntity( gentity_t* self, vec3_t dir, int damage ) {
 	gentity_t* ent;
 	int i;
 
@@ -329,6 +329,10 @@ void GibEntity( gentity_t* self ) {
 	self->takedamage = qfalse;
 	self->s.eFlags |= EF_GIBBED;
 	self->s.contents = 0;
+	if ( dir ) {
+		VectorCopy( dir, self->s.dir );
+	}
+	self->s.dmg = damage;
 
 	if ( self->player ) {
 		self->player->ps.eFlags |= EF_GIBBED;
@@ -341,12 +345,12 @@ void GibEntity( gentity_t* self ) {
 body_die
 ==================
 */
-void body_die( gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int meansOfDeath ) {
+void body_die( gentity_t* self, gentity_t* inflictor, gentity_t* attacker, vec3_t dir, int damage, int meansOfDeath ) {
 	if ( self->health > GIB_HEALTH ) {
 		return;
 	}
 
-	GibEntity( self );
+	GibEntity( self, dir, damage );
 
 	// add corpse gibbed event
 	G_AddEvent( self, EV_DEATH1, 2 );
@@ -543,7 +547,7 @@ void CheckAlmostScored( gentity_t* self, gentity_t* attacker ) {
 player_die
 ==================
 */
-void player_die( gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int meansOfDeath ) {
+void player_die( gentity_t* self, gentity_t* inflictor, gentity_t* attacker, vec3_t dir, int damage, int meansOfDeath ) {
 	static int	rndAnim;
 	gentity_t* ent;
 	int			anim;
@@ -732,7 +736,7 @@ void player_die( gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int
 
 	if ( gibPlayer ) {
 		// gib death
-		GibEntity( self );
+		GibEntity( self, dir, damage );
 
 		// do normal death for clients with gibs disable
 	} else {
@@ -1270,7 +1274,7 @@ void G_Damage( gentity_t* targ, gentity_t* inflictor, gentity_t* attacker, vec3_
 				targ->health = -999;
 
 			targ->enemy = attacker;
-			targ->die( targ, inflictor, attacker, take, mod );
+			targ->die( targ, inflictor, attacker, dir, take, mod );
 			return;
 		} else if ( targ->pain ) {
 			targ->pain( targ, attacker, take );

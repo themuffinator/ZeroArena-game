@@ -162,7 +162,7 @@ struct gentity_s {
 	void		(*touch)(gentity_t *self, gentity_t *other, trace_t *trace);
 	void		(*use)(gentity_t *self, gentity_t *other, gentity_t *activator);
 	void		(*pain)(gentity_t *self, gentity_t *attacker, int damage);
-	void		(*die)(gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int mod);
+	void		(*die)(gentity_t *self, gentity_t *inflictor, gentity_t *attacker, vec3_t dir, int damage, int mod);	//muff: add dir for directional gibs
 	qboolean	(*snapshotCallback)(gentity_t *self, gentity_t *player);
 
 	int			pain_debounce_time;
@@ -628,7 +628,7 @@ qboolean CanDamage (gentity_t *targ, vec3_t origin);
 void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker, vec3_t dir, vec3_t point, int damage, int dflags, int mod, weapon_t weapon );
 qboolean G_RadiusDamage( vec3_t origin, gentity_t *attacker, float damage, float radius, gentity_t *ignore, const int dFlags, const int mod, const weapon_t weapon );
 int G_InvulnerabilityEffect( gentity_t *targ, vec3_t dir, vec3_t point, vec3_t impactpoint, vec3_t bouncedir );
-void body_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int meansOfDeath );
+void body_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, vec3_t dir, int damage, int meansOfDeath );
 void TossPlayerItems( gentity_t *self );
 void TossPlayerGametypeItems( gentity_t *self );
 #ifdef MISSIONPACK
@@ -697,7 +697,7 @@ void PlayerRespawn(gentity_t *ent);
 void BeginIntermission (void);
 void InitBodyQueue (void);
 void PlayerSpawn( gentity_t *ent );
-void player_die (gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int mod);
+void player_die (gentity_t *self, gentity_t *inflictor, gentity_t *attacker, vec3_t dir, int damage, int mod);
 void AddScore( gentity_t *ent, vec3_t origin, int score );
 void CountPopulation( void );
 void CalculateRanks( void );

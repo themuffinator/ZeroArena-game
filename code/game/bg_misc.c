@@ -1574,6 +1574,10 @@ vmNetField_t	bg_entityStateFields[] =
 { NETF(constantLight), 32 },
 { NETF(dl_intensity), 32 },
 { NETF(density), 10},
+{ NETF( dir[0] ), 0 },
+{ NETF( dir[1] ), 0 },
+{ NETF( dir[2] ), 0 },
+{ NETF( dmg ), 10},
 #if 0
 { NETF( clientNum ), 8 },
 { NETF( spawnTime ), 32 },

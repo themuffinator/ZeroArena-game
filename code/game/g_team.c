@@ -1128,7 +1128,7 @@ static void ObeliskRespawn( gentity_t* self ) {
 }
 
 
-static void ObeliskDie( gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int damage, int mod ) {
+static void ObeliskDie( gentity_t* self, gentity_t* inflictor, gentity_t* attacker, vec3_t dir, int damage, int mod ) {
 	team_t attackerTeam;
 
 	attackerTeam = attacker->player->sess.sessionTeam;

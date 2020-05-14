@@ -511,7 +511,7 @@ static cvarTable_t cgameCvarTable[] = {
 	{ &cg_drawGraphicalObits, "cg_drawGraphicalObits", "1", CVAR_ARCHIVE, RANGE_INT( 0, MAX_GRAPHICAL_OBITS ) },
 	{ &cg_drawPregameMessages, "cg_drawPregameMessages", "1", CVAR_ARCHIVE, RANGE_BOOL },
 	{ &cg_highResIcons, "cg_highResIcons", "-1", CVAR_ARCHIVE, RANGE_INT( -1, 3 ) },
-	{ &cg_impactMarkTime, "cg_impactMarkTime", "10000", CVAR_ARCHIVE, RANGE_INT( 0, 60000 ) },
+	{ &cg_impactMarkTime, "cg_impactMarkTime", "30000", CVAR_ARCHIVE, RANGE_INT( 0, 60000 ) },
 	{ &cg_itemFX, "cg_itemFX", "0", CVAR_ARCHIVE, RANGE_INT( 0, 1 ) },
 	{ &cg_placeholderSimpleItems, "cg_placeholderSimpleItems", "1", CVAR_CHEAT, RANGE_BOOL },
 	{ &cg_playIntros, "cg_playIntros", "1", CVAR_ARCHIVE, RANGE_INT( 0, 2 ) },

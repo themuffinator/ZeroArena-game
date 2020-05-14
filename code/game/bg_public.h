@@ -353,6 +353,10 @@ typedef struct entityState_s {
 	int		legsAnim;		// mask off ANIM_TOGGLEBIT
 	int		torsoAnim;		// mask off ANIM_TOGGLEBIT
 	int		skullsES;		// harvester skulls
+
+	// for gibbing
+	vec3_t	dir;
+	int		dmg;
 } entityState_t;
 
 
