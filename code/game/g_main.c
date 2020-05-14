@@ -72,7 +72,6 @@ vmCvar_t	g_dedicated;
 vmCvar_t	g_dmFlags;
 vmCvar_t	g_doWarmup;
 vmCvar_t	g_filterBan;
-vmCvar_t	g_forcePlayerRespawnTime;
 vmCvar_t	g_friendlyFire;
 vmCvar_t	g_gameType;
 vmCvar_t	g_gravity;
@@ -152,6 +151,9 @@ vmCvar_t	g_forceWeaponColors;
 
 vmCvar_t	g_doReady;
 
+vmCvar_t	g_forceRespawn_delayMax;
+vmCvar_t	g_forceRespawn_delayMin;
+
 vmCvar_t	g_warmupDelay;
 vmCvar_t	g_warmupReadyPercentage;
 vmCvar_t	g_warmupWeaponSet;
@@ -212,7 +214,6 @@ static cvarTable_t		gameCvarTable[] = {
 	{ &g_quadFactor, "g_quadFactor", "4", 0, GCF_TRACK_CHANGE, RANGE_ALL },
 	{ &g_weaponRespawn, "g_weaponRespawn", "5", 0, GCF_TRACK_CHANGE, RANGE_ALL },
 	{ &g_weaponTeamRespawn, "g_weaponTeamRespawn", "30", 0, GCF_TRACK_CHANGE, RANGE_ALL },
-	{ &g_forcePlayerRespawnTime, "g_forcePlayerRespawnTime", "20", 0, GCF_TRACK_CHANGE, RANGE_ALL },
 	{ &g_inactivity, "g_inactivity", "0", 0, GCF_TRACK_CHANGE, RANGE_BOOL },
 	{ &g_debugMove, "g_debugMove", "0", 0, 0, RANGE_BOOL },
 	{ &g_debugDamage, "g_debugDamage", "0", 0, 0, RANGE_BOOL },
@@ -278,6 +279,9 @@ static cvarTable_t		gameCvarTable[] = {
 	{ &g_forceWeaponColors, "g_forceWeaponColors", "0", CVAR_SERVERINFO, 0, RANGE_INT( 0, 3 ) }, //0 = user defined, &1 = force default colors, &2 = force team colors in team games
 
 	{ &g_doReady, "g_doReady", "1", 0, 0, RANGE_BOOL },
+
+	{ &g_forceRespawn_delayMax, "g_forceRespawn_delayMax", "3000", 0, 0, RANGE_INT( 50, 60000 ) },	// q3 = 20000, ql = 2400
+	{ &g_forceRespawn_delayMin, "g_forceRespawn_delayMin", "1500", 0, 0, RANGE_INT( 50, 5000 ) },	// q3 = 1700, ql = 2000
 
 	{ &g_warmupDelay, "g_warmupDelay", "10", 0, 0, RANGE_INT( 0, 60 ) },	//ql = 30
 	{ &g_warmupReadyPercentage, "g_warmupReadyPercentage", "0.51", 0, 0, RANGE_FLOAT( 0.0f, 1.0f ) },

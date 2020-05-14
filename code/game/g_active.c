@@ -1018,20 +1018,33 @@ void PlayerThink_real( gentity_t *ent ) {
 
 	// check for respawning
 	if ( player->ps.stats[STAT_HEALTH] <= 0 ) {
-		// wait for the attack button to be pressed
-		if ( level.time > player->respawnTime ) {
-			// forcerespawn is to prevent users from waiting out powerups
-			if ( g_forcePlayerRespawnTime.integer > 0 && 
-				( level.time - player->respawnTime ) > g_forcePlayerRespawnTime.integer * 1000 ) {
-				PlayerRespawn( ent );
-				return;
+		if ( level.warmupState == WARMUP_COUNTDOWN ) {
+			PlayerRespawn( ent );
+		} else {
+			const int	addDelay = 0;	// level.suddenDeathDelay + player->killPenalty;
+			int min = g_forceRespawn_delayMin.integer + addDelay;
+			int max = g_forceRespawn_delayMax.integer + addDelay;
+			if ( min > max ) max = min;
+
+			// check if the player wants to respawn, delay by 100ms to be sure they intended to press fire to respawn
+			if ( (ucmd->buttons & (BUTTON_ATTACK | BUTTON_USE_HOLDABLE)) && !player->respawnWishTime
+						&& level.time > player->respawnTime + 100 ) {
+					player->respawnWishTime = level.time;
 			}
-		
-			// pressing attack or use is the normal respawn method
-			if ( ucmd->buttons & ( BUTTON_ATTACK | BUTTON_USE_HOLDABLE ) ) {
-				PlayerRespawn( ent );
+
+			// the minimum time must be reached before respawning is allowed
+			if ( level.time > player->respawnTime + min ) {
+				// max limit forces respawn
+
+
+				// check player may respawn
+				if ( (level.time > player->respawnWishTime + min)
+						|| (level.time > player->respawnTime + max) ) {
+					PlayerRespawn( ent );
+				}
 			}
 		}
+		//G_Printf( "ClientThink_real (respawn end): %i\n", ent->s.number );
 		return;
 	}
 

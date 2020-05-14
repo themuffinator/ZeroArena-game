@@ -739,7 +739,6 @@ int Pickup_Team( gentity_t* ent, gentity_t* other ) {
 			return Team_TouchOurFlag( ent, other, cl->sess.sessionTeam );
 		}
 #endif
-		return 0;
 	} else if ( team == cl->sess.sessionTeam ) {
 		return Team_TouchOurFlag( ent, other, team );
 	}

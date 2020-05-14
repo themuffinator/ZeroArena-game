@@ -719,9 +719,8 @@ void player_die( gentity_t* self, gentity_t* inflictor, gentity_t* attacker, int
 
 	self->player->ps.maxs[2] = self->s.maxs[2] = -8;
 
-	// don't allow respawn until the death anim is done
-	// g_forcePlayerRespawnTime may force spawning at some later time
-	self->player->respawnTime = level.time + 1700;
+	// set death time for respawn delays
+	self->player->respawnTime = level.time;	// + 1700
 
 	// remove powerups
 	memset( self->player->ps.powerups, 0, sizeof( self->player->ps.powerups ) );

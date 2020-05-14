@@ -370,6 +370,7 @@ struct gplayer_s {
 
 	// timers
 	int			respawnTime;		// can respawn when time > this, force after g_forcerespwan
+	int			respawnWishTime;	// player wants to respawn, bounded by min respawn delay
 	int			inactivityTime;		// kick players when time > this
 	qboolean	inactivityWarning;	// qtrue if the five seoond warning has been given
 	int			rewardTime;			// clear the EF_AWARD_IMPRESSIVE, etc when time > this
@@ -849,7 +850,6 @@ extern	vmCvar_t	g_dedicated;
 extern	vmCvar_t	g_dmFlags;
 extern	vmCvar_t	g_doWarmup;
 extern	vmCvar_t	g_filterBan;
-extern	vmCvar_t	g_forcePlayerRespawnTime;
 extern	vmCvar_t	g_friendlyFire;
 extern	vmCvar_t	g_gameType;
 extern	vmCvar_t	g_gravity;
@@ -923,6 +923,9 @@ extern	vmCvar_t	g_classicItemRespawns;
 extern	vmCvar_t	g_forceWeaponColors;
 
 extern	vmCvar_t	g_doReady;
+
+extern	vmCvar_t	g_forceRespawn_delayMax;
+extern	vmCvar_t	g_forceRespawn_delayMin;
 
 extern	vmCvar_t	g_warmupDelay;
 extern	vmCvar_t	g_warmupReadyPercentage;

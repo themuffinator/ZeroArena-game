@@ -1030,18 +1030,10 @@ static qboolean	UI_RegisterPlayerSkin( uiPlayerInfo_t *pi, const char *modelName
 	char		filename[MAX_QPATH];
 	qboolean	legsSkin, torsoSkin, headSkin;
 
-	if (teamName && *teamName) {
-		Com_sprintf( filename, sizeof( filename ), "models/players/%s/%s/lower_%s.skin", modelName, teamName, skinName );
-	} else {
-		Com_sprintf( filename, sizeof( filename ), "models/players/%s/lower_%s.skin", modelName, skinName );
-	}
+	Com_sprintf( filename, sizeof( filename ), "models/players/%s/lower_%s.skin", modelName, skinName );
 	legsSkin = CG_RegisterSkin( filename, &pi->modelSkin, qfalse );
 
-	if (teamName && *teamName) {
-		Com_sprintf( filename, sizeof( filename ), "models/players/%s/%s/upper_%s.skin", modelName, teamName, skinName );
-	} else {
-		Com_sprintf( filename, sizeof( filename ), "models/players/%s/upper_%s.skin", modelName, skinName );
-	}
+	Com_sprintf( filename, sizeof( filename ), "models/players/%s/upper_%s.skin", modelName, skinName );
 	torsoSkin = CG_RegisterSkin( filename, &pi->modelSkin, qtrue );
 
 	if ( UI_FindPlayerHeadFile( filename, sizeof(filename), teamName, headModelName, headSkinName, "head", "skin" ) ) {
@@ -1252,17 +1244,9 @@ qboolean UI_RegisterPlayerModelname( uiPlayerInfo_t *pi, const char *modelSkinNa
 		return qfalse;
 	}
 
-	if ( headModelName[0] == '*' ) {
-		Com_sprintf( filename, sizeof( filename ), "models/players/heads/%s/%s.md3", &headModelName[1], &headModelName[1] );
-	}
-	else {
-		Com_sprintf( filename, sizeof( filename ), "models/players/%s/head.md3", headModelName );
-	}
+	Com_sprintf( filename, sizeof( filename ), "models/players/%s/head.md3", headModelName );
+
 	pi->headModel = trap_R_RegisterModel( filename );
-	if ( !pi->headModel && headModelName[0] != '*') {
-		Com_sprintf( filename, sizeof( filename ), "models/players/heads/%s/%s.md3", headModelName, headModelName );
-		pi->headModel = trap_R_RegisterModel( filename );
-	}
 
 	if ( !pi->headModel ) {
 		Com_Printf( "Failed to load model file %s\n", filename );
@@ -1270,8 +1254,8 @@ qboolean UI_RegisterPlayerModelname( uiPlayerInfo_t *pi, const char *modelSkinNa
 	}
 
 	// if any skins failed to load, fall back to default
-	if ( !UI_RegisterPlayerSkin( pi, modelName, skinName, headModelName, headSkinName, teamName) ) {
-		if ( !UI_RegisterPlayerSkin( pi, modelName, "bright", headModelName, "bright", teamName ) ) {
+	if ( !UI_RegisterPlayerSkin( pi, modelName, "bright", headModelName, "bright", teamName) ) {
+		if ( !UI_RegisterPlayerSkin( pi, modelName, skinName, headModelName, headSkinName, teamName ) ) {
 			Com_Printf( "Failed to load skin file: %s : %s\n", modelName, skinName );
 			return qfalse;
 		}
