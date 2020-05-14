@@ -525,10 +525,12 @@ static void CG_OffsetFirstPersonView( void ) {
 	origin[2] += cg.cur_lc->predictedPlayerState.viewheight;
 
 	// smooth out duck height changes
-	timeDelta = cg.time - cg.cur_lc->duckTime;
-	if ( timeDelta < DUCK_TIME) {
-		origin[2] -= cg.cur_lc->duckChange 
-			* (DUCK_TIME - timeDelta) / DUCK_TIME;
+	if ( cg.cur_lc->duckTime ) {
+		timeDelta = cg.time - cg.cur_lc->duckTime;
+		if ( timeDelta < DUCK_TIME ) {
+			origin[2] -= cg.cur_lc->duckChange
+				* (DUCK_TIME - timeDelta) / DUCK_TIME;
+		}
 	}
 
 

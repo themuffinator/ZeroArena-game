@@ -748,6 +748,8 @@ typedef struct {
 	qboolean	thisFrameTeleport;
 	qboolean	nextFrameTeleport;
 
+	int			respawnTime;
+
 	int			realTime;
 	int			realFrameTime;
 

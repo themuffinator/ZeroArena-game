@@ -209,6 +209,7 @@ void CG_Respawn( int playerNum ) {
 
 	// no error decay on player movement
 	cg.thisFrameTeleport = qtrue;
+	cg.respawnTime = cg.time;
 
 	allLocalPlayers = ( playerNum == -1 );
 
@@ -606,7 +607,7 @@ void CG_TransitionPlayerState( playerState_t *ps, playerState_t *ops ) {
 
 	// smooth the ducking viewheight change
 	if ( ps->viewheight != ops->viewheight ) {
-		if ( ps->pm_flags & PMF_RESPAWNED ) {
+		if ( cg.time <= cg.respawnTime + DUCK_TIME ) {
 			//muff: if just respawned do no transition. avoids awkward spec to player transition
 			cg.cur_lc->duckChange = 0;
 			cg.cur_lc->duckTime = 0;
