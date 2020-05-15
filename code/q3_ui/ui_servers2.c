@@ -160,7 +160,7 @@ static const char *mod_dir_items[] = {
 
 static const char *servertype_items[] = {
 	"All",
-	"Free For All",
+	"Deathmatch",
 	"Duel",
 	"Team Deathmatch",
 	"Capture The Flag",
@@ -1478,6 +1478,7 @@ static void ArenaServers_MenuInit( void ) {
 	g_arenaservers.menu.wrapAround = qtrue;
 	g_arenaservers.menu.draw       = ArenaServers_MenuDraw;
 	g_arenaservers.menu.key        = ArenaServers_MenuKey;
+	g_arenaservers.menu.showlogo = qtrue;
 
 	g_arenaservers.banner.generic.type  = MTYPE_BTEXT;
 	g_arenaservers.banner.generic.flags = QMF_CENTER_JUSTIFY;

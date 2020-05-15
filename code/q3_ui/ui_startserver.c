@@ -97,14 +97,17 @@ typedef struct {
 static startserver_t s_startserver;
 
 static const char* gametype_items[] = {
-	"Free For All",
+	"Deathmatch",
 	"Duel",
 	"Team Deathmatch",
 	"Capture The Flag",
 	"One Flag CTF",
 	"Overload",
-	"Harvester",
+	"Harvester"
+	/*
+	,
 	NULL
+	*/
 };
 
 static int gametype_remap[] = { GT_FFA, GT_DUEL, GT_TEAM, GT_CTF, GT_1FCTF, GT_OVERLOAD, GT_HARVESTER };
@@ -257,10 +260,16 @@ static void StartServer_GametypeEvent( void* ptr, int event ) {
 	count = UI_GetNumArenas();
 	s_startserver.nummaps = 0;
 	//matchbits = 1 << gametype_remap[s_startserver.gametype.curvalue];
-	matchbits = (1 << gt[s_startserver.gametype.curvalue].index);
-	if ( gt[s_startserver.gametype.curvalue].index == DEFAULT_GAMETYPE ) {
-		matchbits |= (1 << GT_CAMPAIGN);
+	if ( s_startserver.gametype.curvalue + FIRST_TEAM >= GT_MAX_GAME_TYPE )
+		s_startserver.gametype.curvalue = GT_FFA - FIRST_TEAM;
+	else if ( s_startserver.gametype.curvalue + FIRST_TEAM < GT_FFA )
+		s_startserver.gametype.curvalue = GT_MAX_GAME_TYPE - 1 - FIRST_TEAM;
+	matchbits = (1 << (gt[s_startserver.gametype.curvalue + FIRST_TEAM].index));
+#if 0
+	if ( gt[s_startserver.gametype.curvalue].index == GT_CAMPAIGN ) {
+		matchbits |= (1 << GT_FFA);
 	}
+#endif
 	for ( i = 0; i < count; i++ ) {
 		info = UI_GetArenaInfoByNumber( i );
 
@@ -306,7 +315,7 @@ static void StartServer_MenuEvent( void* ptr, int event ) {
 		break;
 
 	case ID_STARTSERVERNEXT:
-		trap_Cvar_SetValue( "g_gameType", gt[s_startserver.gametype.curvalue].index );
+		trap_Cvar_SetValue( "g_gameType", gt[s_startserver.gametype.curvalue + FIRST_TEAM].index );
 		UI_ServerOptionsMenu( s_startserver.multiplayer );
 		break;
 
@@ -431,7 +440,7 @@ static void StartServer_MenuInit( qboolean multiplayer ) {
 	s_startserver.gametype.generic.id = ID_GAMETYPE;
 	s_startserver.gametype.generic.x = 320 - 24;
 	s_startserver.gametype.generic.y = 368;
-	s_startserver.gametype.itemnames		= gametype_items;
+	s_startserver.gametype.itemnames = gametype_items;
 	//s_startserver.gametype.itemnames = gt[].longName;
 
 	for ( i = 0; i < MAX_MAPSPERPAGE; i++ ) {
@@ -1376,7 +1385,7 @@ static void ServerOptions_MenuInit( qboolean multiplayer ) {
 
 	memset( &s_serveroptions, 0, sizeof( serveroptions_t ) );
 	s_serveroptions.multiplayer = multiplayer;
-	s_serveroptions.gametype = (int)Com_Clamp( 0, GT_MAX_GAME_TYPE - 1,
+	s_serveroptions.gametype = (int)Com_Clamp( GT_FFA, GT_MAX_GAME_TYPE - 1,
 		UI_RetrieveGametypeNum() );
 
 	ServerOptions_Cache();
@@ -1844,7 +1853,7 @@ static void UI_BotSelectMenu_UpdateGrid( void ) {
 		if ( j < botSelectInfo.numBots ) {
 			info = UI_GetBotInfoByNumber( botSelectInfo.sortedBotNums[j] );
 			ServerPlayerIcon( Info_ValueForKey( info, "model" ), botSelectInfo.boticons[i], MAX_QPATH );
-			Q_strncpyz( botSelectInfo.botnames[i], Info_ValueForKey( info, "name" ), 16 );
+			Q_strncpyz( botSelectInfo.botnames[i], Info_ValueForKey( info, "name" ), MAX_NAME_LENGTH );
 			Q_CleanStr( botSelectInfo.botnames[i] );
 			botSelectInfo.pics[i].generic.name = botSelectInfo.boticons[i];
 			if ( BotAlreadySelected( botSelectInfo.botnames[i] ) ) {

@@ -135,13 +135,18 @@ PlayerIcon
 =================
 */
 static void PlayerIcon( const char *modelAndSkin, char *iconName, int iconNameMaxSize ) {
-	char	*skin;
+	char* skin;
 	char	model[MAX_QPATH];
 
-	Q_strncpyz( model, modelAndSkin, sizeof(model));
-	skin = "bright";
+	Q_strncpyz( model, modelAndSkin, sizeof( model ) );
+	skin = strrchr( model, '/' );
+	if ( skin ) {
+		*skin++ = '\0';
+	} else {
+		skin = "default";
+	}
 
-	Com_sprintf(iconName, iconNameMaxSize, "models/players/%s/icon_%s.tga", model, skin );
+	Com_sprintf(iconName, iconNameMaxSize, "models/players/%s/icon_bright.tga", model );
 
 	if( !trap_R_RegisterShaderNoMip( iconName ) && Q_stricmp( skin, "default" ) != 0 ) {
 		Com_sprintf(iconName, iconNameMaxSize, "models/players/%s/icon_default.tga", model );
@@ -562,7 +567,7 @@ static void UI_SPLevelMenu_MenuDraw( void ) {
 	}
 
 	// draw player name
-	trap_Cvar_VariableStringBuffer( "name", string, 32 );
+	trap_Cvar_VariableStringBuffer( "name", string, MAX_NAME_LENGTH );
 	Q_CleanStr( string );
 	UI_DrawProportionalString( 320, PLAYER_Y, string, UI_CENTER|UI_SMALLFONT, color_orange );
 
@@ -739,6 +744,7 @@ static void UI_SPLevelMenu_Init( void ) {
 	levelMenuInfo.menu.fullscreen = qtrue;
 	levelMenuInfo.menu.wrapAround = qtrue;
 	levelMenuInfo.menu.draw = UI_SPLevelMenu_MenuDraw;
+	levelMenuInfo.menu.showlogo = qtrue;
 
 	UI_SPLevelMenu_Cache();
 

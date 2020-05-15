@@ -363,8 +363,8 @@ static void PlayerModel_PicEvent( void* ptr, int event )
 		maxlen = strlen(pdest+5)+1;
 		if (maxlen > 16)
 			maxlen = 16;
-		Q_strncpyz( s_playermodel.skinname.string, pdest+5, maxlen );
-		Q_strupr( s_playermodel.skinname.string );
+		//Q_strncpyz( s_playermodel.skinname.string, pdest+5, maxlen );
+		//Q_strupr( s_playermodel.skinname.string );
 
 		s_playermodel.selectedmodel = modelnum;
 
@@ -476,13 +476,13 @@ static void PlayerModel_SetMenuItems( void )
 	char*			pdest;
 
 	// name
-	trap_Cvar_VariableStringBuffer( "name", s_playermodel.playername.string, 16 );
+	trap_Cvar_VariableStringBuffer( "name", s_playermodel.playername.string, MAX_NAME_LENGTH );
 	Q_CleanStr( s_playermodel.playername.string );
-
+#if 0
 	// clan tag
 	trap_Cvar_VariableStringBuffer( "clan", s_playermodel.playerclan.string, 16 );
 	Q_CleanStr( s_playermodel.playerclan.string );
-
+#endif
 	// model
 	trap_Cvar_VariableStringBuffer( "model", s_playermodel.modelskin, sizeof ( s_playermodel.modelskin ) );
 	trap_Cvar_VariableStringBuffer( "headModel", s_playermodel.headmodelskin, sizeof ( s_playermodel.headmodelskin ) );
@@ -523,8 +523,8 @@ static void PlayerModel_SetMenuItems( void )
 			maxlen = strlen(pdest+5)+1;
 			if (maxlen > 16)
 				maxlen = 16;
-			Q_strncpyz( s_playermodel.skinname.string, pdest+5, maxlen );
-			Q_strupr( s_playermodel.skinname.string );
+			//Q_strncpyz( s_playermodel.skinname.string, pdest+5, maxlen );
+			//Q_strupr( s_playermodel.skinname.string );
 			break;
 		}
 	}
@@ -648,7 +648,7 @@ static void PlayerModel_MenuInit( int localPlayerNum )
 	s_playermodel.modelname.string	      = modelname;
 	s_playermodel.modelname.style		  = UI_CENTER;
 	s_playermodel.modelname.color         = text_color_normal;
-
+	/*
 	s_playermodel.skinname.generic.type   = MTYPE_PTEXT;
 	s_playermodel.skinname.generic.flags  = QMF_CENTER_JUSTIFY|QMF_INACTIVE;
 	s_playermodel.skinname.generic.x	  = 497;
@@ -656,7 +656,7 @@ static void PlayerModel_MenuInit( int localPlayerNum )
 	s_playermodel.skinname.string	      = skinname;
 	s_playermodel.skinname.style		  = UI_CENTER;
 	s_playermodel.skinname.color          = text_color_normal;
-
+	*/
 	s_playermodel.player.generic.type      = MTYPE_BITMAP;
 	s_playermodel.player.generic.flags     = QMF_INACTIVE;
 	s_playermodel.player.generic.ownerdraw = PlayerModel_DrawPlayer;
@@ -710,7 +710,7 @@ static void PlayerModel_MenuInit( int localPlayerNum )
 	Menu_AddItem( &s_playermodel.menu,	&s_playermodel.ports );
 	Menu_AddItem( &s_playermodel.menu,	&s_playermodel.playername );
 	Menu_AddItem( &s_playermodel.menu,	&s_playermodel.modelname );
-	Menu_AddItem( &s_playermodel.menu,	&s_playermodel.skinname );
+	//Menu_AddItem( &s_playermodel.menu,	&s_playermodel.skinname );
 
 	for (i=0; i<MAX_MODELSPERPAGE; i++)
 	{

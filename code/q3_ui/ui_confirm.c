@@ -203,6 +203,7 @@ void UI_ConfirmMenu_Style( const char *question, int style, void (*draw)( void )
 	s_confirm.menu.draw       = ConfirmMenu_Draw;
 	s_confirm.menu.key        = ConfirmMenu_Key;
 	s_confirm.menu.wrapAround = qtrue;
+	s_confirm.menu.showlogo = qtrue;
 
 	if ( cg.connState >= CA_CONNECTED ) {
 		s_confirm.menu.fullscreen = qfalse;
@@ -271,7 +272,8 @@ void UI_Message( const char **lines ) {
 	s_confirm.menu.draw       = MessageMenu_Draw;
 	s_confirm.menu.key        = ConfirmMenu_Key;
 	s_confirm.menu.wrapAround = qtrue;
-	
+	s_confirm.menu.showlogo = qtrue;
+
 	if ( cg.connState >= CA_CONNECTED ) {
 		s_confirm.menu.fullscreen = qfalse;
 	}

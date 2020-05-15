@@ -259,14 +259,23 @@ static void PlayerSettings_DrawEffects( void *self ) {
 
 	style = UI_LEFT|UI_SMALLFONT;
 	color = text_color_normal;
-	// header pulses if either color bar is in forcus
-	if( item->generic.id == ID_EFFECTS && ( focusedID == ID_EFFECTS || focusedID == ID_EFFECTS2 ) ) {
+
+	if( item->generic.id == ID_EFFECTS && focusedID == ID_EFFECTS ) {
 		style |= UI_PULSE;
 		color = text_color_highlight;
 	}
 
 	if ( item->generic.id == ID_EFFECTS ) {
-		UI_DrawProportionalString( item->generic.x, item->generic.y, "Colors", style, color );
+		UI_DrawProportionalString( item->generic.x, item->generic.y, "Weapon Color", style, color );
+	}
+
+	if ( item->generic.id == ID_EFFECTS2 && focusedID == ID_EFFECTS2 ) {
+		style |= UI_PULSE;
+		color = text_color_highlight;
+	}
+
+	if ( item->generic.id == ID_EFFECTS2 ) {
+		UI_DrawProportionalString( item->generic.x, item->generic.y, "Player Color", style, color );
 	}
 
 	xOffset = 128.0f / (NUM_COLOR_EFFECTS + 1);
@@ -277,15 +286,8 @@ static void PlayerSettings_DrawEffects( void *self ) {
 	//if ( !colorShader ) {
 	{
 		vec4_t picColor;
-		/*
-		colorShader = s_playersettings.fxPic;	// fxPic[NUM_COLOR_EFFECTS - 1]; // white
-		if ( !colorShader )
-			colorShader = uis.whiteShader;
-			*/
+
 		CG_PlayerColorFromIndex( item->curvalue, picColor );
-		//picColor[0] = colorTable[item->curvalue + 10][0];
-		//picColor[1] = colorTable[item->curvalue + 10][1];
-		//picColor[2] = colorTable[item->curvalue + 10][2];
 		picColor[3] = 1;
 		trap_R_SetColor( picColor );
 	}
@@ -437,6 +439,10 @@ static void PlayerSettings_MenuEvent( void* ptr, int event ) {
 	case ID_EFFECTS:
 		PlayerSettings_SaveChanges();
 		UI_PlayerInfo_UpdateColor( &s_playersettings.playerinfo );
+		break;
+
+	case ID_EFFECTS2:
+		PlayerSettings_SaveChanges();
 		UI_PlayerInfo_UpdateColor2( &s_playersettings.playerinfo );
 		break;
 
@@ -529,7 +535,7 @@ static void PlayerSettings_MenuInit( int localPlayerNum )
 	s_playersettings.framer.width         = 256;
 	s_playersettings.framer.height        = 334;
 
-	y = 144;
+	y = 105;	//144;
 	s_playersettings.name.generic.type			= MTYPE_FIELD;
 	s_playersettings.name.generic.flags			= QMF_NODEFAULTINIT;
 	s_playersettings.name.generic.ownerdraw		= PlayerSettings_DrawName;
@@ -541,7 +547,7 @@ static void PlayerSettings_MenuInit( int localPlayerNum )
 	s_playersettings.name.generic.top			= y - 8;
 	s_playersettings.name.generic.right			= 192 + 200;
 	s_playersettings.name.generic.bottom		= y + 2 * PROP_HEIGHT;
-
+#if 0
 	y += 3 * PROP_HEIGHT;
 	s_playersettings.clan.generic.type = MTYPE_FIELD;
 	s_playersettings.clan.generic.flags = QMF_NODEFAULTINIT;
@@ -554,7 +560,7 @@ static void PlayerSettings_MenuInit( int localPlayerNum )
 	s_playersettings.clan.generic.top = y - 8;
 	s_playersettings.clan.generic.right = 192 + 200;
 	s_playersettings.clan.generic.bottom = y + 2 * PROP_HEIGHT;
-
+#endif
 	y += 3 * PROP_HEIGHT;
 	s_playersettings.handicap.generic.type		= MTYPE_SPINCONTROL;
 	s_playersettings.handicap.generic.flags		= QMF_NODEFAULTINIT;
@@ -583,11 +589,12 @@ static void PlayerSettings_MenuInit( int localPlayerNum )
 	s_playersettings.effects1.generic.right		= 192 + 200;
 	s_playersettings.effects1.generic.bottom		= y + 2* PROP_HEIGHT;
 	s_playersettings.effects1.numitems			= NUM_COLOR_EFFECTS;
-
-	y += 1 * PROP_HEIGHT;
+	
+	y += 3 * PROP_HEIGHT;
 	s_playersettings.effects2.generic.type		= MTYPE_SPINCONTROL;
 	s_playersettings.effects2.generic.flags		= QMF_NODEFAULTINIT;
 	s_playersettings.effects2.generic.id		= ID_EFFECTS2;
+	s_playersettings.effects2.generic.callback = PlayerSettings_MenuEvent;
 	s_playersettings.effects2.generic.ownerdraw	= PlayerSettings_DrawEffects;
 	s_playersettings.effects2.generic.statusbar  = PlayerSettings_StatusBar;
 	s_playersettings.effects2.generic.x			= 192;
@@ -597,7 +604,7 @@ static void PlayerSettings_MenuInit( int localPlayerNum )
 	s_playersettings.effects2.generic.right		= 192 + 200;
 	s_playersettings.effects2.generic.bottom	= y + 2* PROP_HEIGHT;
 	s_playersettings.effects2.numitems			= NUM_COLOR_EFFECTS;
-
+	
 	s_playersettings.model.generic.type			= MTYPE_BITMAP;
 	s_playersettings.model.generic.name			= ART_MODEL0;
 	s_playersettings.model.generic.flags		= QMF_RIGHT_JUSTIFY|QMF_PULSEIFFOCUS;

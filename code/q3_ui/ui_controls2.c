@@ -119,6 +119,7 @@ enum {
 	ID_CHAT2,
 	ID_CHAT3,
 	ID_CHAT4,
+	ID_CHHISTORY,
 	ID_READYUP,
 	ID_TOGGLEMENU,
 
@@ -232,6 +233,7 @@ typedef struct
 	menuaction_s		chat2;
 	menuaction_s		chat3;
 	menuaction_s		chat4;
+	menuaction_s		chhistory;
 	menuaction_s		readyUp;
 	menuaction_s		toggleMenu;
 
@@ -301,6 +303,7 @@ static bind_t g_bindings[] =
 	{"messagemode2", 	"Chat - team",		ID_CHAT2,		ANIM_CHAT,		-1,				-1,		-1, -1},
 	{"messagemode3", 	"Chat - target",	ID_CHAT3,		ANIM_CHAT,		-1,				-1,		-1, -1},
 	{"messagemode4", 	"Chat - attacker",	ID_CHAT4,		ANIM_CHAT,		-1,				-1,		-1, -1},
+	{"+notify", 		"Chat history",		ID_CHHISTORY,	ANIM_IDLE,		'h',			-1,		-1, -1},
 	{"readyUp", 		"Ready up",			ID_READYUP,		ANIM_IDLE,		K_F3,			-1,		-1, -1},
 	{"toggleMenu", 		"Toggle menu",		ID_TOGGLEMENU,	ANIM_IDLE,		K_ESCAPE,		-1,		-1, -1},
 	{(char*)NULL,		(char*)NULL,		0,				0,				-1,				-1,		-1,	-1},
@@ -510,6 +513,7 @@ static menucommon_s *g_misc_controls[] = {
 	(menucommon_s *)&s_controls.chat2,
 	(menucommon_s *)&s_controls.chat3,
 	(menucommon_s *)&s_controls.chat4,
+	(menucommon_s*)&s_controls.chhistory,
 	(menucommon_s *)&s_controls.readyUp,
 	(menucommon_s *)&s_controls.toggleMenu,
 	NULL,
@@ -1856,7 +1860,7 @@ static void Controls_MenuInit( int localPlayerNum )
 	s_controls.cyclepastgauntlet.generic.type      = MTYPE_RADIOBUTTON;
 	s_controls.cyclepastgauntlet.generic.flags     = QMF_SMALLFONT;
 	s_controls.cyclepastgauntlet.generic.x         = SCREEN_WIDTH/2;
-	s_controls.cyclepastgauntlet.generic.name      = "Skip gauntlet";
+	s_controls.cyclepastgauntlet.generic.name      = "Skip Gauntlet";
 	s_controls.cyclepastgauntlet.generic.id        = ID_CYCLEPASTGAUNTLET;
 	s_controls.cyclepastgauntlet.generic.callback  = Controls_MenuEvent;
 	s_controls.cyclepastgauntlet.generic.statusbar = Controls_StatusBar;
@@ -1908,6 +1912,12 @@ static void Controls_MenuInit( int localPlayerNum )
 	s_controls.chat4.generic.callback  = Controls_ActionEvent;
 	s_controls.chat4.generic.ownerdraw = Controls_DrawKeyBinding;
 	s_controls.chat4.generic.id        = ID_CHAT4;
+
+	s_controls.chhistory.generic.type = MTYPE_ACTION;
+	s_controls.chhistory.generic.flags = QMF_LEFT_JUSTIFY | QMF_PULSEIFFOCUS | QMF_GRAYED | QMF_HIDDEN;
+	s_controls.chhistory.generic.callback = Controls_ActionEvent;
+	s_controls.chhistory.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.chhistory.generic.id = ID_CHHISTORY;
 
 	s_controls.readyUp.generic.type			= MTYPE_ACTION;
 	s_controls.readyUp.generic.flags		= QMF_LEFT_JUSTIFY | QMF_PULSEIFFOCUS | QMF_GRAYED | QMF_HIDDEN;
@@ -2021,12 +2031,13 @@ static void Controls_MenuInit( int localPlayerNum )
 	Menu_AddItem( &s_controls.menu, &s_controls.chat2 );
 	Menu_AddItem( &s_controls.menu, &s_controls.chat3 );
 	Menu_AddItem( &s_controls.menu, &s_controls.chat4 );
+	Menu_AddItem( &s_controls.menu, &s_controls.chhistory );
 	Menu_AddItem( &s_controls.menu, &s_controls.readyUp );
 	Menu_AddItem( &s_controls.menu, &s_controls.toggleMenu );
 
 	Menu_AddItem( &s_controls.menu, &s_controls.back );
 
-	trap_Cvar_VariableStringBuffer( "name", s_controls.name.string, 16 );
+	trap_Cvar_VariableStringBuffer( "name", s_controls.name.string, MAX_NAME_LENGTH );
 	Q_CleanStr( s_controls.name.string );
 
 	// initialize the current config
