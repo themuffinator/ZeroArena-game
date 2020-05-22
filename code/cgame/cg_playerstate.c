@@ -211,6 +211,8 @@ void CG_Respawn( int playerNum ) {
 	cg.thisFrameTeleport = qtrue;
 	cg.respawnTime = cg.time;
 
+	//CG_Printf( "respawning\n" );
+
 	allLocalPlayers = ( playerNum == -1 );
 
 	for (i = 0; i < CG_MaxSplitView(); i++) {
@@ -524,7 +526,7 @@ void CG_CheckGameSounds( void ) {
 	cg.bestLeadChange = LEAD_NONE;
 
 	// timeLimit warnings
-	if ( cgs.timeLimit > 0 ) {
+	if ( cgs.timeLimit > 0 && !cg.warmupTime ) {
 		int		msec;
 
 		msec = cg.time - cgs.levelStartTime;
@@ -588,7 +590,11 @@ void CG_TransitionPlayerState( playerState_t *ps, playerState_t *ops ) {
 	if ( ps->persistant[PERS_SPAWN_COUNT] != ops->persistant[PERS_SPAWN_COUNT] ) {
 		CG_Respawn(ps->playerNum);
 	}
-
+#if 0
+	if ( ps->pm_flags & PMF_RESPAWNED && !(ops->pm_flags & PMF_RESPAWNED) ) {
+		CG_Respawn( ps->playerNum );
+	}
+#endif
 	if ( cg.mapRestart ) {
 		CG_Respawn(-1);
 		cg.mapRestart = qfalse;

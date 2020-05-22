@@ -410,6 +410,7 @@ typedef struct {
 
 	int				handicap;
 	int				wins, losses;	// in tourney mode
+	int				queued, queueNum;
 
 	qboolean		teamLeader;		// true when this is a team leader
 
@@ -515,11 +516,10 @@ typedef struct {
 	qhandle_t		icon2;	// icon override
 } itemInfo_t;
 
-
-#define MAX_SKULLTRAIL		16		//10
 typedef struct {
-	vec3_t positions[MAX_SKULLTRAIL];
-	int numpositions;
+	int		skullTotal;
+	vec3_t	skullPosition[MAX_SKULLTRAIL];
+	int		skullTeam[MAX_SKULLTRAIL];
 } skulltrail_t;
 
 
@@ -766,6 +766,7 @@ typedef struct {
 	int			fraglimitWarnings;
 
 	qboolean	mapRestart;			// set on a map restart to set back the weapon
+	qboolean	reloadAssets;
 
 	// auto rotating items
 	vec3_t		autoAngles;
@@ -826,6 +827,8 @@ typedef struct {
 	float		centerPrintCharScale;
 	int			centerPrintY;
 	char		centerPrint[1024];
+	qboolean	centerPrintPriority;
+	int			centerPrintPriorityTime;
 
 	// say, say_team, ...
 	char		messageCommand[32];
@@ -866,6 +869,10 @@ typedef struct {
 
 	qboolean	warmupShortTeams[TEAM_NUM_TEAMS];
 	int			warmupNumShortTeams;
+
+	// overtime
+	int			overTime;
+	int			timePulse;
 	//==========================
 
 	// skull trails
@@ -953,7 +960,6 @@ typedef struct {
 	qhandle_t	skullModel;	// colorize
 	qhandle_t	flagModel;	// colorize done
 	qhandle_t	flagsShader[3];	// colorize
-	qhandle_t	flagStateShader[3];	// colorize	//0 = at base, 1 = dropped, 2 = taken (colorize to team)
 
 	qhandle_t	flagPoleModel;
 	qhandle_t	flagFlapModel;
@@ -1240,8 +1246,6 @@ typedef struct {
 	sfxHandle_t	count1Sound;
 	sfxHandle_t	countFightSound;
 	sfxHandle_t	countPrepareSound;
-
-	qhandle_t flagShaders[3];
 #ifdef MISSIONPACK
 	// new stuff
 	sfxHandle_t	countPrepareTeamSound;
@@ -1339,6 +1343,8 @@ typedef struct {
 	
 	qboolean  newHud;
 
+	// tourney
+	int				queueIndex;
 	//
 	// locally derived information from gamestate
 	//
@@ -1527,6 +1533,7 @@ extern	vmCvar_t		cg_defaultMaleHeadModel;
 extern	vmCvar_t		cg_defaultFemaleModel;
 extern	vmCvar_t		cg_defaultFemaleHeadModel;
 
+extern	vmCvar_t		cg_cacheParticles;
 extern	vmCvar_t		cg_crosshairBrightness;
 extern	vmCvar_t		cg_crosshairColor;
 extern	vmCvar_t		cg_crosshairHitColor;
@@ -1602,6 +1609,8 @@ void CG_RemoveNotifyLine( localPlayer_t *player );
 void CG_AddNotifyText( int realTime, qboolean restoredText );
 
 void CG_SetupDlightstyles( void );
+void CG_RegisterSounds( qboolean restart );
+void CG_RegisterGraphics( qboolean restart );
 
 void CG_KillServer( void );
 
@@ -1665,6 +1674,7 @@ screenPlacement_e CG_GetScreenHorizontalPlacement(void);
 screenPlacement_e CG_GetScreenVerticalPlacement(void);
 void CG_AdjustFrom640( float *x, float *y, float *w, float *h );
 void CG_FillRect( float x, float y, float width, float height, const float *color );
+void CG_DrawPicExt( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const int drawFlags, qhandle_t hShader, const float* color );
 void CG_DrawPic( float x, float y, float width, float height, qhandle_t hShader );
 void CG_DrawTiledPic( float bounds_x, float bounds_y, float bounds_w, float bounds_h, float pic_w, float pic_h, qhandle_t hShader );
 void CG_DrawPicColor( float x, float y, float width, float height, qhandle_t hShader, const float *color );
@@ -1736,7 +1746,7 @@ extern  char teamChat2[256];
 
 void CG_AddLagometerFrameInfo( void );
 void CG_AddLagometerSnapshotInfo( snapshot_t *snap );
-void CG_CenterPrint( int localPlayerNum, const char *str, int y, float charScale );
+void CG_CenterPrint( int localPlayerNum, const char *str, int y, float charScale, const qboolean priority );
 void CG_GlobalCenterPrint( const char *str, int y, float charScale );
 void CG_DrawHead( float x, float y, float w, float h, int playerNum, vec3_t headAngles );
 void CG_DrawActive( stereoFrame_t stereoView );
@@ -1897,12 +1907,13 @@ int CG_SpawnBubbles( localEntity_t **bubbles, vec3_t origin, float baseSize, int
 void CG_SpawnEffect( vec3_t org );
 #ifdef MISSIONPACK
 void CG_KamikazeEffect( vec3_t org );
-void CG_ObeliskExplode( vec3_t org, int entityNum );
-void CG_ObeliskPain( vec3_t org );
 void CG_InvulnerabilityImpact( vec3_t org, vec3_t angles );
 void CG_InvulnerabilityJuiced( vec3_t org );
 void CG_LightningBoltBeam( vec3_t start, vec3_t end );
 #endif
+void CG_ObeliskExplode( vec3_t org, int entityNum );
+void CG_ObeliskPain( vec3_t org );
+
 void CG_ScorePlum( int playerNum, vec3_t org, int score );
 
 void CG_GibPlayer( vec3_t playerOrigin, vec3_t dir, int damage );
@@ -2025,7 +2036,7 @@ void CG_PB_RenderPolyBuffers( void );
 //
 // cg_particles.c
 //
-void	CG_ClearParticles (void);
+void	CG_CacheParticles( void );
 void	CG_AddParticles (void);
 void	CG_ParticleSnow (qhandle_t pshader, vec3_t origin, vec3_t origin2, int turb, float range, int snum);
 void	CG_ParticleSmoke (qhandle_t pshader, centity_t *cent);

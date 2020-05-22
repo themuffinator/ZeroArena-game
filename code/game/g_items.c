@@ -1106,7 +1106,13 @@ void G_SpawnItem( gentity_t* ent, gitem_t* item ) {
 		level.mapWeapons |= (1 << item->giTag);
 	}
 
+	if ( item->giType == IT_TEAM ) {
+		level.miscTimer[item->giTag - PW_FLAGS_INDEX] = 0;
+		level.miscNum[item->giTag - PW_FLAGS_INDEX] = -1;
+	}
+
 	if ( item->giType == IT_RUNE ) {
+#if 0
 		qboolean redTeam = !!(ent->spawnflags & 2);
 		qboolean blueTeam = !!(ent->spawnflags & 4);
 
@@ -1119,6 +1125,9 @@ void G_SpawnItem( gentity_t* ent, gitem_t* item ) {
 		// allow all players to pick it up
 		else
 			ent->s.team = 255;
+#endif
+		if ( ent->spawnflags > 1 )
+			ent->s.team = ent->spawnflags;
 	}
 }
 

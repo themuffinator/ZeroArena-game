@@ -205,6 +205,7 @@ SelectRandomFurthestSpawnPoint
 Chooses a player start, deathmatch start, etc
 ============
 */
+extern gentity_t* SelectInitialSpawnPoint( vec3_t origin, vec3_t angles, qboolean isbot, qboolean coop );
 gentity_t *SelectRandomFurthestSpawnPoint ( vec3_t avoidPoint, vec3_t origin, vec3_t angles, qboolean isbot ) {
 	gentity_t	*spot;
 	vec3_t		delta;
@@ -264,8 +265,11 @@ gentity_t *SelectRandomFurthestSpawnPoint ( vec3_t avoidPoint, vec3_t origin, ve
 	{
 		spot = G_Find(NULL, FOFS(classname), "info_player_deathmatch");
 
-		if (!spot)
-			G_Error( "Couldn't find a spawn point" );
+		if ( !spot ) {
+			spot = SelectInitialSpawnPoint( origin, angles, isbot, qfalse );
+			if ( !spot )
+				G_Error( "Couldn't find a spawn point" );
+		}
 
 		VectorCopy (spot->s.origin, origin);
 		//origin[2] += 9;
@@ -796,6 +800,7 @@ void PlayerUserinfoChanged( int playerNum ) {
 	char	c1[MAX_INFO_STRING];
 	char	c2[MAX_INFO_STRING];
 	char	userinfo[MAX_INFO_STRING];
+	int		queueNormal = 0;
 
 	ent = g_entities + playerNum;
 	player = ent->player;
@@ -884,21 +889,27 @@ void PlayerUserinfoChanged( int playerNum ) {
 	// colors
 	Q_strncpyz(c1, Info_ValueForKey( userinfo, "color1" ), sizeof( c1 ));
 	Q_strncpyz(c2, Info_ValueForKey( userinfo, "color2" ), sizeof( c2 ));
-
+#if 0
+	queueNormal = (level.tourneyQueueEnd - player->sess.queueNum);	//% MAX_CLIENTS;
+	if ( queueNormal < 0 ) queueNormal += MAX_CLIENTS;
+	queueNormal++;
+	queueNormal %= MAX_CLIENTS;
+#endif
+	queueNormal = player->sess.queueNum;
 	// send over a subset of the userinfo keys so other clients can
 	// print scoreboards, display models, and play custom sounds
 	if (ent->r.svFlags & SVF_BOT)
 	{
-		s = va("n\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\hc\\%i\\w\\%i\\l\\%i\\skill\\%s\\tl\\%d",
+		s = va("n\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\hc\\%i\\w\\%i\\l\\%i\\qd\\%i\\qn\\%i\\skill\\%s\\tl\\%d",
 			player->pers.netname, player->sess.sessionTeam, model, headModel, c1, c2, 
-			player->pers.maxHealth, player->sess.wins, player->sess.losses,
+			player->pers.maxHealth, player->sess.wins, player->sess.losses, player->sess.queued, queueNormal,
 			Info_ValueForKey( userinfo, "skill" ), teamLeader );
 	}
 	else
 	{
-		s = va("n\\%s\\cn\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\hc\\%i\\w\\%i\\l\\%i\\tl\\%d",
+		s = va("n\\%s\\cn\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\hc\\%i\\w\\%i\\l\\%i\\qd\\%i\\qn\\%i\\tl\\%d",
 			player->pers.netname, player->pers.netclan, player->sess.sessionTeam, model, headModel, c1, c2,
-			player->pers.maxHealth, player->sess.wins, player->sess.losses, teamLeader);
+			player->pers.maxHealth, player->sess.wins, player->sess.losses, player->sess.queued, queueNormal, teamLeader);
 	}
 
 	trap_SetConfigstring( CS_PLAYERS+playerNum, s );
@@ -1099,7 +1110,7 @@ void PlayerBegin( int playerNum ) {
 		}
 
 		if ( !g_singlePlayerActive.integer ) {
-			BroadcastTeamChange( player, -1 );
+			BroadcastTeamChange( player, -1, qfalse );
 		}
 	}
 	player->pers.initialSpawn = qfalse;
@@ -1135,6 +1146,7 @@ void PlayerSpawn(gentity_t *ent) {
 	//int		statsWeaponHits[WP_NUM_WEAPONS], statsWeaponShots[WP_NUM_WEAPONS];
 	//int		statsWeaponDmgD[WP_NUM_WEAPONS], statsWeaponDmgR[WP_NUM_WEAPONS];
 	int		eventSequence;
+	int		respawnCount = 0;
 
 	index = ent - g_entities;
 	player = ent->player;
@@ -1195,7 +1207,7 @@ void PlayerSpawn(gentity_t *ent) {
 		persistant[i] = player->ps.persistant[i];
 	}
 	eventSequence = player->ps.eventSequence;
-
+	respawnCount = player->ps.persistant[PERS_SPAWN_COUNT];
 	Com_Memset (player, 0, sizeof(*player));
 
 	player->pers = saved;
@@ -1215,9 +1227,9 @@ void PlayerSpawn(gentity_t *ent) {
 	}
 	player->ps.eventSequence = eventSequence;
 	// increment the spawncount so the client will detect the respawn
-	player->ps.persistant[PERS_SPAWN_COUNT]++;
+	player->ps.persistant[PERS_SPAWN_COUNT] = respawnCount + 1;
 	player->ps.persistant[PERS_TEAM] = player->sess.sessionTeam;
-
+	//G_Printf( "PlayerSpawn: spawn count = %i\n", player->ps.persistant[PERS_SPAWN_COUNT] );
 	player->airOutTime = level.time + 12000;
 
 	// set max health
@@ -1289,24 +1301,23 @@ void PlayerSpawn(gentity_t *ent) {
 	player->ps.legsAnim = LEGS_IDLE;
 
 	if (!level.intermissiontime) {
+		// force the base weapon up
+		player->ps.weapon = WP_MACHINEGUN;
+		// select the highest weapon number available, after any spawn given items have fired
+		for ( i = WP_NUM_WEAPONS - 1; i > 0; i-- ) {
+			if ( player->ps.stats[STAT_WEAPONS] & (1 << i) ) {
+				player->ps.weapon = i;
+				break;
+			}
+		}
 		if (ent->player->sess.sessionTeam != TEAM_SPECTATOR) {
 			G_KillBox(ent);
-			// force the base weapon up
-			player->ps.weapon = WP_MACHINEGUN;
-			player->ps.weaponstate = WEAPON_READY;
 			// fire the targets of the spawn point
 			G_UseTargets(spawnPoint, ent);
-			// select the highest weapon number available, after any spawn given items have fired
-			player->ps.weapon = 1;
-
-			for (i = WP_NUM_WEAPONS - 1 ; i > 0 ; i--) {
-				if (player->ps.stats[STAT_WEAPONS] & (1 << i)) {
-					player->ps.weapon = i;
-					break;
-				}
-			}
 			// positively link the player, even if the command times are weird
 			VectorCopy(ent->player->ps.origin, ent->r.currentOrigin);
+
+			player->ps.weaponstate = WEAPON_READY;
 
 			tent = G_TempEntity(ent->player->ps.origin, EV_PLAYER_TELEPORT_IN);
 			tent->s.playerNum = ent->s.playerNum;

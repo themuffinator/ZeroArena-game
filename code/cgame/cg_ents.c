@@ -658,8 +658,8 @@ static void CG_Missile( centity_t *cent ) {
 			trap_R_AddLightToScene( cent->lerpOrigin, w->missileDlight, 0.8f,
 				0x58, 0xa8, 0xff, 0 );
 #endif
-			if ( s1->modelindex2 >= 0 && s1->modelindex2 < cgs.maxplayers ) {
-				CG_GetWeaponColorFloat( &cgs.playerinfo[s1->modelindex2], s1->weapon, col, NULL );
+			if ( s1->ownerNum >= 0 && s1->ownerNum < cgs.maxplayers ) {
+				CG_GetWeaponColorFloat( &cgs.playerinfo[s1->ownerNum], s1->weapon, col, NULL );
 			}
 
 			trap_R_AddLightToScene( cent->lerpOrigin, w->missileDlight, 0.8f,
@@ -708,10 +708,13 @@ static void CG_Missile( centity_t *cent ) {
 		}
 #endif
 	} else if ( s1->weapon == WP_GRENADE_LAUNCHER ) {
-		CG_GetWeaponColorFloat( &cgs.playerinfo[s1->modelindex2], s1->weapon, col, NULL );
-		ent.shaderRGBA[0] = 0xff *col[0];
+		if ( s1->ownerNum >= 0 && s1->ownerNum < cgs.maxplayers ) {
+			CG_GetWeaponColorFloat( &cgs.playerinfo[s1->ownerNum], s1->weapon, col, NULL );
+		}
+		ent.shaderRGBA[0] = 0xff * col[0];
 		ent.shaderRGBA[1] = 0xff * col[1];
 		ent.shaderRGBA[2] = 0xff * col[2];
+		ent.shaderRGBA[3] = 0xff;
 	}
 //#endif
 	if ( cent->currentState.weapon == WP_PLASMAGUN ) {

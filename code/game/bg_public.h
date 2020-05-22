@@ -69,6 +69,8 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 #define	MAX_SAY_TEXT	150
 
+#define MAX_SKULLTRAIL		16		//10
+
 #define	SAY_ALL			0
 #define	SAY_TEAM		1
 #define	SAY_TELL		2
@@ -165,7 +167,11 @@ Suite 120, Rockville, Maryland 20850 USA.
 #define CS_WARMUP_STATE			33		// muff: warmup state tells clients what is needed for the match to begin
 #define CS_WARMUP_VAL			34		// muff: values to tell us about warmup state
 
-#define	CS_MODELS				36
+#define CS_TOURNEY_QUEUEINDEX	35
+
+#define CS_OVERTIME				36
+
+#define	CS_MODELS				40
 #define	CS_SOUNDS				(CS_MODELS+MAX_MODELS)
 #define	CS_PLAYERS				(CS_SOUNDS+MAX_SOUNDS)
 #define CS_LOCATIONS			(CS_PLAYERS+MAX_CLIENTS)
@@ -253,6 +259,84 @@ typedef struct bggametypes_s {
 	int			disableItems;	// flags to disable IT_* types
 } bggametypes_t;
 extern bggametypes_t gt[GT_MAX_GAME_TYPE];
+
+
+
+#define DEFAULT_PLAYER_NAME		"UnnamedPlayer"
+#define DEFAULT_PLAYER_COLOR1	4
+#define DEFAULT_PLAYER_COLOR2	5
+
+// Default player model names for the splitscreen players
+#define DEFAULT_MODEL			"sarge"
+#define DEFAULT_HEAD			"sarge"
+
+// For fallback player and gender-specific fallback sounds
+#define DEFAULT_MODEL_GENDER	"male"
+#define DEFAULT_MODEL_MALE		"sarge"
+#define DEFAULT_HEAD_MALE		"sarge"
+#define DEFAULT_MODEL_FEMALE	"major"
+#define DEFAULT_HEAD_FEMALE		"major"
+
+#define DEFAULT_REDTEAM_NAME		"Pagans"
+#define DEFAULT_BLUETEAM_NAME		"Invaders"
+#define DEFAULT_GREENTEAM_NAME		"Stroggs"
+#define DEFAULT_YELLOWTEAM_NAME		"Crusaders"
+#define DEFAULT_TEALTEAM_NAME		"The Fallen"
+#define DEFAULT_PINKTEAM_NAME		"Anarchists"
+#define MAX_TEAMNAME		32
+
+typedef enum {
+	PLAY_SPECTATOR,
+	PLAY_FREE,
+	PLAY_TEAM
+} playState_t;
+
+typedef enum {
+	TEAM_SPECTATOR = -1,
+	TEAM_FREE,
+	TEAM_RED,
+	TEAM_BLUE,
+	TEAM_GREEN,
+	TEAM_YELLOW,
+	TEAM_TEAL,
+	TEAM_PINK,
+
+	TEAM_NUM_TEAMS
+} team_t;
+#define FIRST_TEAM	TEAM_RED
+#define TOTAL_TEAMS	(TEAM_NUM_TEAMS - FIRST_TEAM)
+
+// Time between location updates
+#define TEAM_LOCATION_UPDATE_TIME		1000
+
+// How many players on the overlay
+#define TEAM_MAXOVERLAY		32
+
+//team task
+typedef enum {
+	TEAMTASK_NONE,
+	TEAMTASK_OFFENSE,
+	TEAMTASK_DEFENSE,
+	TEAMTASK_PATROL,
+	TEAMTASK_FOLLOW,
+	TEAMTASK_RETRIEVE,
+	TEAMTASK_ESCORT,
+	TEAMTASK_CAMP
+} teamtask_t;
+
+//flag status
+typedef enum {
+	FLAG_ATBASE = 0,
+	FLAG_TAKEN,			// CTF
+	FLAG_DROPPED,
+	FLAG_TAKEN_RED,		// One Flag CTF
+	FLAG_TAKEN_BLUE,	// One Flag CTF
+	FLAG_TAKEN_GREEN,	// One Flag CTF
+	FLAG_TAKEN_YELLOW,	// One Flag CTF
+	FLAG_TAKEN_TEAL,	// One Flag CTF
+	FLAG_TAKEN_PINK,	// One Flag CTF
+} flagStatus_t;
+
 
 typedef enum { GENDER_MALE, GENDER_FEMALE, GENDER_NEUTER } gender_t;
 
@@ -352,7 +436,9 @@ typedef struct entityState_s {
 	int		weapon;			// determines weapon and flash model, etc
 	int		legsAnim;		// mask off ANIM_TOGGLEBIT
 	int		torsoAnim;		// mask off ANIM_TOGGLEBIT
-	int		skullsES;		// harvester skulls
+	int		harSkulls[TEAM_NUM_TEAMS];		// harvester skulls
+
+	int		ownerNum;
 
 	// for gibbing
 	vec3_t	dir;
@@ -365,7 +451,7 @@ typedef struct entityState_s {
 
 // array limits (engine will only network arrays <= 1024 elements)
 #define	MAX_STATS				16
-#define	MAX_PERSISTANT			16
+#define	MAX_PERSISTANT			32		//16
 #define MAX_UNLOCK_KEYS			16
 #define	MAX_POWERUPS			32		//16 // entityState_t::powerups bit field limits this to <= 32.
 #define	MAX_WEAPONS				(1<<WEAPONNUM_BITS) // playerState_t::stats[STAT_WEAPONS] bit field limits this to <= 16.
@@ -472,8 +558,7 @@ typedef struct playerState_s {
 	int			ammo[MAX_WEAPONS];
 	int			keys[MAX_UNLOCK_KEYS];
 
-	int			skulls;			// harvester skulls
-	//int			skull[MAX_CARRIED_SKULLS];		//harvester skull slots - set to team of each, to replace token
+	int			harSkulls[TEAM_NUM_TEAMS];			// harvester skulls
 	int			loopSound;
 	int			jumppad_ent;	// jumppad entity hit this frame
 
@@ -932,12 +1017,12 @@ typedef enum {
 	EV_PROXIMITY_MINE_STICK,
 	EV_PROXIMITY_MINE_TRIGGER,
 	EV_KAMIKAZE,			// kamikaze explodes
-	EV_OBELISKEXPLODE,		// obelisk explodes
-	EV_OBELISKPAIN,			// obelisk is in pain
 	EV_INVUL_IMPACT,		// invulnerability sphere impact
 	EV_JUICED,				// invulnerability juiced effect
 	EV_LIGHTNINGBOLT,		// lightning bolt bounced of invulnerability sphere
 //#endif
+	EV_OBELISKEXPLODE,		// obelisk explodes
+	EV_OBELISKPAIN,			// obelisk is in pain
 //muff
 	EV_REGISTER_ITEM,
 //-muff
@@ -1065,92 +1150,6 @@ typedef struct animation_s {
 // flip the togglebit every time an animation
 // changes so a restart of the same anim can be detected
 #define	ANIM_TOGGLEBIT		128
-
-
-#define DEFAULT_PLAYER_NAME		"UnnamedPlayer"
-#define DEFAULT_PLAYER_COLOR1	4
-#define DEFAULT_PLAYER_COLOR2	5
-
-// Default player model names for the splitscreen players
-#define DEFAULT_MODEL			"sarge"
-#define DEFAULT_HEAD			"sarge"
-
-#define DEFAULT_MODEL2			"grunt"
-#define DEFAULT_HEAD2			"grunt"
-
-#define DEFAULT_MODEL3			"major"
-#define DEFAULT_HEAD3			"major"
-
-#define DEFAULT_MODEL4			"visor"
-#define DEFAULT_HEAD4			"visor"
-
-// For fallback player and gender-specific fallback sounds
-#define DEFAULT_MODEL_GENDER	"male"
-#define DEFAULT_MODEL_MALE		"sarge"
-#define DEFAULT_HEAD_MALE		"sarge"
-#define DEFAULT_MODEL_FEMALE	"major"
-#define DEFAULT_HEAD_FEMALE		"major"
-
-
-#define DEFAULT_REDTEAM_NAME		"Pagans"
-#define DEFAULT_BLUETEAM_NAME		"Invaders"
-#define DEFAULT_GREENTEAM_NAME		"Stroggs"
-#define DEFAULT_YELLOWTEAM_NAME		"Crusaders"
-#define DEFAULT_TEALTEAM_NAME		"The Fallen"
-#define DEFAULT_PINKTEAM_NAME		"Anarchists"
-#define MAX_TEAMNAME		32
-
-typedef enum {
-	PLAY_SPECTATOR,
-	PLAY_FREE,
-	PLAY_TEAM
-} playState_t;
-
-typedef enum {
-	TEAM_SPECTATOR = -1,
-	TEAM_FREE,
-	TEAM_RED,
-	TEAM_BLUE,
-	TEAM_GREEN,
-	TEAM_YELLOW,
-	TEAM_TEAL,
-	TEAM_PINK,
-
-	TEAM_NUM_TEAMS
-} team_t;
-#define FIRST_TEAM	TEAM_RED
-#define TOTAL_TEAMS	(TEAM_NUM_TEAMS - FIRST_TEAM)
-
-// Time between location updates
-#define TEAM_LOCATION_UPDATE_TIME		1000
-
-// How many players on the overlay
-#define TEAM_MAXOVERLAY		32
-
-//team task
-typedef enum {
-	TEAMTASK_NONE,
-	TEAMTASK_OFFENSE, 
-	TEAMTASK_DEFENSE,
-	TEAMTASK_PATROL,
-	TEAMTASK_FOLLOW,
-	TEAMTASK_RETRIEVE,
-	TEAMTASK_ESCORT,
-	TEAMTASK_CAMP
-} teamtask_t;
-
-//flag status
-typedef enum {
-	FLAG_ATBASE = 0,
-	FLAG_TAKEN,			// CTF
-	FLAG_DROPPED,
-	FLAG_TAKEN_RED,		// One Flag CTF
-	FLAG_TAKEN_BLUE,	// One Flag CTF
-	FLAG_TAKEN_GREEN,	// One Flag CTF
-	FLAG_TAKEN_YELLOW,	// One Flag CTF
-	FLAG_TAKEN_TEAL,	// One Flag CTF
-	FLAG_TAKEN_PINK,	// One Flag CTF
-} flagStatus_t;
 
 // means of death
 typedef enum {

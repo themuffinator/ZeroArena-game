@@ -328,6 +328,10 @@ void CG_SetConfigValues( void ) {
 	cg.warmupVal = atoi( CG_ConfigString( CS_WARMUP_VAL ) );
 
 	cgs.numTeams = atoi( CG_ConfigString( CS_NUMTEAMS ) );
+
+	cgs.queueIndex = atoi( CG_ConfigString( CS_TOURNEY_QUEUEINDEX ) );
+
+	cg.overTime = atoi( CG_ConfigString( CS_OVERTIME ) );
 }
 
 /*
@@ -398,6 +402,11 @@ static void CG_ConfigStringModified( void ) {
 		CG_StartMusic();
 	} else if ( num == CS_SERVERINFO ) {
 		CG_ParseServerinfo();
+	} else if ( num == CS_TOURNEY_QUEUEINDEX ) {
+		cgs.queueIndex = atoi( str );
+	} else if ( num == CS_OVERTIME ) {
+		cg.overTime = atoi( str );
+		cg.timePulse = cg.time;
 	} else if ( num == CS_WARMUP ) {
 		CG_ParseWarmup();
 	} else if ( num == CS_WARMUP_STATE ) {
@@ -616,7 +625,7 @@ static void CG_MapRestart( void ) {
 
 	CG_InitLocalEntities();
 	CG_InitMarkPolys();
-	CG_ClearParticles ();
+	CG_CacheParticles ();
 
 	// make sure the "3 frags left" warnings play again
 	cg.fraglimitWarnings = 0;
@@ -630,6 +639,11 @@ static void CG_MapRestart( void ) {
 	cg.lightstylesInited = qfalse;
 
 	cg.mapRestart = qtrue;
+
+	cg.reloadAssets = qtrue;
+	//FIXME check the kind of gametype change that has occured and only try loading what is needed
+	CG_RegisterGraphics( qtrue );
+	CG_RegisterSounds( qtrue );
 
 	CG_StartMusic();
 
@@ -820,9 +834,15 @@ static void CG_ServerCommand( void ) {
 
 		for ( i = 0; i < CG_MaxSplitView(); i++ ) {
 			if ( localPlayerBits == -1 || ( localPlayerBits & ( 1 << i ) ) ) {
-				CG_CenterPrint( i, CG_Argv( start + 1 ), SCREEN_HEIGHT * 0.30, 0.5 );
+				CG_CenterPrint( i, CG_Argv( start + 1 ), SCREEN_HEIGHT * 0.30, 0.5, qfalse );
 			}
 		}
+		return;
+	}
+
+	// priority center print
+	if ( !strcmp( cmd, "pcp" ) ) {
+		CG_CenterPrint( i, CG_Argv( 1 ), SCREEN_HEIGHT * 0.30, 0.5, qtrue );
 		return;
 	}
 

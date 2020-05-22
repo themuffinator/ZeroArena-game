@@ -154,6 +154,8 @@ vmCvar_t	g_doReady;
 vmCvar_t	g_forceRespawn_delayMax;
 vmCvar_t	g_forceRespawn_delayMin;
 
+vmCvar_t	g_overTime;
+
 vmCvar_t	g_warmupDelay;
 vmCvar_t	g_warmupReadyPercentage;
 vmCvar_t	g_warmupWeaponSet;
@@ -176,7 +178,7 @@ static cvarTable_t		gameCvarTable[] = {
 	{ &g_restarted, "g_restarted", "0", CVAR_ROM, 0, RANGE_ALL },
 
 	// latched vars
-	{ &g_gameType, "g_gameType", "1", CVAR_SERVERINFO | CVAR_USERINFO | CVAR_LATCH, GCF_DO_RESTART, RANGE_INT( 0, GT_MAX_GAME_TYPE - 1 )  },
+	{ &g_gameType, "g_gameType", "1", CVAR_SERVERINFO, 0, RANGE_INT( 0, GT_MAX_GAME_TYPE - 1 )  },
 	{ &g_instaGib, "g_instaGib", "0", CVAR_LATCH, GCF_DO_RESTART, RANGE_BOOL },
 
 	{ &g_maxClients, "sv_maxClients", "8", CVAR_SERVERINFO | CVAR_LATCH | CVAR_ARCHIVE, 0, RANGE_ALL, "maximum number of clients connected to server" },
@@ -282,6 +284,8 @@ static cvarTable_t		gameCvarTable[] = {
 
 	{ &g_forceRespawn_delayMax, "g_forceRespawn_delayMax", "3000", 0, GCF_TRACK_CHANGE, RANGE_INT( 50, 60000 ) },	// q3 = 20000, ql = 2400
 	{ &g_forceRespawn_delayMin, "g_forceRespawn_delayMin", "1500", 0, GCF_TRACK_CHANGE, RANGE_INT( 50, 5000 ) },	// q3 = 1700, ql = 2000
+
+	{ &g_overTime, "g_overTime", "2", CVAR_SERVERINFO, GCF_TRACK_CHANGE, RANGE_INT( 0, 10 ) },
 
 	{ &g_warmupDelay, "g_warmupDelay", "10", 0, 0, RANGE_INT( 0, 60 ) },	//ql = 30
 	{ &g_warmupReadyPercentage, "g_warmupReadyPercentage", "0.51", 0, 0, RANGE_FLOAT( 0.0f, 1.0f ) },
@@ -411,7 +415,7 @@ void QDECL G_Error( const char* fmt, ... ) {
 
 /*
 ================
-G_FindTeams
+G_FindTeamedItems
 
 Chain together all entities with a matching team field.
 Entity teams are used for item groups and multi-entity mover groups.
@@ -420,7 +424,7 @@ All but the first will have the FL_TEAMSLAVE flag set and teammaster field set
 All but the last will have the teamchain field set to the next one
 ================
 */
-void G_FindTeams( void ) {
+void G_FindTeamedItems( void ) {
 	gentity_t* e, * e2;
 	int		i, j;
 	int		c, c2;
@@ -561,6 +565,16 @@ void G_UpdateCvars( void ) {
 				if ( cv->gameFlags & GCF_TEAM_SHADER ) {
 					remapped = qtrue;
 				}
+
+				if ( !Q_stricmp( cv->cvarName, "g_gameType" ) ) {
+					AP( va( "pcp \"" S_COLOR_CYAN "%s" S_COLOR_WHITE "\n\"", va( "%s", gt[g_gameType.integer].longName ) ) );
+					level.newSession = qtrue;
+					//G_Printf( "Gametype changed, clearing session data.\n" );
+
+					trap_Cmd_ExecuteText( EXEC_APPEND, "map_restart 0\n" );
+					level.changemap = NULL;
+					level.intermissiontime = 0;
+				}
 			}
 		}
 	}
@@ -577,7 +591,7 @@ G_InitGame
 ============
 */
 void G_InitGame( int levelTime, int randomSeed, int restart ) {
-	int					i, j;
+	int	i, j, initGameType;
 
 	G_DPrintf( "------- Game Initialization -------\n" );
 	G_DPrintf( "gameVersion: %s\n", PRODUCT_NAME " " PRODUCT_VERSION " " PLATFORM_STRING " " PRODUCT_DATE );
@@ -597,10 +611,15 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	trap_SetNetFields( sizeof( entityState_t ), sizeof( entityState_t ) - sizeof( int ), bg_entityStateFields, bg_numEntityStateFields,
 		sizeof( playerState_t ), 0, bg_playerStateFields, bg_numPlayerStateFields );
 
-// set some level globals
+	// set some level globals
+	if ( restart ) initGameType = level.initGameType;
+	else initGameType = -1;
+
 	memset( &level, 0, sizeof( level ) );
 	level.time = levelTime;
 	level.startTime = levelTime;
+	level.initGameType = initGameType;
+	level.initRestart = restart;
 
 	level.snd_fry = G_SoundIndex( "sound/player/fry.wav" );	// FIXME standing in lava / slime
 
@@ -723,7 +742,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	G_SpawnEntitiesFromString();
 
 	// general initialization
-	G_FindTeams();
+	G_FindTeamedItems();
 
 	level.teams_max = g_teamTotal_max.integer;
 
@@ -767,6 +786,9 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	}
 
 	G_RemapTeamShaders();
+
+	level.overTime = 0;
+	trap_SetConfigstring( CS_OVERTIME, va( "%i", level.overTime ) );
 
 	// clear ready players from intermission
 	trap_SetConfigstring( CS_PLAYERS_READY, "" );
@@ -942,132 +964,137 @@ PLAYER COUNTING / SCORE SORTING
 
 /*
 =============
-AddTournamentPlayer
+Tournament_RemoveFromQueue
 
-If there are less than two tournament players, put a
-spectator in the game and restart
+Remove a client from the queue when he joins the game or leaves server, update queue accordingly
 =============
 */
-void AddTournamentPlayer( void ) {
+void Tournament_RemoveFromQueue( gplayer_t* player, const qboolean silent ) {
+	if ( !GTF( GTF_DUEL ) ) return;
+
+	if ( !player ) return;
+	if ( !player->sess.queued ) return;
+
+	player->sess.queued = qfalse;
+	player->sess.queueNum = 0;
+	PlayerUserinfoChanged( (int)(player - level.players) );
+	if ( !silent )
+		trap_SendServerCommand( (int)(player - level.players), "cp \"You are no longer in the queue.\n\"" );
+	level.numQueuedPlayers--;
+}
+
+
+/*
+=============
+Tournament_AddToQueue
+
+Add a client to the queue
+=============
+*/
+void Tournament_AddToQueue( gplayer_t* player, const qboolean silent ) {
+
+	if ( !GTF( GTF_DUEL ) ) return;
+	if ( !player ) return;
+	if ( player->sess.queued ) return;
+
+	player->sess.queued = qtrue;
+	player->sess.queueNum = level.tourneyQueueEnd;
+	PlayerUserinfoChanged( (int)(player - level.players) );
+	if ( !silent )
+		trap_SendServerCommand( (int)(player - level.players), "cp \"You are in the queue to play.\n\"" );
+	//G_Printf( "Tournament_AddToQueue: num=%i\n", level.tourneyQueueEnd );
+	level.tourneyQueueEnd = (level.tourneyQueueEnd + 1) % MAX_CLIENTS;
+	trap_SetConfigstring( CS_TOURNEY_QUEUEINDEX, va( "%i", level.tourneyQueueEnd ) );
+	level.numQueuedPlayers++;
+}
+
+
+/*
+=============
+Tournament_AddPlayer
+
+Add the next waiting client to play
+=============
+*/
+void Tournament_AddPlayer( void ) {
 	int			i;
-	gplayer_t* player;
-	gplayer_t* nextInLine;
+	gplayer_t* player, *nextInLine;
 
-	if ( level.numPlayingPlayers >= 2 ) {
-		return;
-	}
+	if ( level.numPlayingPlayers >= 2 ) return;
+	if ( !level.numQueuedPlayers ) return;
+	if ( level.intermissiontime ) return;
 
-	// never change during intermission
-	if ( level.intermissiontime ) {
-		return;
-	}
-
+	player = NULL;
 	nextInLine = NULL;
-
-	for ( i = 0; i < level.maxplayers; i++ ) {
-		player = &level.players[i];
-		if ( player->pers.connected != CON_CONNECTED ) {
-			continue;
-		}
-		if ( player->sess.sessionTeam != TEAM_SPECTATOR ) {
-			continue;
-		}
-		// never select the dedicated follow or scoreboard players
-		if ( player->sess.spectatorState == SPECTATOR_SCOREBOARD ||
-			player->sess.spectatorPlayer < 0 ) {
-			continue;
-		}
-
-		if ( !nextInLine || player->sess.queueNum > nextInLine->sess.queueNum )
+	for ( i = level.tourneyQueueEnd; i < (level.tourneyQueueEnd + MAX_CLIENTS); i++ ) {
+		player = g_entities[i % MAX_CLIENTS].player;
+		if ( !player ) continue;
+		if ( player->pers.connected != CON_CONNECTED ) continue;
+		if ( player->sess.sessionTeam != TEAM_SPECTATOR ) continue;
+		if ( player->sess.queued ) {
 			nextInLine = player;
+			break;
+		}
 	}
 
-	if ( !nextInLine ) {
-		return;
-	}
+	if ( !nextInLine ) return;
+	G_Printf( "Tournament_AddPlayer: playerNum=%i queued=%i queueNum=%i\n",
+		(int)(nextInLine - level.players), nextInLine->sess.queued, nextInLine->sess.queueNum );
 
 	level.warmupTime = -1;
-
-	// set them to free-for-all team
-	SetTeam( &g_entities[nextInLine - level.players], "f" );
+	nextInLine->sess.queued = qfalse;
+	nextInLine->sess.queueNum = 0;
+	Tournament_RemoveFromQueue( nextInLine, qtrue );
+	SetTeam( &g_entities[(int)(nextInLine - level.players)], "f", qfalse );	//player - level.players
 }
+
 
 /*
 =======================
-AddToTournamentQueue
-
-Add player to end of tournament queue
-=======================
-*/
-
-void AddToTournamentQueue( gplayer_t* player ) {
-	int index;
-	gplayer_t* curplayer;
-
-	for ( index = 0; index < level.maxplayers; index++ ) {
-		curplayer = &level.players[index];
-
-		if ( curplayer->pers.connected != CON_DISCONNECTED ) {
-			if ( curplayer == player )
-				curplayer->sess.queueNum = 0;
-			else if ( curplayer->sess.sessionTeam == TEAM_SPECTATOR )
-				curplayer->sess.queueNum++;
-		}
-	}
-}
-
-/*
-=======================
-RemoveTournamentLoser
+Tournament_RemoveLoser
 
 Make the loser a spectator at the back of the line
 =======================
 */
-void RemoveTournamentLoser( void ) {
-	int			playerNum;
+void Tournament_RemoveLoser( void ) {
+	gentity_t* ent;
 
-	if ( level.numPlayingPlayers != 2 ) {
+	if ( level.numPlayingPlayers != 2 ) return;
+
+	ent = &g_entities[level.sortedPlayers[1]];
+
+	if ( ent->player->pers.connected != CON_CONNECTED ) {
 		return;
 	}
 
-	playerNum = level.sortedPlayers[1];
-
-	if ( level.players[playerNum].pers.connected != CON_CONNECTED ) {
-		return;
-	}
-
-	// make them a spectator
-	SetTeam( &g_entities[playerNum], "s" );
+	SetTeam( ent, "q", qfalse );
 }
 
 /*
 =======================
-RemoveTournamentWinner
+Tournament_RemoveWinner
 =======================
 */
-void RemoveTournamentWinner( void ) {
-	int			playerNum;
+void Tournament_RemoveWinner( void ) {
+	gentity_t* ent;
 
-	if ( level.numPlayingPlayers != 2 ) {
+	if ( level.numPlayingPlayers != 2 ) return;
+
+	ent = &g_entities[level.sortedPlayers[0]];
+
+	if ( ent->player->pers.connected != CON_CONNECTED ) {
 		return;
 	}
 
-	playerNum = level.sortedPlayers[0];
-
-	if ( level.players[playerNum].pers.connected != CON_CONNECTED ) {
-		return;
-	}
-
-	// make them a spectator
-	SetTeam( &g_entities[playerNum], "s" );
+	SetTeam( ent, "q", qfalse );
 }
 
 /*
 =======================
-AdjustTournamentScores
+Tournament_AdjustScores
 =======================
 */
-void AdjustTournamentScores( void ) {
+void Tournament_AdjustScores( void ) {
 	int			playerNum;
 
 	playerNum = level.sortedPlayers[0];
@@ -1115,10 +1142,10 @@ int QDECL SortRanks( const void* a, const void* b ) {
 
 	// then spectators
 	if ( ca->sess.sessionTeam == TEAM_SPECTATOR && cb->sess.sessionTeam == TEAM_SPECTATOR ) {
-		if ( ca->sess.queueNum > cb->sess.queueNum ) {
+		if ( ca->sess.queueNum < cb->sess.queueNum ) {
 			return -1;
 		}
-		if ( ca->sess.queueNum < cb->sess.queueNum ) {
+		if ( ca->sess.queueNum > cb->sess.queueNum ) {
 			return 1;
 		}
 		return 0;
@@ -1228,6 +1255,7 @@ Creates info on player load - should be run every time a client connects, begins
 */
 void CountPopulation( void ) {
 	int i;
+	gplayer_t* cl;
 
 	level.follow1 = -1;
 	level.follow2 = -1;
@@ -1235,17 +1263,19 @@ void CountPopulation( void ) {
 	level.numNonSpectatorPlayers = 0;
 	level.numPlayingPlayers = 0;
 	level.numVotingPlayers = 0;		// don't count bots
+	level.numQueuedPlayers = 0;
 
 	for ( i = 0; i < level.maxplayers; i++ ) {
-		if ( level.players[i].pers.connected != CON_DISCONNECTED ) {
+		cl = &level.players[i];
+		if ( cl->pers.connected != CON_DISCONNECTED ) {
 			level.sortedPlayers[level.numConnectedPlayers] = i;
 			level.numConnectedPlayers++;
 
-			if ( level.players[i].sess.sessionTeam != TEAM_SPECTATOR ) {
+			if ( cl->sess.sessionTeam != TEAM_SPECTATOR ) {
 				level.numNonSpectatorPlayers++;
 
 				// decide if this should be auto-followed
-				if ( level.players[i].pers.connected == CON_CONNECTED ) {
+				if ( cl->pers.connected == CON_CONNECTED ) {
 					level.numPlayingPlayers++;
 					if ( !(g_entities[i].r.svFlags & SVF_BOT) ) {
 						level.numVotingPlayers++;
@@ -1256,6 +1286,8 @@ void CountPopulation( void ) {
 						level.follow2 = i;
 					}
 				}
+			} else if ( GTF( GTF_DUEL ) && cl->sess.queued ) {
+				level.numQueuedPlayers++;
 			}
 		}
 	}
@@ -1502,7 +1534,7 @@ void BeginIntermission( void ) {
 
 	// if in tournament mode, change the wins / losses
 	if ( GTF( GTF_DUEL ) ) {
-		AdjustTournamentScores();
+		Tournament_AdjustScores();
 	}
 
 	level.intermissiontime = level.time;
@@ -1521,12 +1553,12 @@ void BeginIntermission( void ) {
 #ifdef MISSIONPACK
 	if ( g_singlePlayerActive.integer ) {
 		trap_Cvar_SetValue( "ui_singlePlayerActive", 0 );
-		UpdateTournamentInfo();
+		SendSPPostGameInfo();
 	}
 #else
 	// if single player game
 	if ( g_singlePlayerActive.integer && !GTF( GTF_TEAMS ) && !GTF( GTF_CAMPAIGN ) ) {
-		UpdateTournamentInfo();
+		SendSPPostGameInfo();
 		SpawnModelsOnVictoryPads();
 	}
 #endif
@@ -1558,7 +1590,7 @@ void ExitLevel( void ) {
 	// which will automatically grab the next spectator and restart
 	if ( GTF( GTF_DUEL ) ) {
 		if ( !level.restarted ) {
-			RemoveTournamentLoser();
+			Tournament_RemoveLoser();
 			trap_Cmd_ExecuteText( EXEC_APPEND, "map_restart 0\n" );
 			level.restarted = qtrue;
 			level.changemap = NULL;
@@ -1894,14 +1926,70 @@ void CheckExitRules( void ) {
 		return;
 	}
 
+	// don't do during warmup
+	if ( level.warmupTime < 0 ) {
+		return;
+	}
+
+	// give a 1 sec delay at start before exiting is considered
+	if ( level.time - level.startTime < 1000 ) {
+		return;
+	}
+
+	if ( GTF( GTF_TEAMS ) && level.numPlayingTeams < 2 ) {
+		int i;
+
+		for ( i = 0; i <= level.teams_max; i++ ) {
+			if ( !(level.shortTeams & (1 << (i + FIRST_TEAM))) ) {
+				if ( level.warmupTime > 0 ) {
+					level.warmupTime = -1;
+					level.warmupState = WARMUP_DEFAULT;
+					AP( "print \"Countdown cancelled: not enough teams\n\"" );
+				} else {
+					AP( va( "print \"%s wins!" S_COLOR_GREY " (Last remaining team)\n\"", G_PlayerTeamName( level.sortedTeams[1] ) ) );
+					LogExit( "Not enough teams left." );
+				}
+				return;
+			}
+		}
+	} else if ( level.numPlayingPlayers < 2 ) {
+		int i;
+
+		for ( i = 0; i <= level.maxplayers; i++ ) {
+			cl = level.players + i;
+			if ( cl->pers.connected != CON_CONNECTED ) continue;
+			if ( cl->sess.sessionTeam == TEAM_FREE ) {
+				if ( level.warmupTime > 0 ) {
+					level.warmupTime = -1;
+					level.warmupState = WARMUP_DEFAULT;
+					AP( "print \"Countdown cancelled: not enough players\n\"" );
+				} else {
+					AP( va( "print \"%s wins!" S_COLOR_GREY " (Last remaining player)\n\"", PlayerName( cl->pers ) ) );
+					LogExit( "Not enough players left." );
+				}
+				return;
+			}
+		}
+	}
+
+	if ( level.warmupTime > 0 ) {
+		return;
+	}
+
 	// check for sudden death
 	if ( ScoreIsTied() ) {
 		// always wait for sudden death
+		if ( GTF(GTF_DUEL) && g_timeLimit.integer
+				&& (level.time - level.startTime >= (g_timeLimit.integer * 60000) + level.overTime) ) {
+			level.overTime += g_overTime.integer * 60000;
+			AP( va( "pcp \"" S_COLOR_CREAM "Overtime! " S_COLOR_WHITE "%i " S_COLOR_CREAM "minute%s added.\n\"", g_overTime.integer, g_overTime.integer == 1 ? "" : "s" ) );
+			trap_SetConfigstring( CS_OVERTIME, va( "%i", level.overTime ) );
+		}
 		return;
 	}
 
 	if ( g_timeLimit.integer && !level.warmupTime ) {
-		if ( level.time - level.startTime >= g_timeLimit.integer * 60000 ) {
+		if ( level.time - level.startTime >= (g_timeLimit.integer * 60000) + level.overTime ) {
 			if ( GTF( GTF_TEAMS ) ) {
 				AP( va( "print \"%s wins!" S_COLOR_GREY " (Time Limit hit)\n\"", G_PlayerTeamName( level.sortedTeams[1] ) ) );
 			} else {
@@ -2056,7 +2144,7 @@ Check if warmup can end in duels
 qboolean PassWarmupDuel( void ) {
 	// pull in a queued player if needed
 	if ( level.numPlayingPlayers < 2 )
-		AddTournamentPlayer();
+		Tournament_AddPlayer();
 
 	// if we don't have two players, go back to "waiting for players"
 	level.warmupState = (level.numPlayingPlayers == 2) ? WARMUP_READYUP : WARMUP_DEFAULT;
@@ -2222,6 +2310,7 @@ void CheckWarmup( void ) {
 		trap_Cvar_Set( "g_restarted", "1" );
 		trap_Cmd_ExecuteText( EXEC_APPEND, "map_restart 0\n" );
 		level.restarted = qtrue;
+		level.changemap = NULL;	//muff: don't change map here
 	}
 }
 
@@ -2299,7 +2388,7 @@ void SetLeader( int team, int playerNum ) {
 	}
 	player->sess.teamLeader = qtrue;
 	PlayerUserinfoChanged( playerNum );
-	PrintTeam( team, va( "print \"%s is the new team leader.\n\"", PlayerName( player->pers ) ) );
+	//PrintTeam( team, va( "print \"%s is the new team leader.\n\"", PlayerName( player->pers ) ) );
 }
 
 /*
@@ -2345,6 +2434,7 @@ CheckCvars
 */
 void CheckCvars( void ) {
 	static int lastMod = -1;
+	static int gameTypeLastMod = -1;
 
 	if ( g_password.modificationCount != lastMod ) {
 		lastMod = g_password.modificationCount;
@@ -2353,6 +2443,16 @@ void CheckCvars( void ) {
 		} else {
 			trap_Cvar_SetValue( "g_needPassword", 0 );
 		}
+	}
+
+	if ( gameTypeLastMod < 0 ) {
+		gameTypeLastMod = g_gameType.modificationCount;
+	}
+
+	// invoke gametype change adapting
+	if ( g_gameType.modificationCount != gameTypeLastMod ) {
+
+		gameTypeLastMod = g_gameType.modificationCount;
 	}
 }
 

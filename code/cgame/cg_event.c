@@ -59,19 +59,19 @@ const char	*CG_PlaceString( int rank ) {
 	} else if ( rank == 3 ) {
 		s = S_COL24_AMBER "3rd" S_COLOR_WHITE;			// draw in yellow
 	} else if ( rank == 11 ) {
-		s = "11th";
+		s = S_COLOR_WHITE "11th";
 	} else if ( rank == 12 ) {
-		s = "12th";
+		s = S_COLOR_WHITE "12th";
 	} else if ( rank == 13 ) {
-		s = "13th";
+		s = S_COLOR_WHITE "13th";
 	} else if ( rank % 10 == 1 ) {
-		s = va("%ist", rank);
+		s = va( S_COLOR_WHITE "%ist", rank);
 	} else if ( rank % 10 == 2 ) {
-		s = va("%ind", rank);
+		s = va( S_COLOR_WHITE "%ind", rank);
 	} else if ( rank % 10 == 3 ) {
-		s = va("%ird", rank);
+		s = va( S_COLOR_WHITE "%ird", rank);
 	} else {
-		s = va("%ith", rank);
+		s = va( S_COLOR_WHITE "%ith", rank);
 	}
 
 	Com_sprintf( str, sizeof( str ), "%s%s", t, s );
@@ -357,10 +357,10 @@ static void CG_Obituary( entityState_t *ent ) {
 			}
 #ifdef MISSIONPACK
 			if (!(cg_singlePlayer.integer && cg.localPlayers[i].cameraOrbit)) {
-				CG_CenterPrint( i, s, SCREEN_HEIGHT * 0.30, 0.5 );
+				CG_CenterPrint( i, s, SCREEN_HEIGHT * 0.30, 0.5, qfalse );
 			} 
 #else
-			CG_CenterPrint( i, s, SCREEN_HEIGHT * 0.30, 0.5 );
+			CG_CenterPrint( i, s, SCREEN_HEIGHT * 0.30, 0.5, qfalse );
 #endif
 		}
 
@@ -496,13 +496,13 @@ static void CG_UseItem( centity_t *cent ) {
 	// print a message if the local player
 	if ( es->number == cg.cur_ps->playerNum ) {
 		if ( !itemNum ) {
-			CG_CenterPrint( 0, "No item to use", SCREEN_HEIGHT * 0.30, 0.5 );
+			CG_CenterPrint( 0, "No item to use", SCREEN_HEIGHT * 0.30, 0.5, qfalse );
 		} else if ( (itemNum == HI_PSCREEN || itemNum == HI_PSHIELD) ) {
 			// only use use item events for PA when out of ammo
-			CG_CenterPrint( 0, "No Cells for Power Armor", SCREEN_HEIGHT * 0.30, 0.5 );
+			CG_CenterPrint( 0, "No Cells for Power Armor", SCREEN_HEIGHT * 0.30, 0.5, qfalse );
 		} else {
 			item = BG_FindItemForHoldable( itemNum );
-			CG_CenterPrint( 0, va( "Use %s", item->pickup_name ), SCREEN_HEIGHT * 0.30, 0.5 );
+			CG_CenterPrint( 0, va( "Use %s", item->pickup_name ), SCREEN_HEIGHT * 0.30, 0.5, qfalse );
 		}
 	}
 
@@ -1043,14 +1043,6 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		DEBUGNAME("EV_KAMIKAZE");
 		CG_KamikazeEffect( cent->lerpOrigin );
 		break;
-	case EV_OBELISKEXPLODE:
-		DEBUGNAME("EV_OBELISKEXPLODE");
-		CG_ObeliskExplode( cent->lerpOrigin, es->eventParm );
-		break;
-	case EV_OBELISKPAIN:
-		DEBUGNAME("EV_OBELISKPAIN");
-		CG_ObeliskPain( cent->lerpOrigin );
-		break;
 	case EV_INVUL_IMPACT:
 		DEBUGNAME("EV_INVUL_IMPACT");
 		CG_InvulnerabilityImpact( cent->lerpOrigin, cent->currentState.angles );
@@ -1064,6 +1056,14 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		CG_LightningBoltBeam(es->origin2, es->pos.trBase);
 		break;
 #endif
+	case EV_OBELISKEXPLODE:
+		DEBUGNAME( "EV_OBELISKEXPLODE" );
+		CG_ObeliskExplode( cent->lerpOrigin, es->eventParm );
+		break;
+	case EV_OBELISKPAIN:
+		DEBUGNAME( "EV_OBELISKPAIN" );
+		CG_ObeliskPain( cent->lerpOrigin );
+		break;
 //muff
 	case EV_REGISTER_ITEM:
 		DEBUGNAME( "EV_REGISTER_ITEM" );
@@ -1082,19 +1082,19 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_MISSILE_HIT:
 		DEBUGNAME("EV_MISSILE_HIT");
 		ByteToDir( es->eventParm, dir );
-		CG_MissileHitPlayer( es->weapon, es->modelindex2, position, dir, es->otherEntityNum );
+		CG_MissileHitPlayer( es->weapon, es->ownerNum, position, dir, es->otherEntityNum );
 		break;
 
 	case EV_MISSILE_MISS:
 		DEBUGNAME("EV_MISSILE_MISS");
 		ByteToDir( es->eventParm, dir );
-		CG_MissileHitWall( es->weapon, es->modelindex2, position, dir, IMPACTSOUND_DEFAULT );
+		CG_MissileHitWall( es->weapon, es->ownerNum, position, dir, IMPACTSOUND_DEFAULT );
 		break;
 
 	case EV_MISSILE_MISS_METAL:
 		DEBUGNAME("EV_MISSILE_MISS_METAL");
 		ByteToDir( es->eventParm, dir );
-		CG_MissileHitWall( es->weapon, es->modelindex2, position, dir, IMPACTSOUND_METAL );
+		CG_MissileHitWall( es->weapon, es->ownerNum, position, dir, IMPACTSOUND_METAL );
 		break;
 
 	case EV_RAILTRAIL:

@@ -1053,6 +1053,14 @@ void CG_NewPlayerInfo( int playerNum ) {
 	v = Info_ValueForKey( configstring, "l" );
 	newInfo.losses = atoi( v );
 
+	// queued
+	v = Info_ValueForKey( configstring, "qd" );
+	newInfo.queued = atoi( v );
+
+	// queue number
+	v = Info_ValueForKey( configstring, "qn" );
+	newInfo.queueNum = atoi( v );
+
 	// team
 	v = Info_ValueForKey( configstring, "t" );
 	newInfo.team = atoi( v );
@@ -1933,42 +1941,56 @@ CG_PlayerHarvesterSkulls
 ===============
 */
 static void CG_PlayerHarvesterSkulls( centity_t *cent, int renderfx ) {
-	int			tokens, i, j;
-	float		angle;
-	refEntity_t	ent;
-	vec3_t		dir, origin;
-	skulltrail_t *trail;
+	int				skullCount = 0, i, j, k;
+	float			angle;
+	refEntity_t		ent;
+	vec3_t			dir, origin;
+	skulltrail_t	*trail;
+
 	if ( cent->currentState.number >= MAX_CLIENTS ) {
 		return;
 	}
 	trail = &cg.skullTrails[cent->currentState.number];
-	tokens = cent->currentState.skullsES;
-	if ( !tokens ) {
-		trail->numpositions = 0;
+	for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ ) {
+		if ( cent->currentState.team == i ) continue;
+		skullCount += cent->currentState.harSkulls[i];
+	}
+	if ( !skullCount ) {
+		trail->skullTotal = 0;
 		return;
 	}
 
-	if ( tokens > MAX_SKULLTRAIL ) {
-		tokens = MAX_SKULLTRAIL;
+	if ( skullCount > MAX_SKULLTRAIL ) {
+		skullCount = MAX_SKULLTRAIL;
 	}
 
 	// add skulls if there are more than last time
-	for (i = 0; i < tokens - trail->numpositions; i++) {
-		for (j = trail->numpositions; j > 0; j--) {
-			VectorCopy(trail->positions[j-1], trail->positions[j]);
+	for (i = 0; i < skullCount - trail->skullTotal; i++) {
+		for (j = trail->skullTotal; j > 0; j--) {
+			VectorCopy(trail->skullPosition[j-1], trail->skullPosition[j]);
 		}
-		VectorCopy(cent->lerpOrigin, trail->positions[0]);
+		VectorCopy(cent->lerpOrigin, trail->skullPosition[0]);
 	}
-	trail->numpositions = tokens;
+	trail->skullTotal = skullCount;
 
 	// move all the skulls along the trail
 	VectorCopy(cent->lerpOrigin, origin);
-	for (i = 0; i < trail->numpositions; i++) {
-		VectorSubtract(trail->positions[i], origin, dir);
+	for (i = 0; i < trail->skullTotal; i++) {
+		VectorSubtract(trail->skullPosition[i], origin, dir);
 		if (VectorNormalize(dir) > 30) {
-			VectorMA(origin, 30, dir, trail->positions[i]);
+			VectorMA(origin, 30, dir, trail->skullPosition[i]);
 		}
-		VectorCopy(trail->positions[i], origin);
+		VectorCopy(trail->skullPosition[i], origin);
+	}
+
+	// assign teams to each skull
+	for ( i = 0; i < trail->skullTotal; i++ ) {
+		for ( j = FIRST_TEAM; j < TEAM_NUM_TEAMS; j++ ) {
+			int num = cent->currentState.harSkulls[j];
+			for ( k = 0; (k < num && k < trail->skullTotal); k++ ) {
+				trail->skullTeam[k] = j;
+			}
+		}
 	}
 
 	memset( &ent, 0, sizeof( ent ) );
@@ -1977,18 +1999,25 @@ static void CG_PlayerHarvesterSkulls( centity_t *cent, int renderfx ) {
 	ent.renderfx = renderfx;
 
 	VectorCopy(cent->lerpOrigin, origin);
-	for (i = 0; i < trail->numpositions; i++) {
-		VectorSubtract(origin, trail->positions[i], ent.axis[0]);
+	for (i = 0; i < trail->skullTotal; i++) {
+		vec3_t	col;
+		VectorSubtract(origin, trail->skullPosition[i], ent.axis[0]);
 		ent.axis[0][2] = 0;
 		VectorNormalize(ent.axis[0]);
 		VectorSet(ent.axis[2], 0, 0, 1);
 		CrossProduct(ent.axis[0], ent.axis[2], ent.axis[1]);
 
-		VectorCopy(trail->positions[i], ent.origin);
+		VectorCopy(trail->skullPosition[i], ent.origin);
 		angle = (((cg.time + 500 * MAX_SKULLTRAIL - 500 * i) / 16) & 255) * (M_PI * 2) / 255;
 		ent.origin[2] += sin(angle) * 10;
+		CG_TeamColors( trail->skullTeam[i], col, "harskulls" );
+
+		ent.shaderRGBA[0] = 0xff * col[0];
+		ent.shaderRGBA[1] = 0xff * col[1];
+		ent.shaderRGBA[2] = 0xff * col[2];
+		ent.shaderRGBA[3] = 0xff;
 		CG_AddRefEntityWithMinLight( &ent );
-		VectorCopy(trail->positions[i], origin);
+		VectorCopy(trail->skullPosition[i], origin);
 	}
 }
 

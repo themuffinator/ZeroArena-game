@@ -443,6 +443,8 @@ void PM_StepSlideMove( qboolean gravity ) {
 	vec3_t		up, down;
 	float		stepSize;
 
+	VectorClear( down_o );
+	VectorClear( down_v );
 	VectorCopy( pm->ps->origin, start_o );
 	VectorCopy( pm->ps->velocity, start_v );
 	if ( pm->pmove_q2slide ) {

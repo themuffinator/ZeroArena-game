@@ -293,18 +293,23 @@ qboolean EntityHasKamikaze(aas_entityinfo_t *entinfo) {
 /*
 ==================
 EntityCarriesSkulls
+
+//muff: now returns team index of first found set of skulls
 ==================
 */
-qboolean EntityCarriesSkulls(aas_entityinfo_t *entinfo) {
+int EntityCarriesSkulls(aas_entityinfo_t *entinfo) {
 	entityState_t state;
+	int	i;
 
-	if (gametype != GT_HARVESTER)
-		return qfalse;
+	if ( gametype != GT_HARVESTER )
+		return 0;
 	//FIXME: get this info from the aas_entityinfo_t ?
 	BotAI_GetEntityState(entinfo->number, &state);
-	if (state.skullsES > 0)
-		return qtrue;
-	return qfalse;
+	for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ ) {
+		if ( state.harSkulls[i] > 0 )
+			return i;
+	}
+	return 0;
 }
 /*
 ==================
@@ -1744,8 +1749,8 @@ void BotUpdateInventory(bot_state_t *bs) {
 
 	for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ ) {
 		int normal = i - FIRST_TEAM;
-		if ( BotTeam(bs) == normal ) {
-			bs->inventory[normal + INV_SKULLS_INDEX] = bs->cur_ps.skulls;
+		if ( BotTeam(bs) != i ) {
+			bs->inventory[normal + INV_SKULLS_INDEX] = bs->cur_ps.harSkulls[i];
 		} else {
 			bs->inventory[normal + INV_SKULLS_INDEX] = 0;
 		}

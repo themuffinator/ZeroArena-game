@@ -33,9 +33,10 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 
 typedef struct teamgame_s {
+#if 0
 	float			last_flag_capture;
 	team_t			last_capture_team;
-#if 0
+
 	flagStatus_t	redStatus;	// CTF
 	flagStatus_t	blueStatus;	// CTF
 	flagStatus_t	flagStatus;	// One Flag CTF
@@ -144,6 +145,7 @@ void AddTeamScore( vec3_t origin, team_t team, int score ) {
 		te->s.eventParm = eventParm;
 	}
 
+	if ( level.warmupTime ) return;
 	level.teamScores[team] += score;
 }
 
@@ -280,11 +282,19 @@ void Team_FragBonuses( gentity_t* targ, gentity_t* inflictor, gentity_t* attacke
 	}
 
 	// did the attacker frag a skull carrier?
-	if ( g_gameType.integer == GT_HARVESTER && targ->player->ps.skulls ) {
-		int skulls = targ->player->ps.skulls;
+	if ( g_gameType.integer == GT_HARVESTER && targ->player->ps.harSkulls ) {
+		int skullCount = 0, i;
+
+		for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ ) {
+			if ( targ->player->ps.harSkulls[i] ) {
+				skullCount += targ->player->ps.harSkulls[i];
+			}
+		}
+
+		if ( !skullCount ) return;
 
 		attacker->player->pers.teamState.lastfraggedcarrier = level.time;
-		AddScore( attacker, targ->r.currentOrigin, CTF_FRAG_CARRIER_BONUS * skulls );
+		AddScore( attacker, targ->r.currentOrigin, CTF_FRAG_CARRIER_BONUS * skullCount );
 		PrintMsg( NULL, "%s fragged %s's skull carrier!\n", PlayerName( attacker->player->pers ), G_PlayerTeamName( targetTeam ) );
 
 		// the target had the flag, clear the hurt carrier
@@ -428,7 +438,7 @@ void Team_CheckHurtCarrier( gentity_t* targ, gentity_t* attacker ) {
 			attacker->player->pers.teamState.lasthurtcarrier = level.time;
 	} else if ( g_gameType.integer == GT_HARVESTER ) {
 		// skulls
-		if ( targ->player->ps.skulls &&
+		if ( targ->player->ps.harSkulls &&
 			targ->player->sess.sessionTeam != attacker->player->sess.sessionTeam )
 			attacker->player->pers.teamState.lasthurtcarrier = level.time;
 	}
@@ -566,6 +576,7 @@ int Team_TouchOurFlag( gentity_t* ent, gentity_t* other, team_t friendlyTeam ) {
 
 		//muff: reset timer
 		level.miscTimer[friendlyTeam] = 0;
+		level.miscNum[friendlyTeam] = -1;
 
 		other->player->pers.teamState.lastreturnedflag = level.time;
 		//ResetFlag will remove this entity!  We must return zero
@@ -594,17 +605,10 @@ int Team_TouchOurFlag( gentity_t* ent, gentity_t* other, team_t friendlyTeam ) {
 
 	// the flag is at home base.  if the player has the enemy
 	// flag, he's just scored!
-	if ( g_gameType.integer == GT_1FCTF ) {
-		Com_sprintf( str, sizeof( str ), "print \"%s captured the flag! " S_COLOR_GREY "(timed: %s)\n\"", PlayerName( cl->pers ), sFlagTime );
-	} else {
-		Com_sprintf( str, sizeof( str ), "print \"%s captured %s's flag! " S_COLOR_GREY "(timed: %s)\n\"", PlayerName( cl->pers ), G_PlayerTeamName( enemyTeam ), sFlagTime );
-	}
+	Com_sprintf( str, sizeof( str ), "print \"%s captured %s's flag! " S_COLOR_GREY "(timed: %s)\n\"", PlayerName( cl->pers ), G_PlayerTeamName( enemyTeam ), sFlagTime );
 	AP( str );
 	
 	cl->ps.powerups[PW_FLAGS_INDEX + enemyTeam] = 0;
-
-	teamgame.last_flag_capture = level.time;
-	teamgame.last_capture_team = friendlyTeam;
 
 	// increase the team's score
 	AddTeamScore( ent->s.pos.trBase, other->player->sess.sessionTeam, 1 );
@@ -619,7 +623,7 @@ int Team_TouchOurFlag( gentity_t* ent, gentity_t* other, team_t friendlyTeam ) {
 	// other gets another 10 frag bonus
 	AddScore( other, ent->r.currentOrigin, CTF_CAPTURE_BONUS );
 
-	Team_CaptureFlagSound( ent, friendlyTeam );
+	Team_CaptureFlagSound( ent, enemyTeam );
 
 	// Ok, let's do the player loop, hand out the bonuses
 	for ( i = 0; i < g_maxClients.integer; i++ ) {
@@ -684,6 +688,7 @@ int Team_TouchEnemyFlag( gentity_t* ent, gentity_t* other, team_t flagTeam ) {
 	if ( !(ent->s.eFlags & EF_DROPPED_ITEM) ) {
 		//muff: start a capture timer for this team flag, only timed from base pickup
 		level.miscTimer[flagTeam] = level.time;
+		level.miscNum[flagTeam] = other->player->ps.playerNum;
 	}
 
 	AddScore( other, ent->r.currentOrigin, CTF_FLAG_BONUS );
@@ -706,7 +711,18 @@ int Pickup_Team( gentity_t* ent, gentity_t* other ) {
 	if ( g_gameType.integer == GT_HARVESTER ) {
 		// the only team items that can be picked up in harvester are the skulls
 		if ( ent->s.team != cl->sess.sessionTeam ) {
-			cl->ps.skulls += 1;
+			int skullCount = 0, i;
+
+			for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ ) {
+				if ( i == cl->sess.sessionTeam ) continue;
+				if ( cl->ps.harSkulls[i] ) {
+					skullCount += cl->ps.harSkulls[i];
+				}
+			}
+
+			// limit MAX_SKULLTRAIL skulls carried at a time
+			if ( skullCount < MAX_SKULLTRAIL )
+				cl->ps.harSkulls[ent->s.team] += 1;
 		}
 		G_FreeEntity( ent );
 		return 0;
@@ -716,6 +732,7 @@ int Pickup_Team( gentity_t* ent, gentity_t* other ) {
 	if ( !GTL( GTL_CAPTURES ) ) return 0;
 
 	// figure out what team this flag is
+
 	for ( i = 0; i < TEAM_NUM_TEAMS; i++ ) {
 		char* s = va( "team_CTF_%sflag", g_teamNamesLower[i] );
 		if ( !strcmp( ent->classname, s) ) {
@@ -734,6 +751,7 @@ int Pickup_Team( gentity_t* ent, gentity_t* other ) {
 			return Team_TouchEnemyFlag( ent, other, cl->sess.sessionTeam );
 		}
 		return 0;
+		//muff: base flags replaced by base obelisks - now there really is only 'one flag'
 #if 0
 		if ( team != cl->sess.sessionTeam ) {
 			return Team_TouchOurFlag( ent, other, cl->sess.sessionTeam );
@@ -1159,7 +1177,7 @@ static void ObeliskDie( gentity_t* self, gentity_t* inflictor, gentity_t* attack
 	teamgame.obeliskAttackedTime[self->spawnflags] = 0;
 	teamgame.obeliskAttackedTime[attackerTeam] = 0;
 
-	AP( va( "cp \"%s destroyed %s's obelisk.\n\"", PlayerName( attacker->player->pers ), G_PlayerTeamName( self->spawnflags ) ) );
+	AP( va( "print \"%s destroyed %s's obelisk!\n\"", PlayerName( attacker->player->pers ), G_PlayerTeamName( self->spawnflags ) ) );
 }
 
 
@@ -1171,6 +1189,7 @@ static void BaseRecepticleTouch( gentity_t* self, gentity_t* other, trace_t* tra
 
 	playerTeam = other->player->sess.sessionTeam;
 	if ( playerTeam == self->spawnflags ) return;
+	if ( self->spawnflags == TEAM_FREE ) return;
 
 	if ( g_gameType.integer == GT_1FCTF ) {
 		qboolean flag = other->player->ps.powerups[PW_NEUTRALFLAG];
@@ -1204,9 +1223,8 @@ static void BaseRecepticleTouch( gentity_t* self, gentity_t* other, trace_t* tra
 		AP( str );
 
 		other->player->ps.powerups[PW_NEUTRALFLAG] = 0;
-
-		teamgame.last_flag_capture = level.time;
-		teamgame.last_capture_team = playerTeam;
+		level.miscTimer[TEAM_FREE] = 0;
+		level.miscNum[TEAM_FREE] = -1;
 
 		// increase the team's score
 		AddTeamScore( self->s.pos.trBase, playerTeam, 1 );
@@ -1221,16 +1239,16 @@ static void BaseRecepticleTouch( gentity_t* self, gentity_t* other, trace_t* tra
 		// other gets another score bonus
 		AddScore( other, self->r.currentOrigin, CTF_CAPTURE_BONUS );
 
-		Team_CaptureFlagSound( self, playerTeam );
+		Team_CaptureFlagSound( self, self->spawnflags );
 
 	} else {
 		int			skulls;
 
-		skulls = other->player->ps.skulls;
-		if ( skulls <= 0 ) return;
+		skulls = other->player->ps.harSkulls[self->spawnflags];
+		if ( !skulls ) return;
 
-		AP( va( "cp \"%s brought in %i %s.\n\"",
-			PlayerName( other->player->pers ), skulls, (skulls == 1) ? "skull" : "skulls" ) );
+		AP( va( "print \"%s brought in %i skull%s!\n\"",
+			PlayerName( other->player->pers ), skulls, (skulls == 1) ? "" : "s" ) );
 
 		AddTeamScore( self->s.pos.trBase, playerTeam, skulls );
 		Team_ForceGesture( other->player->sess.sessionTeam );
@@ -1243,7 +1261,7 @@ static void BaseRecepticleTouch( gentity_t* self, gentity_t* other, trace_t* tra
 		other->player->rewardTime = level.time + REWARD_SPRITE_TIME;
 		other->player->ps.persistant[PERS_CAPTURES] += skulls;
 
-		other->player->ps.skulls = 0;
+		other->player->ps.harSkulls[self->spawnflags] = 0;
 
 		Team_CaptureFlagSound( self, self->spawnflags );
 	}
@@ -1266,7 +1284,7 @@ static void ObeliskPain( gentity_t* self, gentity_t* attacker, int damage ) {
 }
 
 // spawn invisible damagable obelisk entity / harvester base trigger.
-gentity_t* SpawnObelisk( vec3_t origin, vec3_t mins, vec3_t maxs, int team ) {
+gentity_t* SpawnObelisk( vec3_t origin, vec3_t mins, vec3_t maxs, team_t team ) {
 	gentity_t* ent = G_Spawn();
 
 	VectorCopy( origin, ent->s.origin );
@@ -1287,7 +1305,7 @@ gentity_t* SpawnObelisk( vec3_t origin, vec3_t mins, vec3_t maxs, int team ) {
 		ent->pain = ObeliskPain;
 		ent->think = ObeliskRegen;
 		ent->nextthink = level.time + g_obeliskRegenPeriod.integer * 1000;
-	} else if ( g_gameType.integer == GT_HARVESTER || g_gameType.integer == GT_1FCTF ) {
+	} else if ( team != TEAM_FREE && ( g_gameType.integer == GT_HARVESTER || g_gameType.integer == GT_1FCTF )) {
 		ent->s.contents = CONTENTS_TRIGGER;
 		ent->touch = BaseRecepticleTouch;
 	}
@@ -1304,8 +1322,6 @@ gentity_t* SpawnObelisk( vec3_t origin, vec3_t mins, vec3_t maxs, int team ) {
 
 // setup entity for team base model / obelisk model.
 void ObeliskInit( gentity_t* ent ) {
-	trace_t		tr;
-	vec3_t		dest;
 
 	ent->s.eType = ET_TEAM;
 
@@ -1316,26 +1332,11 @@ void ObeliskInit( gentity_t* ent ) {
 		// suspended
 		G_SetOrigin( ent, ent->s.origin );
 	} else {
-		// mappers like to put them exactly on the floor, but being coplanar
-		// will sometimes show up as starting in solid, so lif it up one pixel
-		ent->s.origin[2] += 1;
-
 		// drop to floor
-		VectorSet( dest, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2] - 4096 );
-		trap_Trace( &tr, ent->s.origin, ent->s.mins, ent->s.maxs, dest, ent->s.number, MASK_SOLID );
-		if ( tr.startsolid ) {
-			ent->s.origin[2] -= 1;
-			G_Printf( "SpawnObelisk: %s startsolid at %s\n", ent->classname, vtos( ent->s.origin ) );
-
-			ent->s.groundEntityNum = ENTITYNUM_NONE;
-			G_SetOrigin( ent, ent->s.origin );
-		} else {
-			// allow to ride movers
-			ent->s.groundEntityNum = tr.entityNum;
-			G_SetOrigin( ent, tr.endpos );
-		}
+		G_DropEntityToFloor( ent, 4096 );
 	}
 }
+
 
 void SpawnTeamObelisk( gentity_t* ent, const team_t entityTeam ) {
 	gentity_t* obelisk;

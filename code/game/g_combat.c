@@ -174,25 +174,25 @@ void TossPlayerGametypeItems( gentity_t* ent ) {
 			ent->player->ps.powerups[i] = 0;
 		}
 	} else if ( g_gameType.integer == GT_HARVESTER ) {
-		if ( ent->player->ps.skulls > 0 ) {
-			item = BG_FindItem( va( "%s Skull", g_teamNames[ent->player->sess.sessionTeam] ) );
+		int i, j;
 
-			if ( item ) {
-				for ( i = 0; i < ent->player->ps.skulls; i++ ) {
-					drop = Drop_Item( ent, item, angle );
+		for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ ) {
+			int num = ent->player->ps.harSkulls[i];
+			if ( !num ) continue;
 
-					//multiteam TODO: save team index per carried skull
-					if ( ent->player->sess.sessionTeam == TEAM_RED ) {
-						drop->s.team = TEAM_BLUE;
-					} else {
-						drop->s.team = TEAM_RED;
-					}
-
-					angle += 45;
-				}
+			item = BG_FindItem( va( "%s Skull", g_teamNames[i] ) );
+			if ( !item ) {
+				G_DPrintf( "Couldn't find skull name to drop\n" );
+				continue;
 			}
-			ent->player->ps.skulls = 0;
+			for ( j = 1; j <= num; j++ ) {
+				drop = Drop_Item( ent, item, angle );
+				drop->s.team = i;
+
+				angle += 45;
+			}
 		}
+		memset( &ent->player->ps.harSkulls, 0, sizeof(ent->player->ps.harSkulls) );
 	}
 
 }
@@ -215,8 +215,8 @@ void TossPlayerSkulls( gentity_t* self ) {
 	vec3_t		origin;
 	int			i;
 
-	self->player->ps.skulls = 0;
-
+	memset( &self->player->ps.harSkulls, 0, sizeof(self->player->ps.harSkulls) );
+	
 	// this should never happen but we should never
 	// get the server to crash due to skull being spawned in
 	if ( !G_EntitiesFree() ) {
@@ -510,22 +510,29 @@ void CheckAlmostScored( gentity_t* self, gentity_t* attacker ) {
 	gentity_t* ent;
 	vec3_t		dir;
 	char* classname;
+	int		i, skullCount = 0;
+	const team_t	playerTeam = self->player->sess.sessionTeam;
+
+	for ( i = FIRST_TEAM; i < level.teams_max; i++ ) {
+		if ( i == playerTeam ) continue;
+		skullCount += self->player->ps.harSkulls[i];
+	}
 
 	// if the player was carrying skulls
-	if ( self->player->ps.skulls ) {
+	if ( skullCount ) {
 		int i;
 
 		for ( i = FIRST_TEAM; i <= level.teams_max; i++ ) {
-			if ( i == self->player->sess.sessionTeam ) continue;
+			if ( i == playerTeam ) continue;
 
-			classname = va( "team_%sobelisk", g_teamNamesLower[self->player->sess.sessionTeam] );
+			classname = va( "team_%sobelisk", g_teamNamesLower[i] );
 
 			ent = G_Find( NULL, FOFS( classname ), classname );
 			// if we found the destination obelisk
 			if ( ent ) {
 				// if the player was *very* close
 				VectorSubtract( self->player->ps.origin, ent->s.origin, dir );
-				if ( VectorLength( dir ) < 200 ) {
+				if ( VectorLength( dir ) < 200 && self->player->ps.harSkulls[i] ) {
 					self->player->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;
 					if ( attacker->player ) {
 						//attacker->player->ps.persistant[PERS_PLAYEREVENTS] ^= PLAYEREVENT_HOLYSHIT;

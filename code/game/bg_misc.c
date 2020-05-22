@@ -1553,7 +1553,13 @@ vmNetField_t	bg_entityStateFields[] =
 { NETF(modelindex), MODELINDEX_BITS },
 { NETF(otherEntityNum2), GENTITYNUM_BITS },
 { NETF(loopSound), 8 },
-{ NETF(skullsES), 8 },
+{ NETF( harSkulls[TEAM_FREE] ), 8 },
+{ NETF( harSkulls[TEAM_RED] ), 8 },
+{ NETF( harSkulls[TEAM_BLUE] ), 8 },
+{ NETF( harSkulls[TEAM_GREEN] ), 8 },
+{ NETF( harSkulls[TEAM_YELLOW] ), 8 },
+{ NETF( harSkulls[TEAM_TEAL] ), 8 },
+{ NETF( harSkulls[TEAM_PINK] ), 8 },
 { NETF(team), 8 },
 { NETF(origin2[2]), 0 },
 { NETF(origin2[0]), 0 },
@@ -1573,7 +1579,8 @@ vmNetField_t	bg_entityStateFields[] =
 { NETF(angles2[2]), 0 },
 { NETF(constantLight), 32 },
 { NETF(dl_intensity), 32 },
-{ NETF(density), 10},
+{ NETF( density ), 10 },
+{ NETF( ownerNum ), 10 },
 { NETF( dir[0] ), 0 },
 { NETF( dir[1] ), 0 },
 { NETF( dir[2] ), 0 },
@@ -1634,7 +1641,13 @@ vmNetField_t	bg_playerStateFields[] =
 { PSF(damageYaw), 8 },
 { PSF(damagePitch), 8 },
 { PSF(damageCount), 8 },
-{ PSF(skulls), 8 },
+{ PSF( harSkulls[TEAM_FREE] ), 8 },
+{ PSF( harSkulls[TEAM_RED] ), 8 },
+{ PSF( harSkulls[TEAM_BLUE] ), 8 },
+{ PSF( harSkulls[TEAM_GREEN] ), 8 },
+{ PSF( harSkulls[TEAM_YELLOW] ), 8 },
+{ PSF( harSkulls[TEAM_TEAL] ), 8 },
+{ PSF( harSkulls[TEAM_PINK] ), 8 },
 { PSF(pm_type), 8 },					
 { PSF(delta_angles[0]), 16 },
 { PSF(delta_angles[2]), 16 },
@@ -2105,12 +2118,18 @@ qboolean BG_CanItemBeGrabbed( gametype_t gameType, const entityState_t *ent, con
 		if ( ps->stats[STAT_RUNE] ) {
 			return qfalse;
 		}
-
+#if 0
 		// check team only
 		if ( ent->team != 255 && ( ps->persistant[PERS_TEAM] != ent->team ) ) {
 			return qfalse;
 		}
-
+#endif
+		// check team only
+		if ( gt[gameType].gtFlags & GTF_TEAMS ) {
+			if ( ent->team && !(ent->team & (1 << ps->persistant[PERS_TEAM])) ) {
+				return qfalse;
+			}
+		}
 		return qtrue;
 
 	case IT_TEAM: // team items, such as flags
@@ -2146,6 +2165,20 @@ qboolean BG_CanItemBeGrabbed( gametype_t gameType, const entityState_t *ent, con
 			}
 			
 		} else if( gameType == GT_HARVESTER ) {
+			int skullCount = 0, i;
+
+			// players can clear own skulls
+			if ( ent->team == ps->persistant[PERS_TEAM] ) return qtrue;
+
+			for ( i = FIRST_TEAM; i < TEAM_NUM_TEAMS; i++ ) {
+				if ( ps->harSkulls[i] ) {
+					skullCount += ps->harSkulls[i];
+				}
+			}
+
+			// players can hold up to MAX_SKULLTRAIL skulls at a time
+			if ( skullCount >= MAX_SKULLTRAIL ) return qfalse;
+
 			return qtrue;
 		}
 
@@ -2357,12 +2390,12 @@ char *eventnames[] = {
 	"EV_PROXIMITY_MINE_STICK",
 	"EV_PROXIMITY_MINE_TRIGGER",
 	"EV_KAMIKAZE",			// kamikaze explodes
-	"EV_OBELISKEXPLODE",		// obelisk explodes
-	"EV_OBELISKPAIN",		// obelisk pain
 	"EV_INVUL_IMPACT",		// invulnerability sphere impact
 	"EV_JUICED",				// invulnerability juiced effect
 	"EV_LIGHTNINGBOLT",		// lightning bolt bounced of invulnerability sphere
 //#endif
+	"EV_OBELISKEXPLODE",		// obelisk explodes
+	"EV_OBELISKPAIN",		// obelisk pain
 //muff
 	"EV_REGISTER_ITEM",
 //-muff
@@ -2518,7 +2551,9 @@ void BG_PlayerStateToEntityState( playerState_t *ps, entityState_t *s, qboolean 
 
 	s->contents = ps->contents;
 	s->loopSound = ps->loopSound;
-	s->skullsES = ps->skulls;
+	for ( i = 0; i < TEAM_NUM_TEAMS; i++ ) {
+		s->harSkulls[i] = ps->harSkulls[i];
+	}
 	s->team = ps->persistant[PERS_TEAM];
 
 	s->collisionType = ps->collisionType;
@@ -2607,7 +2642,9 @@ void BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s
 
 	s->contents = ps->contents;
 	s->loopSound = ps->loopSound;
-	s->skullsES = ps->skulls;
+	for ( i = 0; i < TEAM_NUM_TEAMS; i++ ) {
+		s->harSkulls[i] = ps->harSkulls[i];
+	}
 	s->team = ps->persistant[PERS_TEAM];
 
 	s->collisionType = ps->collisionType;

@@ -365,6 +365,11 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd ) {
 	if ( ( player->buttons & BUTTON_ATTACK ) && ! ( player->oldbuttons & BUTTON_ATTACK ) ) {
 		Cmd_FollowCycle_f( ent, 1 );
 	}
+
+	// jump stops following
+	if ( (player->ps.pm_flags & PMF_FOLLOW) && ucmd->upmove ) {
+		StopFollowing( ent );
+	}
 }
 
 
@@ -1076,6 +1081,49 @@ void PlayerThink( int playerNum ) {
 
 
 void G_RunPlayer( gentity_t *ent ) {
+	
+	// we've just changed gametype, let's check teams etc
+	if ( level.initRestart ) {	// && level.initGameType >= 0 && level.initGameType != g_gameType.integer ) {
+		G_Printf( "^6g_gameType=%i, initGameType=%i\n", g_gameType.integer, level.initGameType );
+		if ( ent->player->sess.sessionTeam != TEAM_SPECTATOR
+			&& ((GTF( GTF_TEAMS ) && !IsValidTeam( ent->player->sess.sessionTeam ))
+				|| (!GTF( GTF_TEAMS ) && IsValidTeam( ent->player->sess.sessionTeam ))) ) {
+			SetTeam( ent, "a", qfalse );
+		}
+#if 0
+		int i;
+		G_Printf( "^6g_gameType=%i, initGameType=%i\n", g_gameType.integer, level.initGameType );
+		// just started teamplay mode - assign teams to all players
+		//if ( GTF( GTF_TEAMS ) && !( gt[level.initGameType].gtFlags & GTF_TEAMS ) ) {
+		gentity_t* ent;
+
+		for ( i = 0; i < level.numPlayingPlayers; i++ ) {
+			ent = &g_entities[i];
+
+			//if ( !ent->inuse ) continue;
+			if ( !ent->player ) continue;
+			if ( ent->player->sess.sessionTeam == TEAM_SPECTATOR ) continue;
+
+			SetTeam( ent, "a", qfalse );
+		}
+
+	}
+	// just left teamplay mode - set all players to free
+	else if ( !GTF( GTF_TEAMS ) && (gt[level.initGameType].gtFlags & GTF_TEAMS) ) {
+		gplayer_t* cl;
+
+		for ( i = 0; i < level.numPlayingPlayers; i++ ) {
+			cl = &level.players[i];
+
+			if ( IsValidTeam( cl->sess.sessionTeam ) ) {
+				SetTeam( &g_entities[i], "a", qfalse );
+			}
+		}
+	}
+#endif
+		level.initRestart = qfalse;
+	}
+
 	if ( !(ent->r.svFlags & SVF_BOT) && !g_synchronousClients.integer ) {
 		return;
 	}

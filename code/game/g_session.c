@@ -52,8 +52,9 @@ void G_WritePlayerSessionData( gplayer_t *player ) {
 	const char	*s;
 	const char	*var;
 
-	s = va("%i %i %i %i %i %i %i", 
+	s = va("%i %i %i %i %i %i %i %i", 
 		player->sess.sessionTeam,
+		player->sess.queued,
 		player->sess.queueNum,
 		player->sess.spectatorState,
 		player->sess.spectatorPlayer,
@@ -80,12 +81,14 @@ void G_ReadSessionData( gplayer_t *player ) {
 	int teamLeader;
 	int spectatorState;
 	int sessionTeam;
+	int queued;
 
 	var = va( "session%i", (int)(player - level.players) );
 	trap_Cvar_VariableStringBuffer( var, s, sizeof(s) );
 
-	sscanf( s, "%i %i %i %i %i %i %i",
+	sscanf( s, "%i %i %i %i %i %i %i %i",
 		&sessionTeam,
+		&queued,
 		&player->sess.queueNum,
 		&spectatorState,
 		&player->sess.spectatorPlayer,
@@ -97,6 +100,7 @@ void G_ReadSessionData( gplayer_t *player ) {
 	player->sess.sessionTeam = (team_t)sessionTeam;
 	player->sess.spectatorState = (spectatorState_t)spectatorState;
 	player->sess.teamLeader = (qboolean)teamLeader;
+	player->sess.queued = (qboolean)queued;
 }
 
 
@@ -114,31 +118,22 @@ void G_InitSessionData( gplayer_t *player, char *userinfo ) {
 	sess = &player->sess;
 
 	// initial team determination
-	if ( GTF(GTF_TEAMS) ) {
-		// always spawn as spectator in team games
+	// always spawn as spectator
+	if ( g_entities[player->ps.playerNum].r.svFlags & SVF_BOT ) {
+		//sess->sessionTeam = TEAM_FREE;
+		SetTeam( &g_entities[player - level.players], "a", qfalse );
+	} else {
 		sess->sessionTeam = TEAM_SPECTATOR;
 		sess->spectatorState = SPECTATOR_FREE;
 
-		// allow specifying team, mainly for bots (and humans via start server menu)
-		value = Info_ValueForKey( userinfo, "teamPref" );
-
-		if ( value[0] || g_teamAutoJoin.integer ) {
-			SetTeam( &g_entities[player - level.players], value );
-		}
-	} else {
-		value = Info_ValueForKey( userinfo, "teamPref" );
-		//TODO: should teamPref be used? joining clients should be greeted by welcome screen
-		if ( value[0] == 's' ) {
-			// a willing spectator, not a waiting-in-line
-			sess->sessionTeam = TEAM_SPECTATOR;
-		} else {
-			sess->sessionTeam = TEAM_FREE;	// SPECTATOR;
-		}
-
-		sess->spectatorState = SPECTATOR_FREE;
+		sess->queued = qfalse;
+		sess->queueNum = 0;
 	}
-
-	AddToTournamentQueue(player);
+	// allow specifying team, mainly for bots (and humans via start server menu)
+	value = Info_ValueForKey( userinfo, "teamPref" );
+	if ( value[0] || g_teamAutoJoin.integer ) {
+		SetTeam( &g_entities[player - level.players], value, qfalse );	//player - level.players
+	}
 
 	G_WritePlayerSessionData( player );
 }

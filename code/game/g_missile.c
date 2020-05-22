@@ -416,9 +416,9 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace ) {
 	// one, rather than changing the missile into the explosion?
 
 	if ( other->takedamage && other->player ) {
-		G_AddEvent( ent, EV_MISSILE_HIT, DirToByte( trace->plane.normal ) );
+		ent->s.ownerNum = ent->r.ownerNum;
 		ent->s.otherEntityNum = other->s.number;
-		ent->s.modelindex2 = ent->r.ownerNum;
+		G_AddEvent( ent, EV_MISSILE_HIT, DirToByte( trace->plane.normal ) );
 	} else if( trace->surfaceFlags & SURF_METALSTEPS ) {
 		G_AddEvent( ent, EV_MISSILE_MISS_METAL, DirToByte( trace->plane.normal ) );
 	} else {
@@ -554,8 +554,7 @@ gentity_t *fire_plasma (gentity_t *self, vec3_t start, vec3_t dir) {
 	bolt->flags = DAMAGE_ENERGY;
 
 	//muff send owner number to clients
-	bolt->s.modelindex2 = bolt->r.ownerNum;
-	//bolt->s.density = bolt->r.ownerNum;
+	bolt->s.ownerNum = bolt->r.ownerNum;
 
 	bolt->s.pos.trType = TR_LINEAR;
 	bolt->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;		// move a bit on the very first frame
@@ -606,11 +605,8 @@ gentity_t *fire_grenade (gentity_t *self, vec3_t start, vec3_t dir) {
 	bolt->target_ent = NULL;
 
 	//muff send owner number to clients
-	bolt->s.modelindex2 = bolt->r.ownerNum;
-#if 0
-	bolt->s.clientNum = bolt->r.ownerNum;
-	bolt->s.spawnTime = level.time;
-#endif
+	bolt->s.ownerNum = bolt->r.ownerNum;
+
 	bolt->s.pos.trType = TR_GRAVITY;
 	bolt->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;		// move a bit on the very first frame
 	VectorCopy( start, bolt->s.pos.trBase );
@@ -660,8 +656,7 @@ gentity_t *fire_bfg (gentity_t *self, vec3_t start, vec3_t dir) {
 	bolt->flags = DAMAGE_ENERGY;
 
 	//muff send owner number to clients
-	//bolt->s.modelindex2 = bolt->r.ownerNum;
-	bolt->s.density = bolt->r.ownerNum;
+	bolt->s.ownerNum = bolt->r.ownerNum;
 
 	bolt->s.pos.trType = TR_LINEAR;
 	bolt->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;		// move a bit on the very first frame
@@ -710,8 +705,7 @@ gentity_t *fire_rocket (gentity_t *self, vec3_t start, vec3_t dir) {
 	bolt->target_ent = NULL;
 
 	//muff send owner number to clients
-	//bolt->s.modelindex2 = bolt->r.ownerNum;
-	bolt->s.density = bolt->r.ownerNum;
+	//bolt->s.ownerNum = bolt->r.ownerNum;
 
 	bolt->s.pos.trType = TR_LINEAR;
 	bolt->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;		// move a bit on the very first frame
@@ -753,8 +747,7 @@ gentity_t *fire_grapple (gentity_t *self, vec3_t start, vec3_t dir) {
 	hook->target_ent = NULL;
 
 	//muff send owner number to clients
-	//hook->s.modelindex2 = hook->r.ownerNum;
-	hook->s.density = hook->r.ownerNum;
+	hook->s.ownerNum = hook->r.ownerNum;
 	
 	hook->s.pos.trType = TR_LINEAR;
 	hook->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;		// move a bit on the very first frame
@@ -806,8 +799,7 @@ gentity_t *fire_nail( gentity_t *self, vec3_t start, vec3_t forward, vec3_t righ
 	bolt->target_ent = NULL;
 
 	//muff send owner number to clients
-	//bolt->s.modelindex2 = bolt->r.ownerNum;
-	bolt->s.density = bolt->r.ownerNum;
+	bolt->s.ownerNum = bolt->r.ownerNum;
 
 	bolt->s.pos.trType = TR_LINEAR;
 	bolt->s.pos.trTime = level.time;
@@ -870,8 +862,7 @@ gentity_t *fire_prox( gentity_t *self, vec3_t start, vec3_t dir ) {
 	bolt->count = 0;
 
 	//muff send owner number to clients
-	//bolt->s.modelindex2 = bolt->r.ownerNum;
-	bolt->s.density = bolt->r.ownerNum;
+	bolt->s.ownerNum = bolt->r.ownerNum;
 
 	bolt->s.pos.trType = TR_GRAVITY;
 	bolt->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;		// move a bit on the very first frame

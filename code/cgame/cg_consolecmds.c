@@ -155,7 +155,7 @@ void CG_CenterEcho_f( int localPlayerNum ) {
 
 	CG_ReplaceCharacter( text, '\\', '\n' );
 
-	CG_CenterPrint( localPlayerNum, text, SCREEN_HEIGHT * 0.30, 0.5 );
+	CG_CenterPrint( localPlayerNum, text, SCREEN_HEIGHT * 0.30, 0.5, qfalse );
 }
 
 /*
@@ -1244,6 +1244,7 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "followNext", CG_ForwardToServer_f, CMD_INGAME },
 	{ "followPrevious", CG_ForwardToServer_f, CMD_INGAME },
 	{ "team", CG_ForwardToServer_f, CMD_INGAME, CG_TeamComplete },
+	{ "forfeit", CG_ForwardToServer_f, CMD_INGAME },
 	{ "readyUp", CG_ForwardToServer_f, CMD_INGAME },
 	{ "callVote", CG_ForwardToServer_f, CMD_INGAME, CG_CallVoteComplete },
 	{ "vote", CG_ForwardToServer_f, CMD_INGAME, CG_VoteComplete },
@@ -1251,6 +1252,7 @@ static playerConsoleCommand_t	playerCommands[] = {
 	{ "setViewPos", CG_ForwardToServer_f, CMD_INGAME },
 	{ "stats", CG_ForwardToServer_f, CMD_INGAME },
 	{ "drop", CG_ForwardToServer_f, CMD_INGAME },
+	{ "entityOriginCreate", CG_ForwardToServer_f, CMD_INGAME },
 	{ "spawn", CG_ForwardToServer_f, CMD_INGAME, CG_GiveComplete }
 };
 

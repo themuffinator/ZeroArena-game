@@ -750,6 +750,9 @@ void UI_DrawPlayer( float x, float y, float w, float h, uiPlayerInfo_t *pi, int 
 	float			xx;
 	float			xscale;
 	float			yscale;
+	//muff
+	vec3_t			angles;
+	//-muff
 
 	if ( !pi->legsModel || !pi->torsoModel || !pi->headModel || !pi->animations[0].numFrames ) {
 		return;
@@ -808,8 +811,20 @@ void UI_DrawPlayer( float x, float y, float w, float h, uiPlayerInfo_t *pi, int 
 
 	trap_R_ClearScene();
 
+#if 0
+	angles[PITCH] = angles[ROLL] = 0;
+	angles[YAW] = (time & 2047) * 360 / 2048.0;
+	AnglesToAxis( angles, torso.axis );
+	angles[PITCH] = angles[ROLL] = 0;
+	angles[YAW] = (time & 2047) * 360 / 2048.0;
+	AnglesToAxis( angles, legs.axis );
+#endif
 	// get the rotation information
 	UI_PlayerAngles( pi, legs.axis, torso.axis, head.axis );
+
+	angles[PITCH] = angles[ROLL] = 0;
+	angles[YAW] = (time & 2047) * 360 / 2048.0;
+	AnglesToAxis( angles, legs.axis );
 	
 	// get the animation state (after rotation, to allow feet shuffle)
 	UI_PlayerAnimation( pi, &legs.oldframe, &legs.frame, &legs.backlerp,
@@ -830,7 +845,7 @@ void UI_DrawPlayer( float x, float y, float w, float h, uiPlayerInfo_t *pi, int 
 	VectorCopy (legs.origin, legs.oldorigin);
 
 	Byte4Copy( pi->c2RGBA, legs.shaderRGBA );
-
+	
 	CG_AddRefEntityWithMinLight( &legs );
 
 	if (!legs.hModel) {

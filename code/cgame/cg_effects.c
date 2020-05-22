@@ -673,18 +673,19 @@ void CG_GibPlayer( vec3_t playerOrigin, vec3_t dir, int damage ) {
 
 
 	// ------
+	VectorClear( kvel );
 	if ( dir ) {
 		VectorNormalize( dir );
 
 		knockback = damage;
-		if ( knockback > 400 ) {
-			knockback = 400;
+		if ( knockback > 200 ) {
+			knockback = 200;
 		}
 
 		if ( knockback ) {
 			float	mass = 200;
 
-			VectorScale( dir, 1000.0f * (float)knockback / mass, kvel );
+			VectorScale( dir, 750.0f * (float)knockback / mass, kvel );
 		}
 	}
 	// -------

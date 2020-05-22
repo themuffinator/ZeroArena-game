@@ -627,7 +627,7 @@ static void CG_PlasmaTrail( centity_t *cent, const weaponInfo_t *wi ) {
 	re->customShader = cgs.media.railRingsShader;
 	le->bounceFactor = 0.3f;
 	
-	CG_GetWeaponColorFloat( &cgs.playerinfo[cent->currentState.modelindex2], cent->currentState.weapon, col, NULL );
+	CG_GetWeaponColorFloat( &cgs.playerinfo[cent->currentState.ownerNum], cent->currentState.weapon, col, NULL );
 	//col[0] = col[1] = col[2] = 1.0;
 	re->shaderRGBA[0] = col[0] * 0xff;	// * 63;
 	re->shaderRGBA[1] = col[1] * 0xff;	// * 63;
@@ -695,6 +695,7 @@ static void CG_GrenadeTrail( centity_t *ent, const weaponInfo_t *wi ) {
 CG_BlasterTrail
 ==========================
 */
+#if 0
 static void CG_BlasterTrail( centity_t* cent, const weaponInfo_t* wi ) {
 	localEntity_t* le;
 	refEntity_t* re;
@@ -776,7 +777,7 @@ static void CG_BlasterTrail( centity_t* cent, const weaponInfo_t* wi ) {
 	le->angles.trDelta[2] = 0;
 
 }
-
+#endif
 
 /*
 =================
@@ -2279,7 +2280,7 @@ void CG_MissileHitPlayer( weapon_t weapon, int playerNum, vec3_t origin, vec3_t 
 	case WP_CHAINGUN:
 	case WP_PROX_LAUNCHER:
 #endif
-		CG_MissileHitWall( weapon, cg_entities[playerNum].currentState.modelindex2, origin, dir, IMPACTSOUND_FLESH );
+		CG_MissileHitWall( weapon, cg_entities[playerNum].currentState.ownerNum, origin, dir, IMPACTSOUND_FLESH );
 		break;
 	default:
 		break;

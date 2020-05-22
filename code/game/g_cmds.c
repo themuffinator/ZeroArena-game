@@ -79,16 +79,16 @@ void DeathmatchScoreboardMessage( gentity_t* ent ) {
 		//Q_strcat( entry, sizeof( entry ),
 		Com_sprintf( entry, sizeof( entry ),
 			" %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i", level.sortedPlayers[i],
-				cl->ps.persistant[PERS_SCORE], ping, (level.time - cl->pers.enterTime) / 60000,
-				scoreFlags, g_entities[level.sortedPlayers[i]].s.powerups, G_WeaponsTotalAccuracy( cl ),
-				cl->ps.persistant[PERS_IMPRESSIVE_COUNT],
-				cl->ps.persistant[PERS_EXCELLENT_COUNT],
-				cl->ps.persistant[PERS_GAUNTLET_FRAG_COUNT],
-				cl->ps.persistant[PERS_DEFEND_COUNT],
-				cl->ps.persistant[PERS_ASSIST_COUNT],
-				perfect,
-				cl->ps.persistant[PERS_CAPTURES],
-				cl->ps.persistant[PERS_HOLYSHIT_COUNT]
+			cl->ps.persistant[PERS_SCORE], ping, (level.time - cl->pers.enterTime) / 60000,
+			scoreFlags, g_entities[level.sortedPlayers[i]].s.powerups, G_WeaponsTotalAccuracy( cl ),
+			cl->ps.persistant[PERS_IMPRESSIVE_COUNT],
+			cl->ps.persistant[PERS_EXCELLENT_COUNT],
+			cl->ps.persistant[PERS_GAUNTLET_FRAG_COUNT],
+			cl->ps.persistant[PERS_DEFEND_COUNT],
+			cl->ps.persistant[PERS_ASSIST_COUNT],
+			perfect,
+			cl->ps.persistant[PERS_CAPTURES],
+			cl->ps.persistant[PERS_HOLYSHIT_COUNT]
 		);
 		j = strlen( entry );
 		if ( stringlength + j >= sizeof( string ) )
@@ -287,7 +287,7 @@ void Cmd_DropItem_f( gentity_t* ent ) {
 	gplayer_t* cl;
 	gitem_t* ditem;
 	gentity_t* dent;
-	char	*name;
+	char* name;
 	int		i, count, dtype;
 	qboolean stock, droppable;
 	char* stype;
@@ -296,7 +296,7 @@ void Cmd_DropItem_f( gentity_t* ent ) {
 		CP( va( "print \"Usage: drop [itemtype/itemname]\n\"" ) );
 		return;
 	}
-	
+
 	cl = ent->player;
 	name = ConcatArgs( 1 );
 	stock = droppable = qtrue;
@@ -329,7 +329,7 @@ void Cmd_DropItem_f( gentity_t* ent ) {
 		} else {
 			droppable = qfalse;
 		}
-	} else if ( (!dtype && !Q_stricmp( name, "ammo" ) ) || dtype == IT_AMMO ) {
+	} else if ( (!dtype && !Q_stricmp( name, "ammo" )) || dtype == IT_AMMO ) {
 		weapon_t weapon = dtype ? ditem->giTag : cl->ps.weapon;
 		stype = "ammo";
 
@@ -379,7 +379,7 @@ void Cmd_DropItem_f( gentity_t* ent ) {
 		} else {
 			count = cl->ps.powerups[ditem->giTag];
 		}
-	} else if ( (!dtype && !Q_stricmp( name, "key" ) ) || dtype == IT_KEY ) {
+	} else if ( (!dtype && !Q_stricmp( name, "key" )) || dtype == IT_KEY ) {
 		stype = "key";
 		if ( !dtype ) {
 			for ( i = 0; i < MAX_UNLOCK_KEYS; i++ ) {
@@ -398,7 +398,7 @@ void Cmd_DropItem_f( gentity_t* ent ) {
 		} else if ( !cl->ps.keys[ditem->giTag] ) {
 			stock = qfalse;
 		}
-	} else if ( ( !dtype && !Q_stricmp( name, "rune" ) ) || dtype == IT_RUNE ) {
+	} else if ( (!dtype && !Q_stricmp( name, "rune" )) || dtype == IT_RUNE ) {
 		CP( "print \"Runes not currently droppable.\n\"" );	//FIXME: make it happen
 		return;
 #if 0
@@ -411,7 +411,7 @@ void Cmd_DropItem_f( gentity_t* ent ) {
 			stock = qfalse;
 		}
 #endif
-	} else if ( (!dtype && !Q_stricmp( name, "flag" ) ) || dtype == IT_TEAM ) {
+	} else if ( (!dtype && !Q_stricmp( name, "flag" )) || dtype == IT_TEAM ) {
 		stype = "flag";
 		if ( GTF( GTF_TEAMBASES ) ) {
 			if ( !dtype ) {
@@ -434,7 +434,7 @@ void Cmd_DropItem_f( gentity_t* ent ) {
 		} else {
 			return;
 		}
-	} else if ( (!dtype && !Q_stricmp( name, "health" ) ) || dtype == IT_HEALTH ) {
+	} else if ( (!dtype && !Q_stricmp( name, "health" )) || dtype == IT_HEALTH ) {
 		stype = "health";
 		if ( ditem && ditem->quantity != 5 ) {
 			CP( "print \"Item is not droppable.\n\"" );
@@ -449,7 +449,7 @@ void Cmd_DropItem_f( gentity_t* ent ) {
 			CP( "print \"Not enough health available to drop.\n\"" );
 			return;
 		}
-	} else if ( ( !Q_stricmp( name, "armor" ) ) || dtype == IT_ARMOR ) {
+	} else if ( (!Q_stricmp( name, "armor" )) || dtype == IT_ARMOR ) {
 		int num = bgarmor[g_armorRules.integer][ARMOR_SHARD].base_count;
 
 		stype = "armor";
@@ -572,6 +572,78 @@ void Cmd_SpawnItem_f( gentity_t* ent ) {
 
 /*
 ==================
+Cmd_EntityOriginCreate_f
+
+Spawn a functional item entity at a set origin
+==================
+*/
+void Cmd_EntityOriginCreate_f( gentity_t* ent ) {
+	gitem_t		*it;
+	gentity_t	*create;
+	vec3_t		origin;
+	int			spawnflags, wait;
+	char		buffer[MAX_TOKEN_CHARS];
+	int			i;
+	float		yaw;
+
+	if ( !CheatsOk( ent ) ) return;
+
+	if ( trap_Argc() < 5 ) {
+		CP( va( "print \"Usage: entityOriginCreate [classname] <x> <y> <z> <yaw> [spawnflags] [wait]\n\"" ) );
+		return;
+	}
+
+	trap_Argv( 1, buffer, sizeof( buffer ) );
+	it = BG_FindItemByClassname( buffer );
+	if ( !it ) {
+		CP( va( "print \"Unknown entity classname: %s\n\"", buffer ) );
+		return;
+	}
+
+	VectorClear( origin );
+	for ( i = 0; i < 3; i++ ) {
+		trap_Argv( i + 2, buffer, sizeof( buffer ) );
+		origin[i] = atof( buffer );
+	}
+
+	yaw = 0;
+	if ( trap_Argc() > 5 ) {
+		trap_Argv( 5, buffer, sizeof( buffer ) );
+		yaw = atof( buffer );
+	}
+
+	spawnflags = 0;
+	if ( trap_Argc() > 6 ) {
+		trap_Argv( 6, buffer, sizeof( buffer ) );
+		spawnflags = atoi( buffer );
+	}
+
+	wait = 0;
+	if ( trap_Argc() > 7 ) {
+		trap_Argv( 7, buffer, sizeof( buffer ) );
+		wait = atoi( buffer );
+	}
+
+	RegisterItem( it );
+	G_AddEvent( ent, EV_REGISTER_ITEM, BG_ItemNumForItem( it ) );
+
+	create = G_Spawn();
+	create->classname = it->classname;
+	create->item = it;
+	create->spawnflags = spawnflags;
+	create->wait = wait;
+	VectorCopy( origin, create->s.origin );
+	create->s.angles[YAW] = yaw;
+	create->physicsBounce = 0.50;
+
+	create->nextthink = level.time + FRAMETIME * 2;
+	create->think = FinishSpawningItem;
+	CP( va( "print \"Entity spawned at %s\n\"", vtos(origin) ) );
+}
+
+
+/*
+==================
 Cmd_Give_f
 
 Give items to a player
@@ -688,7 +760,7 @@ void Cmd_God_f( gentity_t* ent ) {
 	ent->flags ^= FL_GODMODE;
 	msg = (ent->flags & FL_GODMODE) ? "ON" : "OFF";
 
-	CP( va( "print \"%c%cgodMode %c%c%s\n\"", Q_COLOR_ESCAPE, COLOR_CREAM, Q_COLOR_ESCAPE, COLOR_WHITE, msg  ) );
+	CP( va( "print \"%c%cgodMode %c%c%s\n\"", Q_COLOR_ESCAPE, COLOR_CREAM, Q_COLOR_ESCAPE, COLOR_WHITE, msg ) );
 }
 
 
@@ -788,11 +860,13 @@ BroadcastTeamChange
 Let everyone know about a team change
 =================
 */
-void BroadcastTeamChange( gplayer_t* player, int oldTeam ) {
+void BroadcastTeamChange( gplayer_t* player, team_t oldTeam, const qboolean forfeit ) {
 	if ( player->sess.sessionTeam == oldTeam )
 		return;
 
-	if ( player->sess.sessionTeam == TEAM_SPECTATOR ) {
+	if ( forfeit ) {
+		AP( va( "print \"%s forfeits.\n\"", PlayerName( player->pers ) ) );
+	} else if ( player->sess.sessionTeam == TEAM_SPECTATOR ) {
 		AP( va( "print \"%s joined the spectators.\n\"", PlayerName( player->pers ) ) );
 	} else if ( player->sess.sessionTeam == TEAM_FREE ) {
 		AP( va( "print \"%s joined the match.\n\"", PlayerName( player->pers ) ) );
@@ -807,7 +881,7 @@ void BroadcastTeamChange( gplayer_t* player, int oldTeam ) {
 SetTeam
 =================
 */
-void SetTeam( gentity_t* ent, const char* s ) {
+void SetTeam( gentity_t* ent, const char* s, const qboolean forfeit ) {
 	int					team, oldTeam;
 	gplayer_t* player;
 	int					playerNum;
@@ -815,6 +889,9 @@ void SetTeam( gentity_t* ent, const char* s ) {
 	int					specPlayer;
 	int					teamLeader;
 
+	if ( GTF( GTF_CAMPAIGN ) ) {
+		return;
+	}
 	//
 	// see what change is requested
 	//
@@ -837,6 +914,11 @@ void SetTeam( gentity_t* ent, const char* s ) {
 	} else if ( !Q_stricmp( s, "spectator" ) || !Q_stricmp( s, "s" ) || !Q_stricmp( s, "spec" ) ) {
 		team = TEAM_SPECTATOR;
 		specState = SPECTATOR_FREE;
+		if ( GTF( GTF_DUEL ) ) Tournament_RemoveFromQueue( player, qfalse );
+	} else if ( !Q_stricmp( s, "q" ) || !Q_stricmp( s, "queue" ) ) {
+		team = TEAM_SPECTATOR;
+		specState = SPECTATOR_FREE;
+		if ( GTF( GTF_DUEL ) ) Tournament_AddToQueue( player, qtrue );
 	} else if ( !Q_stricmp( s, "a" ) || !Q_stricmp( s, "auto" ) ) {
 		if ( GTF( GTF_TEAMS ) ) {
 			team = PickTeam( playerNum );
@@ -878,26 +960,36 @@ void SetTeam( gentity_t* ent, const char* s ) {
 		}
 
 	} else {
-		// force them to spectators if there aren't any spots free
 		team = TEAM_FREE;
-	}
 
-
-	// override decision if limiting the players
-	if ( GTF( GTF_DUEL ) && level.numNonSpectatorPlayers >= 2 ) {
-		team = TEAM_SPECTATOR;
-	} else if ( g_maxGameClients.integer > 0 &&
-			level.numNonSpectatorPlayers >= g_maxGameClients.integer ) {
-		trap_SendServerCommand( playerNum, "cp \"Cannot join the match - player limit has been reached.\n\"" );
-		team = TEAM_SPECTATOR;
-	} else if ( GTF( GTF_TEAMS ) ) {
-		if ( g_teamSize_max.integer > 0 &&
-				level.numTeamPlayers[team] >= g_teamSize_max.integer ) {
-			trap_SendServerCommand( playerNum, va("cp \"%s has too many players.\n\"", G_TeamName(team)) );
-			team = TEAM_SPECTATOR;
+		if ( GTF( GTF_DUEL ) ) {
+			if ( player->sess.sessionTeam != TEAM_FREE && (level.numNonSpectatorPlayers >= 2) && player->sess.queued ) {
+				//muff: queuing again moves you to end of queue
+				Tournament_RemoveFromQueue( player, qtrue );
+			}
 		}
 	}
 
+	// override decision if limiting the players
+	if ( team != TEAM_SPECTATOR && team != player->sess.sessionTeam ) {
+		if ( GTF( GTF_DUEL ) ) {
+			if ( level.numNonSpectatorPlayers >= 2 ) {
+				team = TEAM_SPECTATOR;
+				specState = SPECTATOR_FREE;
+				Tournament_AddToQueue( player, qfalse );
+			}
+		} else if ( g_maxGameClients.integer > 0 && level.numNonSpectatorPlayers >= g_maxGameClients.integer ) {
+			trap_SendServerCommand( player - level.players, "cp \"Cannot join the match - player limit has been reached.\n\"" );
+			team = TEAM_SPECTATOR;
+			specState = SPECTATOR_FREE;
+		} else if ( GTF( GTF_TEAMS ) ) {
+			if ( g_teamSize_max.integer > 0 && level.numTeamPlayers[team] >= g_teamSize_max.integer ) {
+				trap_SendServerCommand( player - level.players, va( "cp \"%s has too many players.\n\"", G_TeamName( team ) ) );
+				team = TEAM_SPECTATOR;
+				specState = SPECTATOR_FREE;
+			}
+		}
+	}
 
 	//
 	// decide if we will allow the change
@@ -925,10 +1017,6 @@ void SetTeam( gentity_t* ent, const char* s ) {
 		player_die( ent, ent, ent, NULL, 100000, MOD_SUICIDE_TEAM_CHANGE );
 	}
 
-	// they go to the end of the line for tournaments
-	if ( team == TEAM_SPECTATOR && oldTeam != team )
-		AddToTournamentQueue( player );
-
 	player->sess.sessionTeam = team;
 	player->sess.spectatorState = specState;
 	player->sess.spectatorPlayer = specPlayer;
@@ -954,7 +1042,7 @@ void SetTeam( gentity_t* ent, const char* s ) {
 		return;
 	}
 
-	BroadcastTeamChange( player, oldTeam );
+	BroadcastTeamChange( player, oldTeam, forfeit );
 
 	PlayerBegin( playerNum );
 }
@@ -968,6 +1056,8 @@ to free floating spectator mode
 =================
 */
 void StopFollowing( gentity_t* ent ) {
+	//if ( !(ent->player->ps.pm_flags & PMF_FOLLOW) ) return;
+
 	ent->player->ps.persistant[PERS_TEAM] = TEAM_SPECTATOR;
 	ent->player->sess.sessionTeam = TEAM_SPECTATOR;
 	ent->player->sess.spectatorState = SPECTATOR_FREE;
@@ -994,8 +1084,14 @@ void Cmd_Team_f( gentity_t* ent ) {
 
 	oldTeam = ent->player->sess.sessionTeam;
 
-	if ( trap_Argc() != 2 && GTF(GTF_TEAMS) ) {
-		AP( va( "print \"You are on %s.\n\"", G_PlayerTeamName( oldTeam ) ) );
+	if ( trap_Argc() != 2 ) {
+		if ( GTF( GTF_TEAMS ) ) {
+			AP( va( "print \"You are on %s.\n\"", G_PlayerTeamName( oldTeam ) ) );
+		} else if ( oldTeam == TEAM_SPECTATOR ) {
+			AP( "print \"You are spectating.\n\"" );
+		} else {
+			AP( "print \"You are in the match.\n\"" );
+		}
 		return;
 	}
 
@@ -1008,18 +1104,41 @@ void Cmd_Team_f( gentity_t* ent ) {
 		return;
 	}
 
-	// if they are playing a tournament game, count as a loss
-	if ( GTF( GTF_DUEL ) && ent->player->sess.sessionTeam == TEAM_FREE ) {
-		ent->player->sess.losses++;
-	}
-
 	trap_Argv( 1, s, sizeof( s ) );
 
-	SetTeam( ent, s );
+	if ( GTF( GTF_DUEL ) ) {
+		if ( !level.warmupTime && oldTeam == TEAM_FREE && (s[0] == 's' || s[0] == 'q') ) {
+			ent->player->sess.losses++;
+		}
+	}
+
+	SetTeam( ent, s, qfalse );
 
 	if ( oldTeam != ent->player->sess.sessionTeam ) {
 		ent->player->switchTeamTime = level.time + 5000;
 	}
+}
+
+
+/*
+=================
+Cmd_Forfeit_f
+=================
+*/
+void Cmd_Forfeit_f( gentity_t* ent ) {
+	if ( !GTF( GTF_DUEL ) ) {
+		AP( "print \"Forfeits are only allowed during duels.\n\"" );
+		return;
+	}
+
+	if ( ent->player->sess.sessionTeam != TEAM_FREE ) return;
+
+	if ( level.warmupTime ) {
+		AP( "print \"Forfeits are only allowed during the match.\n\"" );
+	}
+
+	ent->player->sess.losses++;
+	SetTeam( ent, "s", qtrue );
 }
 
 
@@ -1061,14 +1180,14 @@ void Cmd_Follow_f( gentity_t* ent ) {
 	}
 
 	// if they are playing a tournament game, count as a loss
-	if ( GTF( GTF_DUEL )
-			&& ent->player->sess.sessionTeam == TEAM_FREE ) {
-		ent->player->sess.losses++;
+	if ( GTF( GTF_DUEL ) && ent->player->sess.sessionTeam == TEAM_FREE ) {
+		if ( !level.warmupTime )
+			ent->player->sess.losses++;
 	}
 
 	// first set them to spectator
 	if ( ent->player->sess.sessionTeam != TEAM_SPECTATOR ) {
-		SetTeam( ent, "spectator" );
+		SetTeam( ent, "s", qfalse );
 	}
 
 	ent->player->sess.spectatorState = SPECTATOR_FOLLOW;
@@ -1085,13 +1204,13 @@ void Cmd_FollowCycle_f( gentity_t* ent, int dir ) {
 	int		original;
 
 	// if they are playing a tournament game, count as a loss
-	if ( GTF( GTF_DUEL )
-		&& ent->player->sess.sessionTeam == TEAM_FREE ) {
-		ent->player->sess.losses++;
+	if ( GTF( GTF_DUEL ) && ent->player->sess.sessionTeam == TEAM_FREE ) {
+		if ( !level.warmupTime )
+			ent->player->sess.losses++;
 	}
 	// first set them to spectator
 	if ( ent->player->sess.spectatorState == SPECTATOR_NOT ) {
-		SetTeam( ent, "spectator" );
+		SetTeam( ent, "s", qfalse );
 	}
 
 	if ( dir != 1 && dir != -1 ) {
@@ -1221,13 +1340,13 @@ static void TokeniseTeamChat( gentity_t* ent, const char* in, char* out, int out
 				}
 				// current holdable name
 				else if ( *in == 'B' || *in == 'b' ) {
-					int *holdstr = BG_ItemForItemNum( ent->player->ps.stats[STAT_HOLDABLE_ITEM] )->giTag;
+					int* holdstr = BG_ItemForItemNum( ent->player->ps.stats[STAT_HOLDABLE_ITEM] )->giTag;
 					if ( holdstr ) insert = va( "%s", holdstr );
 				}
 				// current weapon ammo value
 				else if ( *in == 'M' || *in == 'm' ) {
 					if ( ent->player->ps.weapon > 0 && ent->player->ps.weapon < WP_NUM_WEAPONS
-							&& ent->player->ps.weapon != WP_GAUNTLET && ent->player->ps.weapon != WP_GRAPPLING_HOOK ) {
+						&& ent->player->ps.weapon != WP_GAUNTLET && ent->player->ps.weapon != WP_GRAPPLING_HOOK ) {
 						const char* names[WP_NUM_WEAPONS] = {
 							"", "", "Bullets", "Shells", "Grenades", "Rockets",
 							"Lightning Charge", "Slugs", "Cells", "BFG Cells", "",
@@ -1335,7 +1454,7 @@ void G_Say( gentity_t* ent, gentity_t* target, int mode, const char* chatText ) 
 		break;
 	case SAY_TEAM:
 	{
-		char *stok;
+		//char* stok;
 		G_LogPrintf( "sayteam: %s: %s\n", extname, text );
 		if ( Team_GetLocationMsg( ent, location, sizeof( location ) ) )
 			Com_sprintf( name, sizeof( name ), EC"(%s%c%c"EC") (%s)"EC": ",
@@ -1553,7 +1672,7 @@ void Cmd_ReadyUp_f( gentity_t* ent ) {
 	switch ( level.warmupState ) {
 	case WARMUP_DELAYED:
 	case WARMUP_DEFAULT:
-		if ( GTF(GTF_TEAMS) ) {
+		if ( GTF( GTF_TEAMS ) ) {
 			CP( "print \"Players cannot ready up until teams are fully present.\n\"" );
 		} else {
 			CP( "print \"Cannot ready up until more players are present.\n\"" );
@@ -1561,7 +1680,7 @@ void Cmd_ReadyUp_f( gentity_t* ent ) {
 		return;
 	case WARMUP_SHORT_TEAMS:
 	case WARMUP_IMBA:
-		CP( va("print \"Players cannot ready up until teams are %s.\n\"", level.warmupState == WARMUP_SHORT_TEAMS ? "fully present" : "balanced" ) );
+		CP( va( "print \"Players cannot ready up until teams are %s.\n\"", level.warmupState == WARMUP_SHORT_TEAMS ? "fully present" : "balanced" ) );
 		return;
 	case WARMUP_COUNTDOWN:
 		CP( "print \"Readying has ended - match is starting.\n\"" );
@@ -1939,6 +2058,8 @@ void ClientCommand( int connectionNum ) {
 		Cmd_FollowCycle_f( ent, -1 );
 	else if ( Q_stricmp( cmd, "team" ) == 0 )
 		Cmd_Team_f( ent );
+	else if ( Q_stricmp( cmd, "forfeit" ) == 0 )
+		Cmd_Forfeit_f( ent );
 	else if ( Q_stricmp( cmd, "where" ) == 0 )
 		Cmd_Where_f( ent );
 	else if ( !Q_stricmp( cmd, "readyUp" ) )
@@ -1953,8 +2074,10 @@ void ClientCommand( int connectionNum ) {
 		Cmd_SetViewpos_f( ent );
 	else if ( Q_stricmp( cmd, "drop" ) == 0 )
 		Cmd_DropItem_f( ent );
-	if ( Q_stricmp( cmd, "spawn" ) == 0 )
+	else if ( Q_stricmp( cmd, "spawn" ) == 0 )
 		Cmd_SpawnItem_f( ent );
+	else if ( Q_stricmp( cmd, "entityOriginCreate" ) == 0 )
+		Cmd_EntityOriginCreate_f( ent );
 	else
 		trap_SendServerCommand( playerNum, va( "print \"Unknown command: %s\n\"", cmd ) );
 }

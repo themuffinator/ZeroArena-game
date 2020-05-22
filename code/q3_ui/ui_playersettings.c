@@ -174,7 +174,7 @@ static void PlayerSettings_DrawName( void *self ) {
 =================
 PlayerSettings_DrawClan
 =================
-*/
+*/#if 0
 static void PlayerSettings_DrawClan( void* self ) {
 	menufield_s* f;
 	qboolean		focus;
@@ -211,7 +211,7 @@ static void PlayerSettings_DrawClan( void* self ) {
 	Q_CleanStr( clan );
 	UI_DrawProportionalString( 320, 440, clan, UI_CENTER | UI_BIGFONT, text_color_normal );
 }
-
+#endif
 
 /*
 =================

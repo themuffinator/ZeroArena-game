@@ -42,10 +42,10 @@ gentity_t* podium3;
 
 /*
 ==================
-UpdateTournamentInfo
+SendSPPostGameInfo
 ==================
 */
-void UpdateTournamentInfo( void ) {
+void SendSPPostGameInfo( void ) {
 	int			i;
 	gentity_t* ent;
 	int			playerNum;

@@ -1146,9 +1146,11 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 	CG_PlayBufferedSounds();
 
 	for (i = 0, cg.viewport = -1; i < CG_MaxSplitView(); i++) {
+#if 0
 		if (!renderPlayerViewport[i]) {
 			continue;
 		}
+#endif
 		cg.viewport++;
 		cg.cur_localPlayerNum = i;
 		cg.cur_lc = &cg.localPlayers[i];

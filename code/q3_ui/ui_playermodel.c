@@ -545,7 +545,7 @@ static void PlayerModel_MenuInit( int localPlayerNum )
 	static char	playername[32];
 	static char	playerclan[32];
 	static char	modelname[32];
-	static char	skinname[32];
+	//static char	skinname[32];
 
 	// zero set all our globals
 	memset( &s_playermodel, 0 ,sizeof(playermodel_t) );

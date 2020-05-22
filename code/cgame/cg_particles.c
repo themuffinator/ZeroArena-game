@@ -167,9 +167,11 @@ float			oldtime;
 CL_ClearParticles
 ===============
 */
-void CG_ClearParticles (void)
+void CG_CacheParticles( void )
 {
 	int		i;
+
+	if ( !cg_cacheParticles.integer ) return;
 
 	memset( particles, 0, sizeof(particles) );
 
@@ -863,7 +865,7 @@ void CG_AddParticles (void)
 	vec3_t			rotate_ang;
 
 	if (!initparticles)
-		CG_ClearParticles ();
+		CG_CacheParticles ();
 
 	VectorCopy( cg.refdef.viewaxis[0], vforward );
 	VectorCopy( cg.refdef.viewaxis[1], vright );

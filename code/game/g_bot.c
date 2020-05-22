@@ -753,7 +753,7 @@ static void G_AddBot( const char *name, float skill, char *team, int delay, char
 		return;
 	}
 
-	if( delay == 0 ) {
+	if ( delay == 0 ) {
 		PlayerBegin( playerNum );
 		return;
 	}

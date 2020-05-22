@@ -83,7 +83,7 @@ typedef enum {
 	ROTATOR_2TO1,
 //-muff
 //muff: trains
-	TRAIN_TOP,
+	//TRAIN_TOP,
 //-muff
 } moverState_t;
 
@@ -271,7 +271,8 @@ typedef struct {
 typedef struct {
 	team_t		sessionTeam;
 	team_t		sessionPlayState;
-	int			queueNum;		// for determining next-in-line to play
+	qboolean	queued;			// client is queuing in tourney
+	int			queueNum;		// client number in queue to play in tourney
 	spectatorState_t	spectatorState;
 	int			spectatorPlayer;	// for chasecam and follow mode
 	int			wins, losses;		// tournament stats
@@ -452,6 +453,7 @@ typedef struct {
 
 	int			numConnectedPlayers;
 	int			numNonSpectatorPlayers;	// includes connecting players
+	int			numQueuedPlayers;	// includes connecting players
 	int			numPlayingPlayers;		// connected, non-spectators
 	int			sortedPlayers[MAX_CLIENTS];		// sorted by score
 	int			follow1, follow2;		// playerNums for auto-follow spectators
@@ -515,7 +517,10 @@ typedef struct {
 //-q2
 
 //muff
-	float		miscTimer[TEAM_NUM_TEAMS];		// for gametype speficic timing - flag capture times etc etc
+	float		miscTimer[TEAM_NUM_TEAMS];		// for gametype specific timing - flag capture times etc etc
+	float		miscNum[TEAM_NUM_TEAMS];		// for gametype specific use - flag capture times etc etc
+
+	int			overTime;
 //-muff
 	//map
 	int			mapWeapons;
@@ -528,6 +533,13 @@ typedef struct {
 	int			numShortTeams;					// number of teams with less players than minimum
 	int			smallestTeamCount;
 	int			largestTeamCount;
+
+	// checking setting changes requiring map_restart
+	int			initGameType;					// gametype we have initialized
+	qboolean	initRestart;					// just had a map_restart on same map
+
+	// tourney queuing
+	int			tourneyQueueEnd;
 } level_locals_t;
 
 
@@ -547,8 +559,8 @@ char *G_NewString( const char *string );
 //
 void Cmd_Score_f (gentity_t *ent);
 void StopFollowing( gentity_t *ent );
-void BroadcastTeamChange( gplayer_t *player, int oldTeam );
-void SetTeam( gentity_t *ent, const char *s );
+void BroadcastTeamChange( gplayer_t *player, team_t oldTeam, const qboolean forfeit );
+void SetTeam( gentity_t *ent, const char *s, const qboolean forfeit );
 void Cmd_FollowCycle_f( gentity_t *ent, int dir );
 void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText );
 
@@ -747,7 +759,8 @@ void FindIntermissionPoint( void );
 void SetLeader(int team, int player);
 void CheckTeamLeader( int team );
 void G_RunThink (gentity_t *ent);
-void AddToTournamentQueue(gplayer_t *player);
+void Tournament_RemoveFromQueue( gplayer_t* player, const qboolean silent );
+void Tournament_AddToQueue( gplayer_t *player, const qboolean silent );
 void QDECL G_LogPrintf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
 void SendScoreboardMessageToAllClients( void );
 void QDECL G_DPrintf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
@@ -790,7 +803,7 @@ void G_WriteSessionData( void );
 //
 // g_arenas.c
 //
-void UpdateTournamentInfo( void );
+void SendSPPostGameInfo( void );
 void SpawnModelsOnVictoryPads( void );
 void Svcmd_AbortPodium_f( void );
 
@@ -928,6 +941,8 @@ extern	vmCvar_t	g_doReady;
 
 extern	vmCvar_t	g_forceRespawn_delayMax;
 extern	vmCvar_t	g_forceRespawn_delayMin;
+
+extern	vmCvar_t	g_overTime;
 
 extern	vmCvar_t	g_warmupDelay;
 extern	vmCvar_t	g_warmupReadyPercentage;

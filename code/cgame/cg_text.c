@@ -50,7 +50,7 @@ fonts/font:16, and fonts/bigfont:20) are Impact.
 */
 void CG_HudTextInit( void ) {
 	//UI_TINYFONT
-	if ( !CG_InitTrueTypeFont( cg_hudFont.string, 10, cg_hudFontBorder.value, &cgs.media.tinyFont ) ) {
+	if ( !CG_InitTrueTypeFont( cg_hudFont.string, 12, cg_hudFontBorder.value, &cgs.media.tinyFont ) ) {
 		CG_InitBitmapFont( &cgs.media.tinyFont, TINYCHAR_HEIGHT, TINYCHAR_WIDTH );
 	}
 	//UI_SMALLFONT

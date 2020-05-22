@@ -239,6 +239,9 @@ static void CG_DrawPlayerScore( int y, score_t* score, float* color, float fade,
 	// draw the score line
 	if ( score->ping == -1 ) {
 		Com_sprintf( string, sizeof( string ), "connecting" );
+	} else if ( pi->queued ) {
+		int		queueNum = (MAX_CLIENTS + cgs.queueIndex - cgs.playerinfo[cg.cur_ps->playerNum].queueNum) % MAX_CLIENTS;
+		Com_sprintf( string, sizeof( string ), "( %i )", queueNum );
 	} else if ( pi->team == TEAM_SPECTATOR ) {
 		Com_sprintf( string, sizeof( string ), "SPECT" );
 	} else {

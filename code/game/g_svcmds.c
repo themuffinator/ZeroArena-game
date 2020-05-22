@@ -481,7 +481,7 @@ void	Svcmd_ForceTeam_f( void ) {
 
 	// set the team
 	trap_Argv( 2, str, sizeof( str ) );
-	SetTeam( &g_entities[playerNum], str );
+	SetTeam( &g_entities[playerNum], str, qfalse );
 }
 
 /*
@@ -493,9 +493,150 @@ void	Svcmd_ForceTeamComplete( char *args, int argNum ) {
 	if ( argNum == 2 ) {
 		G_Field_CompletePlayerName();
 	} else if ( argNum == 3 ) {
-		trap_Field_CompleteList( "blue\0follow1\0follow2\0free\0red\0scoreboard\0spectator\0" );
+		if ( GTF( GTF_TEAMS ) ) {
+			trap_Field_CompleteList( "blue\0red\0green\0yellow\0teal\0pink\0spectator\0follow1\0follow2\0" );
+		} else {
+			trap_Field_CompleteList( "free\0spectator\0follow1\0follow2\0" );
+		}
 	}
 }
+
+
+/*
+==================
+G_ListGameTypesLong
+==================
+*/
+void G_ListGameTypesLong( void ) {	//gentity_t *ent ) {
+	const int	voteMask = 0;	// = g_voteFlags_gametype.integer;
+	int			i;
+	int			wSName = 0;
+
+	for ( i = 0; i < GT_MAX_GAME_TYPE; i++ ) {
+		// get short name column width
+		if ( strlen( gt[i].shortName ) + 4 > wSName )
+			wSName = strlen( gt[i].shortName ) + 4;	// 2 plus 2 for brackets
+	}
+
+	//G_Printf( va(^1CWidth: SName=%i\n\"", wSName) );
+
+	G_Printf( S_COLOR_YELLOW "\nCurrent gametype is:" S_COLOR_CREAM " [%s] %s\n", gt[g_gameType.integer].shortName, gt[g_gameType.integer].longName );
+	G_Printf( S_COLOR_YELLOW "Valid gametypes are:\n" );
+
+	for ( i = 0; i < GT_MAX_GAME_TYPE; i++ ) {
+		char* sSName, * sLName;
+		int		state;
+
+		// colors
+		if ( i == g_gameType.integer ) {
+			state = 2;	// active
+		} else if ( voteMask & (1 << i) ) {
+			state = 0;	// disabled
+		} else {
+			state = 1;	// enabled
+		}
+
+		// short name
+		sSName = va( "[%s]", gt[i].shortName );
+		while ( strlen( sSName ) < wSName )
+			strcat( sSName, " " );
+
+		// long name
+		sLName = gt[i].longName;
+
+		//G_Printf( va(^1CStr: Num=%i SName=%s LName=%s\n\"", i, sSName, sLName) );
+
+		// output
+		if ( state == 2 )
+			G_Printf( S_COLOR_GREY "%02i. %s%s\n", i, sSName, sLName );
+		else if ( state == 1 )
+			G_Printf( S_COLOR_CREAM "%02i. %s%s\n", i, sSName, sLName );
+		else
+			G_Printf( S_COLOR_BLACK "%02i. %s%s\n", i, sSName, sLName );
+	}
+
+	G_Printf( S_COLOR_WHITE "Usage:" S_COLOR_CREAM " gametype [gametype name/tag]\n\n" );
+}
+
+/*
+===============
+Svcmd_GameType_f
+===============
+*/
+void Svcmd_GameType_f( void ) {
+	char	arg1[MAX_TOKEN_CHARS];
+	int		num = -1;
+
+	if ( g_singlePlayerActive.integer ) {
+		G_Printf( "Usage: changing gametype not available during singleplayer)\n" );
+		return;
+	}
+
+	if ( trap_Argc() < 2 ) {
+		//G_Printf( "Usage: gametype (<number> or [shortname])\n" );
+		G_ListGameTypesLong();
+		return;
+	}
+
+	trap_Argv( 1, arg1, sizeof( arg1 ) );
+
+	if ( !Q_isanumber( arg1 ) ) {
+		int i;
+
+		// search by short name
+		for ( i = 0; i < GT_MAX_GAME_TYPE; i++ ) {
+			if ( !Q_stricmp( arg1, gt[i].shortName ) ) {
+				num = i;
+				break;
+			}
+		}
+
+		// search by long name
+		if ( num < 0 ) {
+			for ( i = 0; i < GT_MAX_GAME_TYPE; i++ ) {
+				if ( !Q_stricmp( arg1, gt[i].longName ) ) {
+					num = i;
+					break;
+				}
+			}
+		}
+
+		if ( num < 0 ) {
+			G_Printf( "Invalid gametype name.\n\n" );
+			return;
+		}
+	}
+
+	if ( num < 0 ) {
+		num = atoi( arg1 );
+		if ( num >= GT_MAX_GAME_TYPE ) {
+			//num = GT_MAX_GAME_TYPE-1;
+			G_Printf( "Invalid gametype number.\n" );
+			return;
+		} else if ( num < 0 ) {
+			//num = 0;
+			G_Printf( "Invalid gametype number.\n" );
+			return;
+		}
+	}
+
+	if ( num == g_gameType.integer ) {
+		G_Printf( "Selected gametype currently active.\n" );
+		return;
+	}
+
+	if ( num == GT_CAMPAIGN ) {
+		G_Printf( "%s selected, changing to %s\n", gt[num].longName, gt[DEFAULT_GAMETYPE].longName );
+		num = DEFAULT_GAMETYPE;
+	}
+
+
+	trap_Cvar_Set( "g_gameType", va( "%i", num ) );
+
+	//AP( va("print \"Game type changed to " S_COLOR_CYAN "%s" S_COLOR_WHITE "\n\"", gt[num].longName) );
+	//AP( va( "pcp \"" S_COLOR_CYAN "%s" S_COLOR_WHITE "\n\"", gt[num].longName ) );
+}
+
 
 /*
 ===================
@@ -644,10 +785,11 @@ struct svcmd
   { "abort_podium", qfalse, Svcmd_AbortPodium_f },
   { "addBot", qfalse, Svcmd_AddBot_f, Svcmd_AddBotComplete },
   { "addIP", qfalse, Svcmd_AddIP_f },
-  { "listBots", qfalse, Svcmd_BotList_f },
   { "botReport", qfalse, Svcmd_BotTeamplayReport_f },
-  { "listEntities", qfalse, Svcmd_EntityList_f },
   { "forceTeam", qfalse, Svcmd_ForceTeam_f, Svcmd_ForceTeamComplete },
+  { "gameType", qfalse, Svcmd_GameType_f },
+  { "listBots", qfalse, Svcmd_BotList_f },
+  { "listEntities", qfalse, Svcmd_EntityList_f },
   { "listIPs", qfalse, Svcmd_ListIPs_f },
   { "removeIP", qfalse, Svcmd_RemoveIP_f },
   { "say", qtrue, Svcmd_Say_f },

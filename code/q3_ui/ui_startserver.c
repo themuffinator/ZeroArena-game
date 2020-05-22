@@ -110,9 +110,6 @@ static const char* gametype_items[] = {
 	*/
 };
 
-static int gametype_remap[] = { GT_FFA, GT_DUEL, GT_TEAM, GT_CTF, GT_1FCTF, GT_OVERLOAD, GT_HARVESTER };
-static int gametype_remap2[] = { 0, 2, 0, 1, 3, 0, 0, 0 };
-
 static void UI_ServerOptionsMenu( qboolean multiplayer );
 
 
@@ -259,7 +256,6 @@ static void StartServer_GametypeEvent( void* ptr, int event ) {
 
 	count = UI_GetNumArenas();
 	s_startserver.nummaps = 0;
-	//matchbits = 1 << gametype_remap[s_startserver.gametype.curvalue];
 	if ( s_startserver.gametype.curvalue + FIRST_TEAM >= GT_MAX_GAME_TYPE )
 		s_startserver.gametype.curvalue = GT_FFA - FIRST_TEAM;
 	else if ( s_startserver.gametype.curvalue + FIRST_TEAM < GT_FFA )

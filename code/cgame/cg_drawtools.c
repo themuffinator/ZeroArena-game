@@ -274,6 +274,46 @@ void CG_ClearViewport( void ) {
 }
 
 
+/*
+================
+CG_DrawPicExt
+
+Coordinates are 640*480 virtual values
+=================
+*/
+void CG_DrawPicExt( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const int drawFlags, qhandle_t hShader, const float *color ) {
+
+	if ( drawFlags ) {
+		if ( drawFlags & UI_CENTER ) {
+			x -= w / 2;
+		} else if ( drawFlags & UI_RIGHT ) {
+			x -= w;
+		}
+		if ( drawFlags & UI_VA_CENTER ) {
+			y -= h / 2;
+		} else if ( drawFlags & UI_VA_BOTTOM ) {
+			y -= h;
+		}
+	}
+
+	if ( w < 0 ) {	// flip about vertical
+		w = -w;
+		s1 = 1;
+		s2 = 0;
+	}
+
+	if ( h < 0 ) {	// flip about horizontal
+		h = -h;
+		t1 = 1;
+		t2 = 0;
+	}
+	CG_AdjustFrom640( &x, &y, &w, &h );
+	trap_R_SetColor( color );
+	trap_R_DrawStretchPic( x, y, w, h, s1, t1, t2, t2, hShader );
+	trap_R_SetColor( NULL );
+}
+
+
 
 /*
 ================
@@ -654,7 +694,7 @@ void CG_DrawSmallString( int x, int y, const char *s, float alpha ) {
 
 	color[0] = color[1] = color[2] = 1.0;
 	color[3] = alpha;
-	CG_DrawString( x, y, s, UI_SMALLFONT, color );
+	CG_DrawString( x, y, s, UI_DROPSHADOW | UI_SMALLFONT, color );
 }
 
 void CG_DrawSmallStringColor( int x, int y, const char *s, vec4_t color ) {
@@ -1135,7 +1175,7 @@ Return colorized name of player with white text escape at end. Easy way to add c
 ==================
 */
 char* CG_PlayerName( playerInfo_t *p, const qboolean clanTag ) {
-	return va( "%s%s", p->name, S_COLOR_CREAM );
+	return va( "%c%c%s%c%c", Q_COLOR_ESCAPE, COLOR_WHITE, p->name, Q_COLOR_ESCAPE, COLOR_CREAM );
 }
 
 

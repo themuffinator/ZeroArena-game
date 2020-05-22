@@ -301,7 +301,7 @@ speed	default is 1000
 */
 
 void use_target_blaster( gentity_t* self, gentity_t* other, gentity_t* activator ) {
-	int effect;
+	//int effect;
 
 	fire_blaster( self, self->s.origin, self->movedir, self->damage, self->speed );	// , EF_BLASTER, MOD_TARGET_BLASTER );
 	G_Sound( self, CHAN_VOICE, self->noise_index );	// , 1, ATTN_NORM, 0 );
